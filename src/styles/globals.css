@@ -1,0 +1,178 @@
+/* Tailwind v3 entry points */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NOTE:
+   Removed Tailwind v4-only lines like:
+   @custom-variant dark (&:is(.dark *));
+   @theme inline {...}
+*/
+
+/* ---- Design tokens (HEX-based) ---- */
+:root {
+  --font-size: 14px;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  --background: #ffffff;
+  --foreground: #2d2d2d;
+
+  --card: #f5efe9;
+  --card-foreground: #2d2d2d;
+
+  --popover: #ffffff;
+  --popover-foreground: #2d2d2d;
+
+  --primary: #ddb7a0;
+  --primary-foreground: #fffdfb;
+
+  --secondary: #a3b9a3;
+  --secondary-foreground: #2d2d2d;
+
+  --muted: #c6b7ad;
+  --muted-foreground: #4a4a4a;
+
+  --accent: #f5efe9;
+  --accent-foreground: #2d2d2d;
+
+  --destructive: #d4183d;
+  --destructive-foreground: #fffdfb;
+
+  --border: #c6b7ad;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #c6b7ad;
+
+  --ring: #a3b9a3;
+
+  --chart-1: #ddb7a0;
+  --chart-2: #a3b9a3;
+  --chart-3: #c6b7ad;
+  --chart-4: #f5efe9;
+  --chart-5: #2d2d2d;
+
+  --radius: 0.625rem;
+
+  --sidebar: #f5efe9;
+  --sidebar-foreground: #2d2d2d;
+  --sidebar-primary: #ddb7a0;
+  --sidebar-primary-foreground: #fffdfb;
+  --sidebar-accent: #c6b7ad;
+  --sidebar-accent-foreground: #2d2d2d;
+  --sidebar-border: #c6b7ad;
+  --sidebar-ring: #a3b9a3;
+}
+
+.dark {
+  --background: #2a2a2a;
+  --foreground: #f5efe9;
+
+  --card: #3a3a3a;
+  --card-foreground: #f5efe9;
+
+  --popover: #2a2a2a;
+  --popover-foreground: #f5efe9;
+
+  --primary: #ddb7a0;
+  --primary-foreground: #2a2a2a;
+
+  --secondary: #a3b9a3;
+  --secondary-foreground: #f5efe9;
+
+  --muted: #4a4a4a;
+  --muted-foreground: #c6b7ad;
+
+  --accent: #3a3a3a;
+  --accent-foreground: #f5efe9;
+
+  --destructive: #d4183d;
+  --destructive-foreground: #f5efe9;
+
+  --border: #4a4a4a;
+  --input: #ffffff;
+  --input-background: #ffffff;
+
+  --ring: #a3b9a3;
+
+  --chart-1: #ddb7a0;
+  --chart-2: #a3b9a3;
+  --chart-3: #c6b7ad;
+  --chart-4: #f5efe9;
+  --chart-5: #2d2d2d;
+
+  --sidebar: #3a3a3a;
+  --sidebar-foreground: #f5efe9;
+  --sidebar-primary: #ddb7a0;
+  --sidebar-primary-foreground: #2a2a2a;
+  --sidebar-accent: #4a4a4a;
+  --sidebar-accent-foreground: #f5efe9;
+  --sidebar-border: #4a4a4a;
+  --sidebar-ring: #a3b9a3;
+}
+
+/* Base layer to make token utilities like border-border work */
+@layer base {
+  * {
+    @apply border-border ;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Typography defaults.
+   Applied only when a Tailwind text-* class is NOT already present higher up. */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    h4 {
+      font-size: var(--text-base);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    p {
+      font-size: var(--text-base);
+      font-weight: 400;
+      line-height: 1.6;
+    }
+    label {
+      font-size: var(--text-base);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    button {
+      font-size: var(--text-base);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    input {
+      font-size: var(--text-base);
+      font-weight: 400;
+      line-height: 1.4;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
