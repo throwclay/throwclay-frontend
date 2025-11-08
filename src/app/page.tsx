@@ -261,7 +261,13 @@ export default function Home() {
           <DashboardMockup />
         );
       case "profile":
-        return <ArtistProfile />;
+        return (
+          <ArtistProfile
+            currentUser={currentUser}
+            onProfileUpdated={(updated) => setCurrentUser(updated)}
+          />
+        );
+
       case "classes":
         return currentUser.type === "studio" ? (
           <ClassesManagement />
@@ -309,6 +315,7 @@ export default function Home() {
       {isLoggedIn && currentUser && (
         <Navigation
           currentUser={currentUser}
+          currentStudio={currentStudio}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           onLogout={handleLogout}

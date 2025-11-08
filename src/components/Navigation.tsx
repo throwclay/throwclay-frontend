@@ -1,21 +1,55 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
-  User, Building2, ShoppingBag, BarChart3, GraduationCap, Calendar,
-  MessageCircle, Settings as SettingsIcon, MapPin, Globe,
-  Users, UserCog, Menu, X, ChevronDown, Brush, Grid3X3, MoreHorizontal, Check, Flame, Bell, FileText, Beaker, BookOpen
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Checkbox } from './ui/checkbox';
-import type { User as UserType } from '@/app/context/AppContext';
-import { useAppContext } from '@/app/context/AppContext';
+  User,
+  Building2,
+  ShoppingBag,
+  BarChart3,
+  GraduationCap,
+  Calendar,
+  MessageCircle,
+  Settings as SettingsIcon,
+  MapPin,
+  Globe,
+  Users,
+  UserCog,
+  Menu,
+  X,
+  ChevronDown,
+  Brush,
+  Grid3X3,
+  MoreHorizontal,
+  Check,
+  Flame,
+  Bell,
+  FileText,
+  Beaker,
+  BookOpen,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+import { Checkbox } from "./ui/checkbox";
+
+import type { User as UserType, Studio } from "@/types";
 
 interface NavigationProps {
   currentUser: UserType;
+  currentStudio: Studio | null;
   currentPage: string;
   onPageChange: (page: string) => void;
   onLogout: () => void;
@@ -35,12 +69,12 @@ const AppGridIcon = ({ className }: { className?: string }) => (
     <rect x="1" y="1" width="3" height="3" rx="0.5" fill="currentColor" />
     <rect x="6.5" y="1" width="3" height="3" rx="0.5" fill="currentColor" />
     <rect x="12" y="1" width="3" height="3" rx="0.5" fill="currentColor" />
-    
+
     {/* Row 2 */}
     <rect x="1" y="6.5" width="3" height="3" rx="0.5" fill="currentColor" />
     <rect x="6.5" y="6.5" width="3" height="3" rx="0.5" fill="currentColor" />
     <rect x="12" y="6.5" width="3" height="3" rx="0.5" fill="currentColor" />
-    
+
     {/* Row 3 */}
     <rect x="1" y="12" width="3" height="3" rx="0.5" fill="currentColor" />
     <rect x="6.5" y="12" width="3" height="3" rx="0.5" fill="currentColor" />
@@ -48,38 +82,48 @@ const AppGridIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export function Navigation({ currentUser, currentPage, onPageChange, onLogout }: NavigationProps) {
-  const { currentStudio } = useAppContext();
+export function Navigation({
+  currentUser,
+  currentStudio,
+  currentPage,
+  onPageChange,
+  onLogout,
+}: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([currentStudio?.locations?.[0]?.id || '']);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([
+    currentStudio?.locations?.[0]?.id || "",
+  ]);
   const [showStudioMenu, setShowStudioMenu] = useState(false);
 
   // Mock notification count - in real app this would come from API
   const notificationCount = 3;
 
   const getSelectedLocationNames = () => {
-    if (!currentStudio?.locations) return 'No Locations';
-    
+    if (!currentStudio?.locations) return "No Locations";
+
     if (selectedLocations.length === 1) {
-      return currentStudio.locations.find(loc => loc.id === selectedLocations[0])?.name || 'Location';
+      return (
+        currentStudio.locations.find((loc) => loc.id === selectedLocations[0])
+          ?.name || "Location"
+      );
     } else if (selectedLocations.length === currentStudio.locations.length) {
-      return 'All Locations';
+      return "All Locations";
     } else {
       return `${selectedLocations.length} Locations`;
     }
   };
 
   const toggleLocationSelection = (locationId: string) => {
-    setSelectedLocations(prev => 
-      prev.includes(locationId) 
-        ? prev.filter(id => id !== locationId)
+    setSelectedLocations((prev) =>
+      prev.includes(locationId)
+        ? prev.filter((id) => id !== locationId)
         : [...prev, locationId]
     );
   };
 
   const selectAllLocations = () => {
     if (currentStudio?.locations) {
-      setSelectedLocations(currentStudio.locations.map(loc => loc.id));
+      setSelectedLocations(currentStudio.locations.map((loc) => loc.id));
     }
   };
 
@@ -89,43 +133,83 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
 
   // Main navigation items based on user type
   const getMainNavigationItems = () => {
-    if (currentUser.type === 'studio') {
+    if (currentUser.type === "studio") {
       return [
-        { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-        { id: 'messages', label: 'Messages', icon: MessageCircle },
-        { id: 'classes', label: 'Classes', icon: GraduationCap },
-        { id: 'members', label: 'Members', icon: Users },
-        { id: 'staff', label: 'Staff', icon: UserCog },
-        { id: 'blog', label: 'Blog', icon: BookOpen },
-        { id: 'profile', label: 'Profile', icon: User }
+        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+        { id: "messages", label: "Messages", icon: MessageCircle },
+        { id: "classes", label: "Classes", icon: GraduationCap },
+        { id: "members", label: "Members", icon: Users },
+        { id: "staff", label: "Staff", icon: UserCog },
+        { id: "blog", label: "Blog", icon: BookOpen },
+        { id: "profile", label: "Profile", icon: User },
       ];
     } else {
       return [
-        { id: 'profile', label: 'Profile', icon: User },
-        { id: 'classes', label: 'Classes', icon: GraduationCap },
-        { id: 'journal', label: 'Journal', icon: Brush },
-        { id: 'blog', label: 'Blog', icon: BookOpen },
-        { id: 'messages', label: 'Messages', icon: MessageCircle },
-        { id: 'dashboard', label: 'Dashboard', icon: BarChart3 }
+        { id: "profile", label: "Profile", icon: User },
+        { id: "classes", label: "Classes", icon: GraduationCap },
+        { id: "journal", label: "Journal", icon: Brush },
+        { id: "blog", label: "Blog", icon: BookOpen },
+        { id: "messages", label: "Messages", icon: MessageCircle },
+        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
       ];
     }
   };
 
   // More dropdown items based on user type
   const getMoreItems = () => {
-    if (currentUser.type === 'studio') {
+    if (currentUser.type === "studio") {
       return [
-        { id: 'events', label: 'Events', icon: Calendar, description: 'Manage studio events' },
-        { id: 'kilns', label: 'Kilns', icon: Flame, description: 'Kiln management & firing schedules' },
-        { id: 'glazes', label: 'Glazes', icon: Beaker, description: 'Track and test glaze recipes' },
-        { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag, description: 'Commerce platform' },
-        { id: 'ceramics', label: 'Ceramics', icon: Grid3X3, description: 'Browse ceramics' }
+        {
+          id: "events",
+          label: "Events",
+          icon: Calendar,
+          description: "Manage studio events",
+        },
+        {
+          id: "kilns",
+          label: "Kilns",
+          icon: Flame,
+          description: "Kiln management & firing schedules",
+        },
+        {
+          id: "glazes",
+          label: "Glazes",
+          icon: Beaker,
+          description: "Track and test glaze recipes",
+        },
+        {
+          id: "marketplace",
+          label: "Marketplace",
+          icon: ShoppingBag,
+          description: "Commerce platform",
+        },
+        {
+          id: "ceramics",
+          label: "Ceramics",
+          icon: Grid3X3,
+          description: "Browse ceramics",
+        },
       ];
     } else {
       return [
-        { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag, description: 'Sell your work' },
-        { id: 'studios', label: 'Studios', icon: Building2, description: 'Find pottery studios' },
-        { id: 'ceramics', label: 'Ceramics', icon: Grid3X3, description: 'Browse ceramics' }
+        {
+          id: "marketplace",
+          label: "Marketplace",
+          icon: ShoppingBag,
+          description: "Sell your work",
+        },
+        {
+          id: "studios",
+          label: "Studios",
+          icon: Building2,
+          description: "Find pottery studios",
+        },
+        {
+          id: "ceramics",
+          label: "Ceramics",
+          icon: Grid3X3,
+          description: "Browse ceramics",
+        },
       ];
     }
   };
@@ -133,36 +217,37 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
   // Mock notifications data - in real app this would come from API
   const getNotifications = () => [
     {
-      id: '1',
-      type: 'kiln',
-      title: 'Firing Complete',
-      message: 'Main Electric Kiln has finished firing and is ready for unloading',
-      timestamp: '2 minutes ago',
-      isRead: false
+      id: "1",
+      type: "kiln",
+      title: "Firing Complete",
+      message:
+        "Main Electric Kiln has finished firing and is ready for unloading",
+      timestamp: "2 minutes ago",
+      isRead: false,
     },
     {
-      id: '2',
-      type: 'class',
-      title: 'New Class Enrollment',
-      message: 'Sarah Wilson enrolled in Advanced Wheel Throwing',
-      timestamp: '1 hour ago',
-      isRead: false
+      id: "2",
+      type: "class",
+      title: "New Class Enrollment",
+      message: "Sarah Wilson enrolled in Advanced Wheel Throwing",
+      timestamp: "1 hour ago",
+      isRead: false,
     },
     {
-      id: '3',
-      type: 'membership',
-      title: 'Membership Renewal',
-      message: 'Mike Chen renewed their studio membership',
-      timestamp: '3 hours ago',
-      isRead: true
-    }
+      id: "3",
+      type: "membership",
+      title: "Membership Renewal",
+      message: "Mike Chen renewed their studio membership",
+      timestamp: "3 hours ago",
+      isRead: true,
+    },
   ];
 
   const mainNavigationItems = getMainNavigationItems();
   const moreAppsItems = getMoreItems();
   const allNavigationItems = [...mainNavigationItems, ...moreAppsItems];
   const notifications = getNotifications();
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const NavigationContent = () => (
     <div className="flex items-center space-x-2">
@@ -170,18 +255,20 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
       {mainNavigationItems.map((item) => {
         const Icon = item.icon;
         const isActive = currentPage === item.id;
-        
+
         return (
           <Button
             key={item.id}
             variant={isActive ? "default" : "ghost"}
             size="sm"
             onClick={() => onPageChange(item.id)}
-            className={`${isActive ? '' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`${
+              isActive ? "" : "text-muted-foreground hover:text-foreground"
+            }`}
           >
             <Icon className="w-4 h-4 mr-2" />
             {item.label}
-            {item.id === 'staff' && currentUser.type === 'studio' && (
+            {item.id === "staff" && currentUser.type === "studio" && (
               <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0.5">
                 5
               </Badge>
@@ -194,7 +281,11 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
       {moreAppsItems.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <AppGridIcon className="w-4 h-4 mr-2" />
               Apps
             </Button>
@@ -203,17 +294,19 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
             {moreAppsItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
-              
+
               return (
                 <DropdownMenuItem
                   key={item.id}
                   onClick={() => onPageChange(item.id)}
-                  className={`cursor-pointer ${isActive ? 'bg-accent' : ''}`}
+                  className={`cursor-pointer ${isActive ? "bg-accent" : ""}`}
                 >
                   <Icon className="mr-3 h-4 w-4" />
                   <div>
                     <p>{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
                   </div>
                 </DropdownMenuItem>
               );
@@ -225,14 +318,18 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
       {/* Notifications Bell - Now positioned after Apps */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="relative text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative text-muted-foreground hover:text-foreground"
+          >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs min-w-[20px]"
               >
-                {unreadCount > 9 ? '9+' : unreadCount}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
           </Button>
@@ -253,12 +350,16 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
               notifications.map((notification) => (
                 <DropdownMenuItem
                   key={notification.id}
-                  className={`cursor-pointer p-4 ${!notification.isRead ? 'bg-accent/30' : ''}`}
+                  className={`cursor-pointer p-4 ${
+                    !notification.isRead ? "bg-accent/30" : ""
+                  }`}
                 >
                   <div className="w-full space-y-2">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{notification.title}</p>
+                        <p className="font-medium text-sm truncate">
+                          {notification.title}
+                        </p>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {notification.message}
                         </p>
@@ -299,8 +400,10 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
           {/* Left Section - Brand Only */}
           <div className="flex items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary flex items-center justify-center" style={{ borderRadius: '68% 32% 62% 38% / 55% 48% 52% 45%' }}>
-              </div>
+              <div
+                className="w-8 h-8 bg-primary flex items-center justify-center"
+                style={{ borderRadius: "68% 32% 62% 38% / 55% 48% 52% 45%" }}
+              ></div>
               <span className="text-xl font-bold">Throw Clay</span>
             </div>
           </div>
@@ -313,89 +416,138 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
           {/* Right Section - Studio Menu + User Menu */}
           <div className="flex items-center space-x-4">
             {/* Studio Menu for Studio Users */}
-            {currentUser.type === 'studio' && currentStudio && (
-              <DropdownMenu open={showStudioMenu} onOpenChange={setShowStudioMenu}>
+            {currentUser.type === "studio" && currentStudio && (
+              <DropdownMenu
+                open={showStudioMenu}
+                onOpenChange={setShowStudioMenu}
+              >
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-9 px-3 flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    className="h-9 px-3 flex items-center space-x-2"
+                  >
                     <Building2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">@{currentStudio.handle}</span>
+                    <span className="text-sm font-medium">
+                      @{currentStudio.handle}
+                    </span>
                     <ChevronDown className="w-3 h-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-80" align="end" sideOffset={8}>
+                <DropdownMenuContent
+                  className="w-80"
+                  align="end"
+                  sideOffset={8}
+                >
                   {/* Studio Header */}
                   <div className="flex items-center space-x-3 p-4">
                     <Building2 className="w-8 h-8 text-muted-foreground" />
                     <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{currentStudio.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{currentStudio.handle}</p>
+                      <p className="font-semibold text-sm truncate">
+                        {currentStudio.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{currentStudio.handle}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {currentStudio.locations?.length || 0} location{(currentStudio.locations?.length || 0) !== 1 ? 's' : ''}
+                        {currentStudio.locations?.length || 0} location
+                        {(currentStudio.locations?.length || 0) !== 1
+                          ? "s"
+                          : ""}
                       </p>
                     </div>
                   </div>
-                  
+
                   <DropdownMenuSeparator />
-                  
+
                   {/* Location Selection */}
-                  {currentStudio.locations && currentStudio.locations.length > 0 && (
-                    <>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium text-sm">Select Locations</h4>
-                          {currentStudio.locations.length > 1 && (
-                            <div className="flex space-x-2">
-                              <Button variant="ghost" size="sm" onClick={selectAllLocations}>
-                                All
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={clearLocationSelection}>
-                                Clear
-                              </Button>
+                  {currentStudio.locations &&
+                    currentStudio.locations.length > 0 && (
+                      <>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-sm">
+                              Select Locations
+                            </h4>
+                            {currentStudio.locations.length > 1 && (
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={selectAllLocations}
+                                >
+                                  All
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={clearLocationSelection}
+                                >
+                                  Clear
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-3">
+                            {currentStudio.locations.map((location) => (
+                              <div
+                                key={location.id}
+                                className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent"
+                              >
+                                {currentStudio.locations.length > 1 ? (
+                                  <Checkbox
+                                    checked={selectedLocations.includes(
+                                      location.id
+                                    )}
+                                    onCheckedChange={() =>
+                                      toggleLocationSelection(location.id)
+                                    }
+                                  />
+                                ) : (
+                                  <div className="w-4 h-4 flex items-center justify-center">
+                                    <Check className="w-3 h-3 text-primary" />
+                                  </div>
+                                )}
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">
+                                    {location.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {location.city}, {location.state}
+                                  </p>
+                                </div>
+                                {currentStudio.locations.length > 1 &&
+                                  selectedLocations.includes(location.id) && (
+                                    <Check className="w-4 h-4 text-primary" />
+                                  )}
+                              </div>
+                            ))}
+                          </div>
+                          {selectedLocations.length > 1 && (
+                            <div className="mt-3 p-3 bg-accent/50 rounded-md">
+                              <p className="text-xs text-muted-foreground">
+                                Bulk operations will apply to{" "}
+                                {selectedLocations.length} selected locations
+                              </p>
                             </div>
                           )}
                         </div>
-                        <div className="space-y-3">
-                          {currentStudio.locations.map((location) => (
-                            <div key={location.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent">
-                              {currentStudio.locations.length > 1 ? (
-                                <Checkbox
-                                  checked={selectedLocations.includes(location.id)}
-                                  onCheckedChange={() => toggleLocationSelection(location.id)}
-                                />
-                              ) : (
-                                <div className="w-4 h-4 flex items-center justify-center">
-                                  <Check className="w-3 h-3 text-primary" />
-                                </div>
-                              )}
-                              <MapPin className="w-4 h-4 text-muted-foreground" />
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">{location.name}</p>
-                                <p className="text-xs text-muted-foreground">{location.city}, {location.state}</p>
-                              </div>
-                              {currentStudio.locations.length > 1 && selectedLocations.includes(location.id) && (
-                                <Check className="w-4 h-4 text-primary" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        {selectedLocations.length > 1 && (
-                          <div className="mt-3 p-3 bg-accent/50 rounded-md">
-                            <p className="text-xs text-muted-foreground">
-                              Bulk operations will apply to {selectedLocations.length} selected locations
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+
                   {/* Studio Actions */}
-                  <DropdownMenuItem onClick={() => onPageChange('profile')} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => onPageChange("profile")}
+                    className="cursor-pointer"
+                  >
                     <Building2 className="mr-3 h-4 w-4" />
                     Studio Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onPageChange('settings')} className="cursor-pointer">
+                  <DropdownMenuItem
+                    onClick={() => onPageChange("settings")}
+                    className="cursor-pointer"
+                  >
                     <SettingsIcon className="mr-3 h-4 w-4" />
                     Studio Settings
                   </DropdownMenuItem>
@@ -406,11 +558,20 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
             {/* User Avatar Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-full"
+                >
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={currentUser.profile?.profileImage} alt={currentUser.name} />
+                    <AvatarImage
+                      src={currentUser.profile?.profileImage}
+                      alt={currentUser.name}
+                    />
                     <AvatarFallback>
-                      {currentUser.name.split(' ').map(n => n[0]).join('')}
+                      {currentUser.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -418,42 +579,70 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
               <DropdownMenuContent className="w-64" align="end" sideOffset={8}>
                 <div className="flex items-center space-x-3 p-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={currentUser.profile?.profileImage} alt={currentUser.name} />
+                    <AvatarImage
+                      src={currentUser.profile?.profileImage}
+                      alt={currentUser.name}
+                    />
                     <AvatarFallback>
-                      {currentUser.name.split(' ').map(n => n[0]).join('')}
+                      {currentUser.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{currentUser.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">@{currentUser.handle}</p>
-                    <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
-                    {currentUser.type === 'artist' && currentStudio && (
+                    <p className="font-semibold text-sm truncate">
+                      {currentUser.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      @{currentUser.handle}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {currentUser.email}
+                    </p>
+                    {currentUser.type === "artist" && currentStudio && (
                       <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                         <Building2 className="w-3 h-3" />
-                        <span className="truncate">Member of {currentStudio.name}</span>
+                        <span className="truncate">
+                          Member of {currentStudio.name}
+                        </span>
                       </div>
                     )}
-                    {currentUser.type === 'artist' && currentUser.subscription && (
-                      <Badge variant="secondary" className="w-fit text-xs">
-                        {currentUser.subscription === 'free' ? 'Free' : 
-                         currentUser.subscription === 'passion' ? 'Passion' :
-                         currentUser.subscription === 'small-artist' ? 'Artist' : 'Studio Pro'}
-                      </Badge>
-                    )}
+                    {currentUser.type === "artist" &&
+                      currentUser.subscription && (
+                        <Badge variant="secondary" className="w-fit text-xs">
+                          {currentUser.subscription === "free"
+                            ? "Free"
+                            : currentUser.subscription === "passion"
+                            ? "Passion"
+                            : currentUser.subscription === "small-artist"
+                            ? "Artist"
+                            : "Studio Pro"}
+                        </Badge>
+                      )}
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onPageChange('profile')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => onPageChange("profile")}
+                  className="cursor-pointer"
+                >
                   <User className="mr-3 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onPageChange('settings')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => onPageChange("settings")}
+                  className="cursor-pointer"
+                >
                   <SettingsIcon className="mr-3 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -466,7 +655,11 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
               className="lg:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -480,7 +673,7 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
                 {allNavigationItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentPage === item.id;
-                  
+
                   return (
                     <button
                       key={item.id}
@@ -490,14 +683,17 @@ export function Navigation({ currentUser, currentPage, onPageChange, onLogout }:
                       }}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
                       }`}
                     >
                       <Icon className="w-5 h-5" />
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.id === 'staff' && currentUser.type === 'studio' && (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                      {item.id === "staff" && currentUser.type === "studio" && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs px-1.5 py-0.5"
+                        >
                           5
                         </Badge>
                       )}
