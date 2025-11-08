@@ -75,7 +75,7 @@ import {
 } from "./ui/dropdown-menu";
 import { BadgeManagement } from "./BadgeManagement";
 import type {
-  User,
+  User as UserType,
   ArtistProfile as ArtistProfileType,
   StudentBadge,
 } from "@/types";
@@ -83,8 +83,8 @@ import type {
 import { toast } from "sonner";
 
 interface ArtistProfileProps {
-  currentUser: User | null;
-  onProfileUpdated?: (user: User) => void;
+  currentUser: UserType | null;
+  onProfileUpdated?: (user: UserType) => void;
 }
 
 export function ArtistProfile({

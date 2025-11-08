@@ -22,14 +22,19 @@ import { Navigation } from "@/components/Navigation";
 import { LandingPage } from "@/components/LandingPage";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
-import type { User, Studio, PotteryEntry, StudioLocation } from "@/types";
+import type {
+  User as UserType,
+  Studio,
+  PotteryEntry,
+  StudioLocation,
+} from "@/types";
 import { getSubscriptionLimits } from "@/utils/subscriptions";
 
 import { supabase } from "@/lib/apis/supabaseClient";
 
 interface AppContextType {
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
+  currentUser: UserType | null;
+  setCurrentUser: (user: UserType | null) => void;
   currentStudio: Studio | null;
   setCurrentStudio: (studio: Studio | null) => void;
   currentThrow?: PotteryEntry | null;
@@ -38,18 +43,8 @@ interface AppContextType {
   navigateToPage?: (page: string) => void;
 }
 
-// const AppContext = createContext<AppContextType | undefined>(undefined);
-
-// export function useAppContext() {
-//   const context = useContext(AppContext);
-//   if (context === undefined) {
-//     throw new Error("useAppContext must be used within an AppProvider");
-//   }
-//   return context;
-// }
-
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [currentStudio, setCurrentStudio] = useState<Studio | null>(null);
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -155,7 +150,7 @@ export default function Home() {
 
     if (userError || !user) {
       console.error("handleLogin: no Supabase user", userError);
-      // You might want a toast or UI error here instead
+      // Optionally show a toast here
       return;
     }
 
@@ -168,51 +163,108 @@ export default function Home() {
 
     if (profileError) {
       console.error("handleLogin: error fetching profile", profileError);
-      // still continue with reasonable fallbacks
+      // We can still proceed with reasonable defaults
     }
 
-    // 3) Derive basic fields with fallbacks
     const email = user.email ?? userData.email;
     const fallbackName = email?.split("@")[0] ?? "Unnamed";
+
     const name =
       (profileRow as any)?.name ??
       user.user_metadata?.full_name ??
       fallbackName;
+
     const handle =
       (profileRow as any)?.handle ??
       fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
-    const type =
+
+    const type: "artist" | "studio" =
       ((profileRow as any)?.type as "artist" | "studio" | null) ??
       userData.userType;
 
-    // 4) Build your front-end User object
-    const appUser: User = {
+    // 3) Build front-end User object
+    const appUser: UserType = {
       id: user.id,
       name,
       handle,
       email,
       type,
-      // You can wire these later when you add subscriptions/usage
       subscription: undefined,
       subscriptionLimits: undefined,
       usageStats: undefined,
-      // Simple default profile object – same shape your ArtistProfile expects
       profile: {
-        bio: "",
-        socialMedia: {},
+        bio: (profileRow as any)?.bio ?? "",
+        socialMedia: (profileRow as any)?.social_media ?? {},
         branding: {
-          primaryColor: "#030213",
+          primaryColor:
+            (profileRow as any)?.branding?.primaryColor ?? "#030213",
+          secondaryColor: (profileRow as any)?.branding?.secondaryColor,
+          logoUrl: (profileRow as any)?.branding?.logoUrl,
         },
       },
-      createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(), // fallback
+      createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(),
       lastLogin: (profileRow as any)?.last_login ?? undefined,
       isActive: (profileRow as any)?.is_active ?? true,
     };
 
-    // 5) Store in state
     setCurrentUser(appUser);
-    // For now, we don't have real studios yet, so:
-    setCurrentStudio(null);
+
+    // 4) Fetch their studio memberships (this is the new part!)
+    const { data: memberships, error: membershipError } = await supabase
+      .from("studio_memberships")
+      .select(
+        `
+      studio_id,
+      role,
+      status,
+      studios:studio_id (
+        id,
+        name,
+        handle,
+        email,
+        website,
+        description,
+        is_active,
+        plan,
+        created_at
+      )
+    `
+      )
+      .eq("user_id", user.id) // 👈 uses user_id, not member_id
+      .eq("status", "active"); // 👈 relies on your new status column
+
+    if (membershipError) {
+      console.error("handleLogin: error fetching memberships", membershipError);
+    }
+
+    let studioForState: Studio | null = null;
+
+    if (memberships && memberships.length > 0) {
+      // For now: just take the first active studio
+      const membership = memberships[0] as any;
+      const s = membership.studios;
+
+      if (s) {
+        studioForState = {
+          id: s.id,
+          name: s.name,
+          handle: s.handle,
+          email: s.email ?? "",
+          website: s.website ?? "",
+          description: s.description ?? "",
+          locations: [], // TODO: wire real locations when you have them
+          isActive: s.is_active ?? true,
+          plan: (s.plan as Studio["plan"]) ?? "studio-pro",
+          createdAt: s.created_at,
+          memberCount: 0, // TODO: compute via count/view later
+          classCount: 0, // TODO
+          glazes: [],
+          firingSchedule: [],
+        };
+      }
+    }
+
+    setCurrentStudio(studioForState);
 
     setIsLoggedIn(true);
     setCurrentPage(type === "studio" ? "dashboard" : "profile");
@@ -294,7 +346,7 @@ export default function Home() {
       case "marketplace":
         return <CommerceMarketplace />;
       case "settings":
-        return <Settings />;
+        return <Settings currentUser={currentUser} />;
       case "events":
         return <EventsManagement />;
       case "messages":

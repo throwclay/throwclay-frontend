@@ -1,19 +1,24 @@
-import { useState } from 'react';
-import { User, Building2, Bell, Shield, Palette, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { StudioSettings } from './StudioSettings';
-import { useAppContext } from '@/app/context/AppContext';
+import { useState } from "react";
+import { User, Building2, Bell, Shield, Palette, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { StudioSettings } from "./StudioSettings";
 
-export function Settings() {
-  const { currentUser } = useAppContext();
+import type { User as UserType } from "@/types";
 
+interface SettingsProps {
+  currentUser: UserType | null;
+}
+
+export function Settings({ currentUser }: SettingsProps) {
   if (!currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
           <h1>Settings</h1>
-          <p className="text-muted-foreground">Please log in to access settings</p>
+          <p className="text-muted-foreground">
+            Please log in to access settings
+          </p>
         </div>
       </div>
     );
@@ -24,13 +29,17 @@ export function Settings() {
       <div className="mb-8">
         <h1>Settings</h1>
         <p className="text-muted-foreground">
-          Manage your {currentUser.type === 'studio' ? 'studio' : 'account'} settings and preferences
+          Manage your {currentUser.type === "studio" ? "studio" : "account"}{" "}
+          settings and preferences
         </p>
       </div>
 
-      <Tabs defaultValue={currentUser.type === 'studio' ? 'studio' : 'profile'} className="space-y-6">
+      <Tabs
+        defaultValue={currentUser.type === "studio" ? "studio" : "profile"}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-4">
-          {currentUser.type === 'studio' && (
+          {currentUser.type === "studio" && (
             <TabsTrigger value="studio" className="flex items-center space-x-2">
               <Building2 className="w-4 h-4" />
               <span>Studio</span>
@@ -40,7 +49,10 @@ export function Settings() {
             <User className="w-4 h-4" />
             <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center space-x-2">
+          <TabsTrigger
+            value="notifications"
+            className="flex items-center space-x-2"
+          >
             <Bell className="w-4 h-4" />
             <span>Notifications</span>
           </TabsTrigger>
@@ -51,7 +63,7 @@ export function Settings() {
         </TabsList>
 
         {/* Studio Settings Tab */}
-        {currentUser.type === 'studio' && (
+        {currentUser.type === "studio" && (
           <TabsContent value="studio">
             <StudioSettings />
           </TabsContent>
@@ -93,7 +105,7 @@ export function Settings() {
                   <div>
                     <label className="text-sm font-medium">Subscription</label>
                     <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1 capitalize">
-                      {currentUser.subscription.replace('-', ' ')}
+                      {currentUser.subscription.replace("-", " ")}
                     </p>
                   </div>
                 )}
