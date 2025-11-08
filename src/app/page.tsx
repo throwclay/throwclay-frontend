@@ -25,6 +25,8 @@ import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplac
 import type { User, Studio, PotteryEntry, StudioLocation } from "@/types";
 import { getSubscriptionLimits } from "@/utils/subscriptions";
 
+import { supabase } from "@/lib/apis/supabaseClient";
+
 interface AppContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
@@ -141,70 +143,79 @@ export default function Home() {
     setCurrentPage(page);
   };
 
-  const handleLogin = (userData: {
+  const handleLogin = async (userData: {
     email: string;
     userType: "artist" | "studio";
   }) => {
-    // Create mock user based on type
-    if (userData.userType === "studio") {
-      const studio = mockStudios[0]; // Use first studio as default
-      setCurrentStudio(studio);
+    // 1) Get the authenticated user from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      const studioUser: User = {
-        id: "studio_user_1",
-        name: "Studio Administrator",
-        handle: studio.handle,
-        email: userData.email,
-        type: "studio",
-        profile: {
-          bio: "Professional pottery studio dedicated to fostering creativity and ceramic artistry.",
-          socialMedia: {
-            instagram: "@clayandfire",
-            website: "https://clayandfire.com",
-          },
-          branding: {
-            primaryColor: "#8B4513",
-          },
-        },
-        createdAt: "2018-06-15T00:00:00Z",
-        isActive: true,
-      };
-      setCurrentUser(studioUser);
-    } else {
-      // Artist user
-      const artistUser: User = {
-        id: "artist_user_1",
-        name: "Alex Rivera",
-        handle: "alexrivera",
-        email: userData.email,
-        type: "artist",
-        subscription: "passion",
-        subscriptionLimits: getSubscriptionLimits("passion"),
-        usageStats: {
-          projectsUsed: 3,
-          throwsInProjects: 18,
-          additionalThrowsUsed: 5,
-          totalThrows: 23,
-        },
-        profile: {
-          bio: "Ceramic artist exploring the intersection of traditional techniques and contemporary forms.",
-          socialMedia: {
-            instagram: "@alexrivera_clay",
-            website: "https://alexriveraceramics.com",
-          },
-          branding: {
-            primaryColor: "#DDB7A0",
-          },
-        },
-        createdAt: "2023-03-12T00:00:00Z",
-        isActive: true,
-      };
-      setCurrentUser(artistUser);
-      setCurrentStudio(mockStudios[0]); // Artists can be members of studios
+    if (userError || !user) {
+      console.error("handleLogin: no Supabase user", userError);
+      // You might want a toast or UI error here instead
+      return;
     }
 
+    // 2) Fetch their profile row from public.profiles
+    const { data: profileRow, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("handleLogin: error fetching profile", profileError);
+      // still continue with reasonable fallbacks
+    }
+
+    // 3) Derive basic fields with fallbacks
+    const email = user.email ?? userData.email;
+    const fallbackName = email?.split("@")[0] ?? "Unnamed";
+    const name =
+      (profileRow as any)?.name ??
+      user.user_metadata?.full_name ??
+      fallbackName;
+    const handle =
+      (profileRow as any)?.handle ??
+      fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+    const type =
+      ((profileRow as any)?.type as "artist" | "studio" | null) ??
+      userData.userType;
+
+    // 4) Build your front-end User object
+    const appUser: User = {
+      id: user.id,
+      name,
+      handle,
+      email,
+      type,
+      // You can wire these later when you add subscriptions/usage
+      subscription: undefined,
+      subscriptionLimits: undefined,
+      usageStats: undefined,
+      // Simple default profile object – same shape your ArtistProfile expects
+      profile: {
+        bio: "",
+        socialMedia: {},
+        branding: {
+          primaryColor: "#030213",
+        },
+      },
+      createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(), // fallback
+      lastLogin: (profileRow as any)?.last_login ?? undefined,
+      isActive: (profileRow as any)?.is_active ?? true,
+    };
+
+    // 5) Store in state
+    setCurrentUser(appUser);
+    // For now, we don't have real studios yet, so:
+    setCurrentStudio(null);
+
     setIsLoggedIn(true);
-    setCurrentPage(userData.userType === "studio" ? "dashboard" : "profile");
+    setCurrentPage(type === "studio" ? "dashboard" : "profile");
   };
 
   const handleLogout = () => {
