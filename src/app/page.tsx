@@ -22,6 +22,7 @@ import { Navigation } from "@/components/Navigation";
 import { LandingPage } from "@/components/LandingPage";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
+import { InvitesPanel } from "@/components/InvitesPanel";
 import type {
   User as UserType,
   Studio,
@@ -49,6 +50,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentThrow, setCurrentThrow] = useState<PotteryEntry | null>(null);
+  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
 
   // Mock studios data
   const mockStudios: Studio[] = [
@@ -222,7 +224,6 @@ export default function Home() {
         name,
         handle,
         email,
-        website,
         description,
         is_active,
         plan,
@@ -268,6 +269,7 @@ export default function Home() {
 
     setIsLoggedIn(true);
     setCurrentPage(type === "studio" ? "dashboard" : "profile");
+    fetchInvites();
   };
 
   const handleLogout = () => {
@@ -276,6 +278,37 @@ export default function Home() {
     setCurrentThrow(null);
     setIsLoggedIn(false);
     setCurrentPage("landing");
+  };
+
+  const fetchInvites = async () => {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        console.error("fetchInvites: no session", error);
+        return;
+      }
+
+      const res = await fetch("/api/invites", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.error("fetchInvites: non-OK response", res.status);
+        return;
+      }
+
+      const data = await res.json();
+      setPendingInvites(data.invites ?? []);
+    } catch (err) {
+      console.error("fetchInvites error", err);
+    }
   };
 
   const contextValue: AppContextType = {
@@ -363,6 +396,14 @@ export default function Home() {
         return <PublicStudiosDirectory onNavigate={setCurrentPage} />;
       case "ceramics":
         return <PublicCeramicsMarketplace onNavigate={setCurrentPage} />;
+      case "invites":
+        return (
+          <InvitesPanel
+            invites={pendingInvites}
+            onInvitesChange={setPendingInvites}
+          />
+        );
+
       default:
         return (
           <div className="p-8">
@@ -380,6 +421,7 @@ export default function Home() {
           currentUser={currentUser}
           currentStudio={currentStudio}
           currentPage={currentPage}
+          pendingInvitesCount={pendingInvites.length}
           onPageChange={setCurrentPage}
           onLogout={handleLogout}
         />

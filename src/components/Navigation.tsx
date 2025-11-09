@@ -24,6 +24,7 @@ import {
   FileText,
   Beaker,
   BookOpen,
+  Mail,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -51,6 +52,7 @@ interface NavigationProps {
   currentUser: UserType;
   currentStudio: Studio | null;
   currentPage: string;
+  pendingInvitesCount: number;
   onPageChange: (page: string) => void;
   onLogout: () => void;
 }
@@ -86,6 +88,7 @@ export function Navigation({
   currentUser,
   currentStudio,
   currentPage,
+  pendingInvitesCount,
   onPageChange,
   onLogout,
 }: NavigationProps) {
@@ -157,6 +160,12 @@ export function Navigation({
 
   // More dropdown items based on user type
   const getMoreItems = () => {
+    const invitesItem = {
+      id: "invites",
+      label: "Invites",
+      icon: Mail,
+      description: "Studio invitations",
+    };
     if (currentUser.type === "studio") {
       return [
         {
@@ -189,6 +198,7 @@ export function Navigation({
           icon: Grid3X3,
           description: "Browse ceramics",
         },
+        invitesItem,
       ];
     } else {
       return [
@@ -210,6 +220,7 @@ export function Navigation({
           icon: Grid3X3,
           description: "Browse ceramics",
         },
+        invitesItem,
       ];
     }
   };
@@ -294,6 +305,7 @@ export function Navigation({
             {moreAppsItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
+              const isInvites = item.id === "invites";
 
               return (
                 <DropdownMenuItem
@@ -301,12 +313,24 @@ export function Navigation({
                   onClick={() => onPageChange(item.id)}
                   className={`cursor-pointer ${isActive ? "bg-accent" : ""}`}
                 >
-                  <Icon className="mr-3 h-4 w-4" />
-                  <div>
-                    <p>{item.label}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.description}
-                    </p>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Icon className="mr-3 h-4 w-4" />
+                      <div>
+                        <p>{item.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                    {isInvites && pendingInvitesCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 text-xs px-1.5 py-0.5"
+                      >
+                        {pendingInvitesCount}
+                      </Badge>
+                    )}
                   </div>
                 </DropdownMenuItem>
               );
@@ -673,6 +697,7 @@ export function Navigation({
                 {allNavigationItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentPage === item.id;
+                  const isInvites = item.id === "invites";
 
                   return (
                     <button
@@ -695,6 +720,14 @@ export function Navigation({
                           className="text-xs px-1.5 py-0.5"
                         >
                           5
+                        </Badge>
+                      )}
+                      {isInvites && pendingInvitesCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs px-1.5 py-0.5"
+                        >
+                          {pendingInvitesCount}
                         </Badge>
                       )}
                     </button>
