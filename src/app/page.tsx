@@ -385,7 +385,7 @@ export default function Home() {
       case "messages":
         return <MessagingCenter />;
       case "members":
-        return <MemberManagement />;
+        return <MemberManagement currentStudio={currentStudio} />;
       case "staff":
         return <StaffManagement />;
       case "kilns":

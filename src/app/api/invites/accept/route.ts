@@ -107,6 +107,8 @@ export async function POST(req: Request) {
         user_id: user.id,
         role,
         status: "active",
+        location_id: invite.location_id,
+        membership_type: invite.membership_type,
       } as any,
       {
         onConflict: "studio_id,user_id",
