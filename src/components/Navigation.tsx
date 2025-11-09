@@ -43,14 +43,11 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
 import { Checkbox } from "./ui/checkbox";
 
-import type { User as UserType, Studio } from "@/types";
+import { useAppContext } from "@/app/context/AppContext";
 
 interface NavigationProps {
-  currentUser: UserType;
-  currentStudio: Studio | null;
   currentPage: string;
   pendingInvitesCount: number;
   onPageChange: (page: string) => void;
@@ -85,21 +82,23 @@ const AppGridIcon = ({ className }: { className?: string }) => (
 );
 
 export function Navigation({
-  currentUser,
-  currentStudio,
   currentPage,
   pendingInvitesCount,
   onPageChange,
   onLogout,
 }: NavigationProps) {
+  const { currentUser, currentStudio } = useAppContext();
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([
     currentStudio?.locations?.[0]?.id || "",
   ]);
   const [showStudioMenu, setShowStudioMenu] = useState(false);
 
-  // Mock notification count - in real app this would come from API
-  const notificationCount = 3;
+  // If somehow rendered without a user, don't blow up
+  if (!currentUser) {
+    return null;
+  }
 
   const getSelectedLocationNames = () => {
     if (!currentStudio?.locations) return "No Locations";
@@ -339,7 +338,7 @@ export function Navigation({
         </DropdownMenu>
       )}
 
-      {/* Notifications Bell - Now positioned after Apps */}
+      {/* Notifications Bell */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

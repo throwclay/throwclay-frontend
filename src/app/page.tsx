@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, createContext, useContext } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PotteryJournal } from "@/components/PotteryJournal";
 import { WhiteboardEditor } from "@/components/WhiteboardEditor";
@@ -23,33 +23,36 @@ import { LandingPage } from "@/components/LandingPage";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
 import { InvitesPanel } from "@/components/InvitesPanel";
-import type {
-  User as UserType,
-  Studio,
-  PotteryEntry,
-  StudioLocation,
-} from "@/types";
+import type { User as UserType, Studio, PotteryEntry } from "@/types";
 import { getSubscriptionLimits } from "@/utils/subscriptions";
+import { useAppContext } from "./context/AppContext";
 
 import { supabase } from "@/lib/apis/supabaseClient";
 
-interface AppContextType {
-  currentUser: UserType | null;
-  setCurrentUser: (user: UserType | null) => void;
-  currentStudio: Studio | null;
-  setCurrentStudio: (studio: Studio | null) => void;
-  currentThrow?: PotteryEntry | null;
-  setCurrentThrow?: (throwEntry: PotteryEntry | null) => void;
-  updateThrow?: (throwEntry: PotteryEntry) => void;
-  navigateToPage?: (page: string) => void;
-}
+// interface AppContextType {
+//   currentUser: UserType | null;
+//   setCurrentUser: (user: UserType | null) => void;
+//   currentStudio: Studio | null;
+//   setCurrentStudio: (studio: Studio | null) => void;
+//   currentThrow?: PotteryEntry | null;
+//   setCurrentThrow?: (throwEntry: PotteryEntry | null) => void;
+//   updateThrow?: (throwEntry: PotteryEntry) => void;
+//   navigateToPage?: (page: string) => void;
+//   authToken?: string | null;
+//   setAuthToken?: (token: string | null) => void;
+// }
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
-  const [currentStudio, setCurrentStudio] = useState<Studio | null>(null);
+  const {
+    currentUser,
+    setCurrentUser,
+    currentStudio,
+    setCurrentStudio,
+    setCurrentThrow,
+    setAuthToken,
+  } = useAppContext();
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentThrow, setCurrentThrow] = useState<PotteryEntry | null>(null);
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
 
   // Mock studios data
@@ -144,19 +147,24 @@ export default function Home() {
     email: string;
     userType: "artist" | "studio";
   }) => {
-    // 1) Get the authenticated user from Supabase
+    // 1) Get the current session (has both user + access token)
     const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (userError || !user) {
-      console.error("handleLogin: no Supabase user", userError);
+    if (sessionError || !session || !session.user) {
+      console.error("handleLogin: no Supabase session/user", sessionError);
       // Optionally show a toast here
       return;
     }
 
-    // 2) Fetch their profile row from public.profiles
+    const user = session.user;
+
+    // 2) Store access token in AppContext for API routes
+    setAuthToken(session.access_token);
+
+    // 3) Fetch their profile row from public.profiles
     const { data: profileRow, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -173,7 +181,7 @@ export default function Home() {
 
     const name =
       (profileRow as any)?.name ??
-      user.user_metadata?.full_name ??
+      (user.user_metadata as any)?.full_name ??
       fallbackName;
 
     const handle =
@@ -184,7 +192,7 @@ export default function Home() {
       ((profileRow as any)?.type as "artist" | "studio" | null) ??
       userData.userType;
 
-    // 3) Build front-end User object
+    // 4) Build front-end User object
     const appUser: UserType = {
       id: user.id,
       name,
@@ -211,28 +219,28 @@ export default function Home() {
 
     setCurrentUser(appUser);
 
-    // 4) Fetch their studio memberships (this is the new part!)
+    // 5) Fetch their studio memberships
     const { data: memberships, error: membershipError } = await supabase
       .from("studio_memberships")
       .select(
         `
-      studio_id,
-      role,
-      status,
-      studios:studio_id (
-        id,
-        name,
-        handle,
-        email,
-        description,
-        is_active,
-        plan,
-        created_at
+        studio_id,
+        role,
+        status,
+        studios:studio_id (
+          id,
+          name,
+          handle,
+          email,
+          description,
+          is_active,
+          plan,
+          created_at
+        )
+      `
       )
-    `
-      )
-      .eq("user_id", user.id) // 👈 uses user_id, not member_id
-      .eq("status", "active"); // 👈 relies on your new status column
+      .eq("user_id", user.id)
+      .eq("status", "active");
 
     if (membershipError) {
       console.error("handleLogin: error fetching memberships", membershipError);
@@ -253,7 +261,7 @@ export default function Home() {
           email: s.email ?? "",
           website: s.website ?? "",
           description: s.description ?? "",
-          locations: [], // TODO: wire real locations when you have them
+          locations: [], // TODO: wire real locations
           isActive: s.is_active ?? true,
           plan: (s.plan as Studio["plan"]) ?? "studio-pro",
           createdAt: s.created_at,
@@ -269,7 +277,6 @@ export default function Home() {
 
     setIsLoggedIn(true);
     setCurrentPage(type === "studio" ? "dashboard" : "profile");
-    fetchInvites();
   };
 
   const handleLogout = () => {
@@ -280,47 +287,47 @@ export default function Home() {
     setCurrentPage("landing");
   };
 
-  const fetchInvites = async () => {
-    try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+  // const fetchInvites = async () => {
+  //   try {
+  //     const {
+  //       data: { session },
+  //       error,
+  //     } = await supabase.auth.getSession();
 
-      if (error || !session) {
-        console.error("fetchInvites: no session", error);
-        return;
-      }
+  //     if (error || !session) {
+  //       console.error("fetchInvites: no session", error);
+  //       return;
+  //     }
 
-      const res = await fetch("/api/invites", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+  //     const res = await fetch("/api/invites", {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: `Bearer ${session.access_token}`,
+  //       },
+  //     });
 
-      if (!res.ok) {
-        console.error("fetchInvites: non-OK response", res.status);
-        return;
-      }
+  //     if (!res.ok) {
+  //       console.error("fetchInvites: non-OK response", res.status);
+  //       return;
+  //     }
 
-      const data = await res.json();
-      setPendingInvites(data.invites ?? []);
-    } catch (err) {
-      console.error("fetchInvites error", err);
-    }
-  };
+  //     const data = await res.json();
+  //     setPendingInvites(data.invites ?? []);
+  //   } catch (err) {
+  //     console.error("fetchInvites error", err);
+  //   }
+  // };
 
-  const contextValue: AppContextType = {
-    currentUser,
-    setCurrentUser,
-    currentStudio,
-    setCurrentStudio,
-    currentThrow,
-    setCurrentThrow,
-    updateThrow,
-    navigateToPage,
-  };
+  // const contextValue: AppContextType = {
+  //   currentUser,
+  //   setCurrentUser,
+  //   currentStudio,
+  //   setCurrentStudio,
+  //   currentThrow,
+  //   setCurrentThrow,
+  //   updateThrow,
+  //   navigateToPage,
+  // };
 
   const renderPage = () => {
     if (!isLoggedIn) {
@@ -414,12 +421,9 @@ export default function Home() {
   };
 
   return (
-    // <AppContext.Provider value={contextValue}>
     <div className="min-h-screen bg-background">
       {isLoggedIn && currentUser && (
         <Navigation
-          currentUser={currentUser}
-          currentStudio={currentStudio}
           currentPage={currentPage}
           pendingInvitesCount={pendingInvites.length}
           onPageChange={setCurrentPage}
@@ -428,7 +432,6 @@ export default function Home() {
       )}
       <main>{renderPage()}</main>
     </div>
-    // </AppContext.Provider>
   );
 }
 

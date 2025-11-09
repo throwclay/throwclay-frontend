@@ -1,6 +1,9 @@
 // app/api/studios/[studioId]/invites/route.ts
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
+// import type { Database } from "@/types/supabase"; // TODO: create later
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,41 +12,24 @@ const supabaseAdmin = createClient(
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
 
+// ✅ Create invite
 export async function POST(
   req: Request,
   { params }: { params: { studioId: string } }
 ) {
   const studioId = params.studioId;
 
-  const authHeader =
-    req.headers.get("authorization") || req.headers.get("Authorization");
+  // read auth user from cookies
+  const supabase = createRouteHandlerClient({ cookies });
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
-    return NextResponse.json(
-      { error: "Missing or invalid Authorization header" },
-      { status: 401 }
-    );
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const token = authHeader.slice("bearer ".length).trim();
-  if (!token) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
-
-  const { data: userResult, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userResult?.user) {
-    console.error("Error verifying access token:", userError);
-    return NextResponse.json(
-      { error: "Invalid or expired token" },
-      { status: 401 }
-    );
-  }
-
-  const user = userResult.user;
-
-  // 🔑 parse body
   const body = await req.json().catch(() => null);
   const email = body?.email as string | undefined;
   const role = body?.role as string | undefined;
@@ -61,15 +47,6 @@ export async function POST(
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
-  // require membership
-  if (!membershipType) {
-    return NextResponse.json(
-      { error: "membershipType is required" },
-      { status: 400 }
-    );
-  }
-
-  // require studio location
   if (!locationId) {
     return NextResponse.json(
       { error: "locationId is required" },
@@ -77,7 +54,14 @@ export async function POST(
     );
   }
 
-  // ✅ check inviter’s membership & role
+  if (!membershipType) {
+    return NextResponse.json(
+      { error: "membershipType is required" },
+      { status: 400 }
+    );
+  }
+
+  // ✅ check inviter's membership/role (locked down via service role)
   const { data: membership, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
@@ -105,7 +89,6 @@ export async function POST(
 
   const inviteToken = crypto.randomUUID();
 
-  // ✅ insert invite with location + membership type
   const { data: invite, error: inviteError } = await supabaseAdmin
     .from("studio_invites")
     .insert({
@@ -115,7 +98,7 @@ export async function POST(
       token: inviteToken,
       status: "pending",
       invited_by: user.id,
-      location_id: locationId || null,
+      location_id: locationId,
       membership_type: membershipType,
     })
     .select(
@@ -142,4 +125,79 @@ export async function POST(
   }
 
   return NextResponse.json({ invite });
+}
+
+// ✅ List invites
+export async function GET(
+  req: Request,
+  { params }: { params: { studioId: string } }
+) {
+  const studioId = params.studioId;
+
+  const supabase = createRouteHandlerClient({ cookies });
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // only owner / co-admin / manager can see invites
+  const { data: membership, error: membershipError } = await supabaseAdmin
+    .from("studio_memberships")
+    .select("role")
+    .eq("studio_id", studioId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    console.error("Error checking membership", membershipError);
+    return NextResponse.json(
+      { error: "Error checking membership" },
+      { status: 500 }
+    );
+  }
+
+  if (
+    !membership ||
+    !INVITER_ROLES.includes((membership.role as string) ?? "")
+  ) {
+    return NextResponse.json(
+      { error: "You do not have permission to view invites for this studio" },
+      { status: 403 }
+    );
+  }
+
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status") ?? "pending";
+
+  const { data: invites, error: invitesError } = await supabaseAdmin
+    .from("studio_invites")
+    .select(
+      `
+      id,
+      studio_id,
+      email,
+      role,
+      status,
+      invited_at,
+      location_id,
+      membership_type
+    `
+    )
+    .eq("studio_id", studioId)
+    .eq("status", status)
+    .order("invited_at", { ascending: false });
+
+  if (invitesError) {
+    console.error("Error fetching invites", invitesError);
+    return NextResponse.json(
+      { error: "Failed to fetch invites" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ invites: invites ?? [] });
 }

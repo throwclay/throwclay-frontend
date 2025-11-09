@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
   Download,
   Upload,
   Plus,
@@ -14,8 +13,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
-  DollarSign,
   Settings,
   Users2,
   FileText,
@@ -57,37 +54,41 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-  useAppContext,
-  type StudioMembership,
-  type MembershipApplication,
-  type PaymentInvoice,
-  type User,
-} from "@/app/context/AppContext";
+
+import { useAppContext } from "@/app/context/AppContext";
 
 import type {
   User as UserType,
-  Studio,
-  PotteryEntry,
   StudioLocation,
+  StudioMembership,
+  MembershipApplication,
+  PaymentInvoice,
 } from "@/types";
 
 import { MemberIntakeFormBuilder } from "./MemberIntakeFormBuilder";
 import { supabase as supabaseClient } from "@/lib/apis/supabaseClient";
 import { toast } from "sonner";
 
-interface MemberData extends User {
+interface MemberData extends UserType {
   membership: StudioMembership;
   invoices: PaymentInvoice[];
   classHistory: any[];
   eventHistory: any[];
-  currentUser: UserType | null;
-  setCurrentUser: (user: UserType | null) => void;
-  currentStudio: Studio | null;
-  setCurrentStudio: (studio: Studio | null) => void;
 }
 
-export function MemberManagement({ currentStudio }: MemberData) {
+interface StudioInvite {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  invited_at: string;
+  location_id: string | null;
+  membership_type: string | null;
+}
+
+type InviteRole = "member" | "employee" | "manager" | "co-admin";
+
+export function MemberManagement() {
   const [activeTab, setActiveTab] = useState("active");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -97,18 +98,34 @@ export function MemberManagement({ currentStudio }: MemberData) {
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
 
-  // NEW: invite form state
+  // Invite form state
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<
-    "member" | "employee" | "manager" | "admin"
-  >("member");
-  const [isInviting, setIsInviting] = useState(false);
+  const [inviteRole, setInviteRole] = useState<InviteRole>("member");
   const [inviteLocationId, setInviteLocationId] = useState<string | "">("");
   const [inviteMembershipType, setInviteMembershipType] = useState<
     "basic" | "premium" | "unlimited"
   >("basic");
+  const [isInviting, setIsInviting] = useState(false);
 
-  // Mock member data
+  const [invites, setInvites] = useState<StudioInvite[]>([]);
+  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
+  const [invitesError, setInvitesError] = useState<string | null>(null);
+
+  const { authToken, currentUser, currentStudio } = useAppContext();
+
+  // Guard: only studios should see this
+  if (!currentStudio) {
+    return (
+      <div className="max-w-3xl mx-auto p-8 text-center">
+        <h1 className="text-2xl font-semibold mb-2">Member Management</h1>
+        <p className="text-muted-foreground">
+          Select a studio to manage members.
+        </p>
+      </div>
+    );
+  }
+
+  // Mock member data (still mock for now)
   const [members] = useState<MemberData[]>([
     {
       id: "mem1",
@@ -116,14 +133,14 @@ export function MemberManagement({ currentStudio }: MemberData) {
       email: "sarah.johnson@email.com",
       handle: "sarahj",
       type: "artist",
-      studioId: currentStudio?.id,
+      studioId: currentStudio.id,
       phone: "(503) 555-0101",
       subscription: "free",
       role: "member",
       membership: {
         id: "membership1",
         userId: "mem1",
-        studioId: currentStudio?.id || "",
+        studioId: currentStudio.id || "",
         locationId: "loc1",
         membershipType: "basic",
         status: "active",
@@ -139,7 +156,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
         {
           id: "inv1",
           userId: "mem1",
-          studioId: currentStudio?.id || "",
+          studioId: currentStudio.id || "",
           type: "membership",
           amount: 85,
           description: "Monthly Membership - June 2025",
@@ -177,14 +194,14 @@ export function MemberManagement({ currentStudio }: MemberData) {
       email: "mike.r@email.com",
       handle: "mikerod",
       type: "artist",
-      studioId: currentStudio?.id,
+      studioId: currentStudio.id,
       phone: "(503) 555-0102",
       subscription: "free",
       role: "member",
       membership: {
         id: "membership2",
         userId: "mem2",
-        studioId: currentStudio?.id || "",
+        studioId: currentStudio.id || "",
         locationId: "loc2",
         membershipType: "premium",
         status: "active",
@@ -200,7 +217,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
         {
           id: "inv3",
           userId: "mem2",
-          studioId: currentStudio?.id || "",
+          studioId: currentStudio.id || "",
           type: "membership",
           amount: 125,
           description: "Premium Membership - June 2025",
@@ -227,7 +244,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
       applicantName: "Emma Thompson",
       applicantEmail: "emma.t@email.com",
       applicantPhone: "(503) 555-0200",
-      studioId: currentStudio?.id || "",
+      studioId: currentStudio.id || "",
       locationId: "loc1",
       membershipType: "basic",
       experience: "Beginner - took a few classes elsewhere",
@@ -251,7 +268,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
       applicantName: "David Kim",
       applicantEmail: "david.kim@email.com",
       applicantPhone: "(503) 555-0203",
-      studioId: currentStudio?.id || "",
+      studioId: currentStudio.id || "",
       locationId: "loc2",
       membershipType: "premium",
       experience: "Intermediate - 2 years experience",
@@ -279,9 +296,11 @@ export function MemberManagement({ currentStudio }: MemberData) {
       member.membership.shelfNumber
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
+
     const matchesLocation =
       selectedLocation === "all" ||
       member.membership.locationId === selectedLocation;
+
     const matchesStatus =
       activeTab === "all" || member.membership.status === activeTab;
 
@@ -304,12 +323,18 @@ export function MemberManagement({ currentStudio }: MemberData) {
     }
   };
 
-  const getLocationName = (locationId?: string) => {
+  const getLocationName = (locationId?: string | null) => {
     if (!locationId) return "Unassigned";
-    const location = currentStudio?.locations.find(
+
+    // Prefer DB-loaded locations
+    const fromLoaded = locations.find((loc) => loc.id === locationId);
+    if (fromLoaded) return fromLoaded.name;
+
+    // Fallback to any locations on currentStudio
+    const fromStudio = currentStudio.locations?.find(
       (loc) => loc.id === locationId
     );
-    return location?.name || "Unknown Location";
+    return fromStudio?.name || "Unknown Location";
   };
 
   const getMembershipStatusBadge = (status: string) => {
@@ -340,7 +365,49 @@ export function MemberManagement({ currentStudio }: MemberData) {
     }
   };
 
-  // 🔑 NEW: send studio invite via API
+  // --- API: fetch invites ---
+  const fetchInvites = async () => {
+    console.log(`studio id from fetch: ${currentStudio.id}`);
+    console.log(`auth token from fetch: ${authToken}`);
+
+    if (!authToken) {
+      setInvitesError("You must be logged in to view invites.");
+      setInvites([]);
+      return;
+    }
+
+    try {
+      setIsLoadingInvites(true);
+      setInvitesError(null);
+
+      const res = await fetch(
+        `/api/studios/${currentStudio.id}/invites?status=pending`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setInvitesError(body.error || "Failed to load invites");
+        setInvites([]);
+        return;
+      }
+
+      const body = await res.json();
+      setInvites(body.invites || []);
+    } catch (err) {
+      console.error("Error fetching invites", err);
+      setInvitesError("Failed to load invites");
+      setInvites([]);
+    } finally {
+      setIsLoadingInvites(false);
+    }
+  };
+
+  // --- API: send invite ---
   const handleSendInvite = async () => {
     if (!currentStudio) {
       toast.error("No studio selected");
@@ -352,27 +419,27 @@ export function MemberManagement({ currentStudio }: MemberData) {
       return;
     }
 
+    if (!inviteLocationId) {
+      toast.error("Location is required");
+      return;
+    }
+
+    if (!authToken) {
+      toast.error("You must be logged in to send invites.");
+      return;
+    }
+
     setIsInviting(true);
     try {
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
-      if (!session) {
-        toast.error("You must be logged in to send invites");
-        setIsInviting(false);
-        return;
-      }
-
       const res = await fetch(`/api/studios/${currentStudio.id}/invites`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           email: inviteEmail,
-          role: inviteRole,
+          role: inviteRole, // DB expects: member | employee | manager | co-admin
           locationId: inviteLocationId,
           membershipType: inviteMembershipType,
         }),
@@ -395,6 +462,9 @@ export function MemberManagement({ currentStudio }: MemberData) {
       setInviteRole("member");
       setInviteLocationId("");
       setInviteMembershipType("basic");
+
+      // Refresh pending invites list
+      fetchInvites();
     } catch (e) {
       console.error("Invite error", e);
       toast.error("Something went wrong sending the invite");
@@ -403,8 +473,9 @@ export function MemberManagement({ currentStudio }: MemberData) {
     }
   };
 
+  // Load studio locations on mount / studio change
   useEffect(() => {
-    if (!currentStudio?.id) return;
+    if (!currentStudio.id) return;
 
     const loadLocations = async () => {
       setIsLoadingLocations(true);
@@ -424,7 +495,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
       } else {
         setLocations((data || []) as StudioLocation[]);
 
-        // auto-select first location:
+        // auto-select first location
         if (!inviteLocationId && data && data.length > 0) {
           setInviteLocationId(data[0].id);
         }
@@ -434,18 +505,14 @@ export function MemberManagement({ currentStudio }: MemberData) {
     };
 
     loadLocations();
-  }, [currentStudio?.id]);
+  }, [currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!currentStudio) {
-    return (
-      <div className="max-w-3xl mx-auto p-8 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Member Management</h1>
-        <p className="text-muted-foreground">
-          Select a studio to manage members.
-        </p>
-      </div>
-    );
-  }
+  // Auto-fetch invites when tab is "invites"
+  useEffect(() => {
+    if (activeTab === "invites" && currentStudio.id) {
+      fetchInvites();
+    }
+  }, [activeTab, currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -467,7 +534,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
             Import
           </Button>
 
-          {/* 🔑 Invite dialog instead of direct "Create Member" */}
+          {/* Invite dialog */}
           <Dialog>
             <DialogTrigger asChild>
               <Button>
@@ -481,8 +548,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
                 <DialogDescription>
                   Send an invite to join{" "}
                   <span className="font-medium">@{currentStudio.handle}</span>.
-                  They&apos;ll be assigned a location and membership type after
-                  accepting.
+                  They&apos;ll be added as a member after accepting.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
@@ -504,7 +570,7 @@ export function MemberManagement({ currentStudio }: MemberData) {
                   <Select
                     value={inviteRole}
                     onValueChange={(value) =>
-                      setInviteRole(value as typeof inviteRole)
+                      setInviteRole(value as InviteRole)
                     }
                   >
                     <SelectTrigger id="inviteRole">
@@ -512,10 +578,9 @@ export function MemberManagement({ currentStudio }: MemberData) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="instructor">Instructor</SelectItem>
                       <SelectItem value="employee">Employee</SelectItem>
                       <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="co-admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -638,9 +703,9 @@ export function MemberManagement({ currentStudio }: MemberData) {
             </TabsTrigger>
             <TabsTrigger value="invites">
               Pending Invites
-              {applications.length > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {applications.length}
+              {invites.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {invites.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -668,11 +733,11 @@ export function MemberManagement({ currentStudio }: MemberData) {
               onValueChange={setSelectedLocation}
             >
               <SelectTrigger className="w-48">
-                <SelectValue />
+                <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
-                {currentStudio?.locations.map((location) => (
+                {currentStudio.locations?.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name}
                   </SelectItem>
@@ -831,10 +896,6 @@ export function MemberManagement({ currentStudio }: MemberData) {
                             View Invoices
                           </DropdownMenuItem>
                           <DropdownMenuItem>
-                            <DollarSign className="w-4 h-4 mr-2" />
-                            Payment History
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Remove Member
                           </DropdownMenuItem>
@@ -951,6 +1012,85 @@ export function MemberManagement({ currentStudio }: MemberData) {
               </div>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Pending Invites */}
+        <TabsContent value="invites" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Pending Invites</h2>
+              <p className="text-sm text-muted-foreground">
+                These invites haven&apos;t been accepted yet.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchInvites}
+              disabled={isLoadingInvites}
+            >
+              Refresh
+            </Button>
+          </div>
+
+          {isLoadingInvites ? (
+            <div className="border rounded-lg p-6 text-center text-muted-foreground">
+              Loading invites…
+            </div>
+          ) : invitesError ? (
+            <div className="border rounded-lg p-6 text-center text-red-500 text-sm">
+              {invitesError}
+            </div>
+          ) : invites.length === 0 ? (
+            <div className="border rounded-lg p-10 text-center space-y-2">
+              <p className="font-medium">No pending invites</p>
+              <p className="text-sm text-muted-foreground">
+                Send an invite from the Member Management header to add new
+                members.
+              </p>
+            </div>
+          ) : (
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Membership</TableHead>
+                    <TableHead>Invited At</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invites.map((invite) => (
+                    <TableRow key={invite.id}>
+                      <TableCell>{invite.email}</TableCell>
+                      <TableCell className="capitalize">
+                        {invite.role}
+                      </TableCell>
+                      <TableCell>
+                        {getLocationName(invite.location_id)}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        {invite.membership_type || "—"}
+                      </TableCell>
+                      <TableCell>
+                        {invite.invited_at
+                          ? new Date(invite.invited_at).toLocaleString()
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {invite.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
 
         {/* Other status tabs */}

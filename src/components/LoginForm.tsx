@@ -24,6 +24,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   const handleSubmit = async (userType: "studio" | "artist") => {
     setIsLoading(true);
@@ -50,6 +51,8 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           );
           return;
         }
+
+        setAuthToken?.(data.session.access_token);
 
         // ✅ User is logged in, make sure profile exists
         await ensureProfile(userType);
