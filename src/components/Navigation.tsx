@@ -49,7 +49,6 @@ import { useAppContext } from "@/app/context/AppContext";
 
 interface NavigationProps {
   currentPage: string;
-  pendingInvitesCount: number;
   onPageChange: (page: string) => void;
   onLogout: () => void;
 }
@@ -83,11 +82,13 @@ const AppGridIcon = ({ className }: { className?: string }) => (
 
 export function Navigation({
   currentPage,
-  pendingInvitesCount,
   onPageChange,
   onLogout,
 }: NavigationProps) {
-  const { currentUser, currentStudio } = useAppContext();
+  const { currentUser, currentStudio, pendingInvites } = useAppContext();
+  const pendingInvitesCount = pendingInvites.filter(
+    (i) => i.status === "pending"
+  ).length;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([

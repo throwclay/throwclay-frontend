@@ -1,32 +1,37 @@
 // app/api/studios/[studioId]/invites/route.ts
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { createClient } from "@supabase/supabase-js";
-// import type { Database } from "@/types/supabase"; // TODO: create later
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
 
-// ✅ Create invite
+function getBearerToken(req: Request): string | null {
+  const authHeader =
+    req.headers.get("authorization") || req.headers.get("Authorization");
+  if (!authHeader) return null;
+  const [scheme, value] = authHeader.split(" ");
+  if (!scheme || scheme.toLowerCase() !== "bearer" || !value) return null;
+  return value;
+}
+
+// POST – create invite (studio-scoped)
 export async function POST(
   req: Request,
   { params }: { params: { studioId: string } }
 ) {
   const studioId = params.studioId;
+  const token = getBearerToken(req);
 
-  // read auth user from cookies
-  const supabase = createRouteHandlerClient({ cookies });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await supabaseAdmin.auth.getUser(token);
 
   if (userError || !user) {
+    console.error("Error verifying token", userError);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -61,7 +66,7 @@ export async function POST(
     );
   }
 
-  // ✅ check inviter's membership/role (locked down via service role)
+  // check inviter's membership
   const { data: membership, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
@@ -127,24 +132,28 @@ export async function POST(
   return NextResponse.json({ invite });
 }
 
-// ✅ List invites
+// GET – list invites for a studio (admin view)
 export async function GET(
   req: Request,
   { params }: { params: { studioId: string } }
 ) {
   const studioId = params.studioId;
+  const token = getBearerToken(req);
 
-  const supabase = createRouteHandlerClient({ cookies });
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // only owner / co-admin / manager can see invites
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (userError || !user) {
+    console.error("Error verifying token", userError);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { data: membership, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")

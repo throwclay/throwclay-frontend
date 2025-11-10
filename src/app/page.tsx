@@ -29,19 +29,6 @@ import { useAppContext } from "./context/AppContext";
 
 import { supabase } from "@/lib/apis/supabaseClient";
 
-// interface AppContextType {
-//   currentUser: UserType | null;
-//   setCurrentUser: (user: UserType | null) => void;
-//   currentStudio: Studio | null;
-//   setCurrentStudio: (studio: Studio | null) => void;
-//   currentThrow?: PotteryEntry | null;
-//   setCurrentThrow?: (throwEntry: PotteryEntry | null) => void;
-//   updateThrow?: (throwEntry: PotteryEntry) => void;
-//   navigateToPage?: (page: string) => void;
-//   authToken?: string | null;
-//   setAuthToken?: (token: string | null) => void;
-// }
-
 export default function Home() {
   const {
     currentUser,
@@ -49,11 +36,14 @@ export default function Home() {
     currentStudio,
     setCurrentStudio,
     setCurrentThrow,
+    authToken,
     setAuthToken,
+    pendingInvites,
+    setPendingInvites,
   } = useAppContext();
+
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
 
   // Mock studios data
   const mockStudios: Studio[] = [
@@ -141,6 +131,34 @@ export default function Home() {
 
   const navigateToPage = (page: string) => {
     setCurrentPage(page);
+  };
+
+  const fetchInvites = async () => {
+    if (!authToken) {
+      setPendingInvites([]);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/invites", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("fetchInvites: non-OK response", res.status, body);
+        setPendingInvites([]);
+        return;
+      }
+
+      const data = await res.json();
+      setPendingInvites(data.invites ?? []);
+    } catch (err) {
+      console.error("fetchInvites error", err);
+      setPendingInvites([]);
+    }
   };
 
   const handleLogin = async (userData: {
@@ -277,6 +295,8 @@ export default function Home() {
 
     setIsLoggedIn(true);
     setCurrentPage(type === "studio" ? "dashboard" : "profile");
+
+    fetchInvites();
   };
 
   const handleLogout = () => {
@@ -286,48 +306,6 @@ export default function Home() {
     setIsLoggedIn(false);
     setCurrentPage("landing");
   };
-
-  // const fetchInvites = async () => {
-  //   try {
-  //     const {
-  //       data: { session },
-  //       error,
-  //     } = await supabase.auth.getSession();
-
-  //     if (error || !session) {
-  //       console.error("fetchInvites: no session", error);
-  //       return;
-  //     }
-
-  //     const res = await fetch("/api/invites", {
-  //       method: "GET",
-  //       headers: {
-  //         Authorization: `Bearer ${session.access_token}`,
-  //       },
-  //     });
-
-  //     if (!res.ok) {
-  //       console.error("fetchInvites: non-OK response", res.status);
-  //       return;
-  //     }
-
-  //     const data = await res.json();
-  //     setPendingInvites(data.invites ?? []);
-  //   } catch (err) {
-  //     console.error("fetchInvites error", err);
-  //   }
-  // };
-
-  // const contextValue: AppContextType = {
-  //   currentUser,
-  //   setCurrentUser,
-  //   currentStudio,
-  //   setCurrentStudio,
-  //   currentThrow,
-  //   setCurrentThrow,
-  //   updateThrow,
-  //   navigateToPage,
-  // };
 
   const renderPage = () => {
     if (!isLoggedIn) {
@@ -392,7 +370,7 @@ export default function Home() {
       case "messages":
         return <MessagingCenter />;
       case "members":
-        return <MemberManagement currentStudio={currentStudio} />;
+        return <MemberManagement />;
       case "staff":
         return <StaffManagement />;
       case "kilns":
@@ -404,12 +382,7 @@ export default function Home() {
       case "ceramics":
         return <PublicCeramicsMarketplace onNavigate={setCurrentPage} />;
       case "invites":
-        return (
-          <InvitesPanel
-            invites={pendingInvites}
-            onInvitesChange={setPendingInvites}
-          />
-        );
+        return <InvitesPanel />;
 
       default:
         return (
@@ -425,7 +398,6 @@ export default function Home() {
       {isLoggedIn && currentUser && (
         <Navigation
           currentPage={currentPage}
-          pendingInvitesCount={pendingInvites.length}
           onPageChange={setCurrentPage}
           onLogout={handleLogout}
         />

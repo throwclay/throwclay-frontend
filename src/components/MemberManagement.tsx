@@ -86,7 +86,7 @@ interface StudioInvite {
   membership_type: string | null;
 }
 
-type InviteRole = "member" | "employee" | "manager" | "co-admin";
+type InviteRole = "member" | "employee" | "manager" | "admin";
 
 export function MemberManagement() {
   const [activeTab, setActiveTab] = useState("active");
