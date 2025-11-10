@@ -6,8 +6,10 @@ import type { User, Studio, PotteryEntry } from "@/types";
 // Add this type (or import from "@/types" if you prefer)
 export type StudioInvite = {
   id: string;
+  name: string;
   email: string;
   role: string;
+  phone: string;
   status: string;
   invited_at: string;
   token: string;

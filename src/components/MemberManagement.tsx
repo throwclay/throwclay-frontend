@@ -114,7 +114,8 @@ export function MemberManagement() {
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const { authToken, currentUser, currentStudio } = useAppContext();
+  const { authToken, currentUser, currentStudio, setPendingInvites } =
+    useAppContext();
 
   // Guard: only studios should see this
   if (!currentStudio) {
@@ -370,9 +371,6 @@ export function MemberManagement() {
 
   // --- API: fetch invites ---
   const fetchInvites = async () => {
-    console.log(`studio id from fetch: ${currentStudio.id}`);
-    console.log(`auth token from fetch: ${authToken}`);
-
     if (!authToken) {
       setInvitesError("You must be logged in to view invites.");
       setInvites([]);
@@ -401,6 +399,7 @@ export function MemberManagement() {
 
       const body = await res.json();
       setInvites(body.invites || []);
+      setPendingInvites(body.invites || []);
     } catch (err) {
       console.error("Error fetching invites", err);
       setInvitesError("Failed to load invites");
@@ -517,17 +516,18 @@ export function MemberManagement() {
       }
 
       setIsLoadingLocations(false);
+      fetchInvites();
     };
 
     loadLocations();
   }, [currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fetch invites when tab is "invites"
-  useEffect(() => {
-    if (activeTab === "invites" && currentStudio.id) {
-      fetchInvites();
-    }
-  }, [activeTab, currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // useEffect(() => {
+  //   if (activeTab === "invites" && currentStudio.id) {
+  //     fetchInvites();
+  //   }
+  // }, [activeTab, currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">

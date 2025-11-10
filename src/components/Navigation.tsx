@@ -200,7 +200,7 @@ export function Navigation({
           icon: Grid3X3,
           description: "Browse ceramics",
         },
-        invitesItem,
+        // invitesItem,
       ];
     } else {
       return [
