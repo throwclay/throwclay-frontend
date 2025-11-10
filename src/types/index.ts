@@ -2,7 +2,7 @@
 export interface PhotoEntry {
   id: string;
   url: string;
-  type: 'photo' | 'sketch';
+  type: "photo" | "sketch";
   caption: string;
   notes: string;
   timestamp: string;
@@ -15,7 +15,7 @@ export interface PhotoEntry {
 
 export interface PhotoAnnotation {
   id: string;
-  type: 'drawing' | 'text' | 'arrow' | 'highlight';
+  type: "drawing" | "text" | "arrow" | "highlight";
   x: number;
   y: number;
   width?: number;
@@ -33,7 +33,7 @@ export interface DrawingStroke {
   points: { x: number; y: number }[];
   color: string;
   strokeWidth: number;
-  tool: 'pen' | 'brush' | 'highlighter' | 'eraser';
+  tool: "pen" | "brush" | "highlighter" | "eraser";
   timestamp: string;
 }
 
@@ -44,8 +44,16 @@ export interface StickyNote {
   y: number;
   width: number;
   height: number;
-  color: 'yellow' | 'blue' | 'green' | 'pink' | 'orange' | 'purple' | 'red' | 'white';
-  fontSize: 'small' | 'medium' | 'large';
+  color:
+    | "yellow"
+    | "blue"
+    | "green"
+    | "pink"
+    | "orange"
+    | "purple"
+    | "red"
+    | "white";
+  fontSize: "small" | "medium" | "large";
   createdAt: string;
   createdBy: string;
   updatedAt?: string;
@@ -62,7 +70,7 @@ export interface TextBox {
   fontColor: string;
   backgroundColor?: string;
   borderColor?: string;
-  alignment: 'left' | 'center' | 'right';
+  alignment: "left" | "center" | "right";
   createdAt: string;
   createdBy: string;
   updatedAt?: string;
@@ -102,7 +110,7 @@ export interface CollaborationPermission {
   userId: string;
   userName: string;
   userHandle: string;
-  permission: 'view' | 'comment' | 'edit';
+  permission: "view" | "comment" | "edit";
   canDuplicate: boolean;
   grantedBy: string;
   grantedAt: string;
@@ -122,7 +130,7 @@ export interface Project {
   sharePermissions: CollaborationPermission[];
   comments: CollaborationComment[];
   tags?: string[];
-  status: 'active' | 'completed' | 'archived';
+  status: "active" | "completed" | "archived";
 }
 
 export interface PotteryEntry {
@@ -135,7 +143,7 @@ export interface PotteryEntry {
   firingType: string;
   firingTemp: string;
   glazes: string[];
-  status: 'planning' | 'in-progress' | 'fired' | 'completed';
+  status: "planning" | "in-progress" | "fired" | "completed";
   notes: string;
   photos: PhotoEntry[]; // Legacy field - kept for backward compatibility
   challenges: string;
@@ -204,7 +212,7 @@ export interface Studio {
   description?: string;
   locations: StudioLocation[];
   isActive: boolean;
-  plan: 'studio-solo' | 'studio-duo' | 'studio-pro' | 'studio-unlimited';
+  plan: "studio-solo" | "studio-duo" | "studio-pro" | "studio-unlimited";
   createdAt: string;
   memberCount: number;
   classCount: number;
@@ -241,13 +249,14 @@ export interface User {
   name: string;
   handle: string;
   email: string;
-  type: 'artist' | 'studio';
-  
+  phone: string;
+  type: "artist" | "studio";
+
   // Artist-specific fields
-  subscription?: 'free' | 'passion' | 'small-artist' | 'studio-pro';
+  subscription?: "free" | "passion" | "small-artist" | "studio-pro";
   subscriptionLimits?: SubscriptionLimits;
   usageStats?: UsageStats;
-  
+
   // Shared fields
   profile?: ArtistProfile;
   createdAt: string;
@@ -259,7 +268,14 @@ export interface User {
 export interface GlazeIngredient {
   id: string;
   name: string;
-  type: 'flux' | 'silica' | 'alumina' | 'colorant' | 'opacifier' | 'matting-agent' | 'other';
+  type:
+    | "flux"
+    | "silica"
+    | "alumina"
+    | "colorant"
+    | "opacifier"
+    | "matting-agent"
+    | "other";
   description?: string;
   supplier?: string;
   cost?: number;
@@ -271,7 +287,7 @@ export interface GlazeIngredientMeasurement {
   ingredientId: string;
   ingredientName: string;
   quantity: number;
-  unit: 'grams' | 'pounds' | 'ounces' | 'percentage' | 'parts';
+  unit: "grams" | "pounds" | "ounces" | "percentage" | "parts";
   notes?: string;
 }
 
@@ -280,19 +296,19 @@ export interface GlazeTestResult {
   experimentId: string;
   testPieceDescription: string;
   clayBody: string;
-  applicationMethod: 'dipping' | 'brushing' | 'spraying' | 'pouring' | 'other';
-  applicationThickness: 'thin' | 'medium' | 'thick' | 'variable';
+  applicationMethod: "dipping" | "brushing" | "spraying" | "pouring" | "other";
+  applicationThickness: "thin" | "medium" | "thick" | "variable";
   bisqueTemp: string;
   glazeFireTemp: string;
   cone: string[];
-  atmosphere: 'oxidation' | 'reduction' | 'neutral' | 'raku' | 'other';
+  atmosphere: "oxidation" | "reduction" | "neutral" | "raku" | "other";
   kilnId?: string;
   firingDate: string;
   results: {
     color: string;
-    surface: 'gloss' | 'satin' | 'matte' | 'crystalline' | 'textured' | 'other';
-    opacity: 'transparent' | 'translucent' | 'opaque';
-    quality: 'excellent' | 'good' | 'fair' | 'poor' | 'defective';
+    surface: "gloss" | "satin" | "matte" | "crystalline" | "textured" | "other";
+    opacity: "transparent" | "translucent" | "opaque";
+    quality: "excellent" | "good" | "fair" | "poor" | "defective";
     defects?: string[];
     notes?: string;
   };
@@ -308,7 +324,11 @@ export interface GlazeExperiment {
   studioId: string;
   name: string;
   description?: string;
-  glazeType: 'new-recipe' | 'existing-recipe' | 'purchased-glaze' | 'modification';
+  glazeType:
+    | "new-recipe"
+    | "existing-recipe"
+    | "purchased-glaze"
+    | "modification";
   baseGlazeId?: string; // Reference to existing glaze if modification
   baseGlazeName?: string;
   purchasedGlazeInfo?: {
@@ -321,7 +341,7 @@ export interface GlazeExperiment {
   };
   recipe: {
     totalBatchWeight: number;
-    totalBatchUnit: 'grams' | 'pounds' | 'ounces';
+    totalBatchUnit: "grams" | "pounds" | "ounces";
     ingredients: GlazeIngredientMeasurement[];
     mixingInstructions?: string;
     meshSize?: number;
@@ -332,14 +352,14 @@ export interface GlazeExperiment {
   testDate: string;
   firingDates: string[]; // Can have multiple firings
   cones: string[]; // e.g., ['04', '6', '10'] - can test multiple cones
-  atmospheres: ('oxidation' | 'reduction' | 'neutral' | 'raku' | 'other')[]; // Can test multiple atmospheres
+  atmospheres: ("oxidation" | "reduction" | "neutral" | "raku" | "other")[]; // Can test multiple atmospheres
   testResults: GlazeTestResult[];
   tags: string[]; // Custom tags for organization
-  status: 'planning' | 'testing' | 'completed' | 'archived';
+  status: "planning" | "testing" | "completed" | "archived";
   isPublic: boolean; // Share with other studios
   averageRating: number; // Calculated from test results
   totalQuantityMade: number; // Total glaze quantity made
-  quantityUnit: 'grams' | 'pounds' | 'ounces' | 'cups' | 'liters';
+  quantityUnit: "grams" | "pounds" | "ounces" | "cups" | "liters";
   costPerBatch?: number;
   notes: string;
   createdAt: string;
@@ -367,13 +387,19 @@ export interface GlazeExperimentTemplate {
   description: string;
   recipe: {
     totalBatchWeight: number;
-    totalBatchUnit: 'grams' | 'pounds' | 'ounces';
+    totalBatchUnit: "grams" | "pounds" | "ounces";
     ingredients: GlazeIngredientMeasurement[];
     mixingInstructions?: string;
     meshSize?: number;
   };
   recommendedCones: string[];
-  recommendedAtmospheres: ('oxidation' | 'reduction' | 'neutral' | 'raku' | 'other')[];
+  recommendedAtmospheres: (
+    | "oxidation"
+    | "reduction"
+    | "neutral"
+    | "raku"
+    | "other"
+  )[];
   tags: string[];
   isPublic: boolean;
   createdBy: string;
@@ -389,9 +415,16 @@ export interface KilnFiringTemplate {
   kilnId: string; // Reference to specific kiln
   name: string;
   description?: string;
-  baseType: 'bisque' | 'glaze' | 'raku' | 'pit' | 'saggar' | 'crystalline' | 'other';
+  baseType:
+    | "bisque"
+    | "glaze"
+    | "raku"
+    | "pit"
+    | "saggar"
+    | "crystalline"
+    | "other";
   temperatureCurve: {
-    phase: 'initial' | 'ramp-up' | 'soak' | 'cool-down';
+    phase: "initial" | "ramp-up" | "soak" | "cool-down";
     targetTemp: number;
     ratePerHour: number;
     holdTime: number;
@@ -403,7 +436,7 @@ export interface KilnFiringTemplate {
       pressureSettings?: string;
     };
   }[];
-  atmosphere: 'oxidation' | 'reduction' | 'neutral';
+  atmosphere: "oxidation" | "reduction" | "neutral";
   estimatedDuration: number;
   clayCompatibility: string[];
   glazeCompatibility: string[];
@@ -442,15 +475,22 @@ export interface CustomFiringType {
   studioId: string;
   name: string;
   description?: string;
-  baseType: 'bisque' | 'glaze' | 'raku' | 'pit' | 'saggar' | 'crystalline' | 'other';
+  baseType:
+    | "bisque"
+    | "glaze"
+    | "raku"
+    | "pit"
+    | "saggar"
+    | "crystalline"
+    | "other";
   temperatureCurve: {
-    phase: 'initial' | 'ramp-up' | 'soak' | 'cool-down';
+    phase: "initial" | "ramp-up" | "soak" | "cool-down";
     targetTemp: number;
     ratePerHour: number;
     holdTime: number;
     notes?: string;
   }[];
-  atmosphere: 'oxidation' | 'reduction' | 'neutral';
+  atmosphere: "oxidation" | "reduction" | "neutral";
   estimatedDuration: number;
   specialInstructions?: string;
   clayCompatibility: string[];
@@ -470,12 +510,17 @@ export interface KilnAssignment {
   firingId: string;
   assignedEmployeeId: string;
   assignedEmployeeName: string;
-  assignmentType: 'loading' | 'monitoring' | 'unloading' | 'full-cycle';
+  assignmentType: "loading" | "monitoring" | "unloading" | "full-cycle";
   scheduledStart: string;
   scheduledEnd: string;
   actualStart?: string;
   actualEnd?: string;
-  status: 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'needs-cover';
+  status:
+    | "assigned"
+    | "in-progress"
+    | "completed"
+    | "cancelled"
+    | "needs-cover";
   tasks: {
     id: string;
     description: string;
@@ -488,7 +533,7 @@ export interface KilnAssignment {
   assignedBy: string;
   assignedAt: string;
   notificationsSent: {
-    type: 'assignment' | 'reminder' | 'start-alert' | 'completion-reminder';
+    type: "assignment" | "reminder" | "start-alert" | "completion-reminder";
     sentAt: string;
     acknowledged?: boolean;
   }[];
@@ -497,7 +542,7 @@ export interface KilnAssignment {
     requestedBy: string;
     requestedAt: string;
     reason: string;
-    status: 'pending' | 'approved' | 'denied';
+    status: "pending" | "approved" | "denied";
     coveredBy?: string;
     coveredAt?: string;
   }[];
@@ -507,7 +552,7 @@ export interface KilnCamera {
   id: string;
   kilnId: string;
   cameraId: string;
-  position: 'interior' | 'exterior' | 'control-panel' | 'pyrometer';
+  position: "interior" | "exterior" | "control-panel" | "pyrometer";
   isActive: boolean;
   monitoringSettings: {
     recordDuringFiring: boolean;
@@ -520,12 +565,16 @@ export interface KilnCamera {
     };
     recordMotionDetection: boolean;
     nightVisionAuto: boolean;
-    qualitySettings: 'low' | 'medium' | 'high' | 'ultra';
+    qualitySettings: "low" | "medium" | "high" | "ultra";
   };
   firingRecordings: {
     id: string;
     firingId: string;
-    recordingType: 'live-stream' | 'time-lapse' | 'temperature-alert' | 'motion-detection';
+    recordingType:
+      | "live-stream"
+      | "time-lapse"
+      | "temperature-alert"
+      | "motion-detection";
     startTime: string;
     endTime?: string;
     fileUrl?: string;
@@ -539,7 +588,7 @@ export interface KilnCamera {
     };
   }[];
   lastHealthCheck: string;
-  healthStatus: 'online' | 'offline' | 'error' | 'maintenance';
+  healthStatus: "online" | "offline" | "error" | "maintenance";
   batteryLevel?: number;
   signalStrength?: number;
 }
@@ -553,7 +602,7 @@ export interface RingIntegration {
   connectedDevices: {
     deviceId: string;
     deviceName: string;
-    deviceType: 'doorbell' | 'camera' | 'floodlight-cam';
+    deviceType: "doorbell" | "camera" | "floodlight-cam";
     locationName: string;
     isAssignedToKiln: boolean;
     assignedKilnId?: string;
@@ -565,14 +614,14 @@ export interface RingIntegration {
     enablePushNotifications: boolean;
     enableEmailAlerts: boolean;
     enableSMSAlerts: boolean;
-    recordingQuality: 'auto' | 'low' | 'medium' | 'high';
-    motionSensitivity: 'low' | 'medium' | 'high';
-    nightVisionMode: 'auto' | 'on' | 'off';
+    recordingQuality: "auto" | "low" | "medium" | "high";
+    motionSensitivity: "low" | "medium" | "high";
+    nightVisionMode: "auto" | "on" | "off";
     twoWayAudioEnabled: boolean;
   };
   webhookUrl?: string;
   lastSync: string;
-  syncStatus: 'success' | 'error' | 'pending';
+  syncStatus: "success" | "error" | "pending";
   errorLog: {
     timestamp: string;
     error: string;
@@ -601,7 +650,7 @@ export interface KilnLoadItem {
   shelfPosition?: string;
   loadedAt: string;
   loadedBy: string;
-  status: 'loaded' | 'firing' | 'cooling' | 'ready-for-pickup' | 'picked-up';
+  status: "loaded" | "firing" | "cooling" | "ready-for-pickup" | "picked-up";
   pickupNotified?: string;
   notes?: string;
 }
@@ -628,7 +677,7 @@ export interface KilnPerformanceLog {
   timestamp: string;
   temperature: number;
   targetTemperature: number;
-  phase: 'heating' | 'holding' | 'cooling';
+  phase: "heating" | "holding" | "cooling";
   gasUsage?: number;
   electricUsage?: number;
   notes?: string;
@@ -638,7 +687,7 @@ export interface KilnPerformanceLog {
 export interface Kiln {
   id: string;
   name: string;
-  type: 'electric' | 'gas' | 'wood' | 'raku';
+  type: "electric" | "gas" | "wood" | "raku";
   manufacturer?: string;
   model?: string;
   serialNumber?: string;
@@ -651,7 +700,13 @@ export interface Kiln {
     height: number;
     capacity: number;
   }[];
-  status: 'available' | 'loading' | 'firing' | 'cooling' | 'maintenance' | 'out-of-service';
+  status:
+    | "available"
+    | "loading"
+    | "firing"
+    | "cooling"
+    | "maintenance"
+    | "out-of-service";
   lastFired?: string;
   totalFirings: number;
   maintenanceSchedule?: {
@@ -680,7 +735,7 @@ export interface ManagerResponsibility {
   id: string;
   name: string;
   description: string;
-  category: 'members' | 'classes' | 'operations' | 'content' | 'custom';
+  category: "members" | "classes" | "operations" | "content" | "custom";
   taskCompletionLink?: string;
   isRequired: boolean;
   isCustom: boolean;
@@ -694,12 +749,18 @@ export interface ScheduleEntry {
   date: string;
   startTime: string;
   endTime: string;
-  category: 'operations' | 'classes' | 'social-media' | 'covering-shift' | 'sick-leave' | 'vacation';
+  category:
+    | "operations"
+    | "classes"
+    | "social-media"
+    | "covering-shift"
+    | "sick-leave"
+    | "vacation";
   description?: string;
   locationId?: string;
   classId?: string;
   coveringForId?: string;
-  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  status: "scheduled" | "in-progress" | "completed" | "cancelled";
   approvedBy?: string;
   notes?: string;
   createdAt: string;
@@ -711,9 +772,9 @@ export interface TimeOffRequest {
   employeeId: string;
   startDate: string;
   endDate: string;
-  type: 'vacation' | 'sick-leave' | 'personal' | 'other';
+  type: "vacation" | "sick-leave" | "personal" | "other";
   reason?: string;
-  status: 'pending' | 'approved' | 'denied';
+  status: "pending" | "approved" | "denied";
   requestedAt: string;
   reviewedAt?: string;
   reviewedBy?: string;
@@ -730,14 +791,20 @@ export interface TimeCardEntry {
   totalHours: number;
   regularHours: number;
   overtimeHours: number;
-  category: 'operations' | 'classes' | 'social-media' | 'covering-shift' | 'training' | 'other';
+  category:
+    | "operations"
+    | "classes"
+    | "social-media"
+    | "covering-shift"
+    | "training"
+    | "other";
   locationId?: string;
   notes?: string;
   wasScheduled: boolean;
   scheduledStart?: string;
   scheduledEnd?: string;
   discrepancyReason?: string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'needs-review';
+  status: "draft" | "submitted" | "approved" | "rejected" | "needs-review";
   submittedAt?: string;
   reviewedAt?: string;
   reviewedBy?: string;
@@ -753,7 +820,13 @@ export interface TimeCard {
   totalRegularHours: number;
   totalOvertimeHours: number;
   totalHours: number;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'needs-review' | 'processed';
+  status:
+    | "draft"
+    | "submitted"
+    | "approved"
+    | "rejected"
+    | "needs-review"
+    | "processed";
   submittedAt?: string;
   submittedBy: string;
   reviewedAt?: string;
@@ -770,7 +843,7 @@ export interface PayPeriod {
   startDate: string;
   endDate: string;
   payDate: string;
-  status: 'open' | 'locked' | 'processed' | 'paid';
+  status: "open" | "locked" | "processed" | "paid";
   createdAt: string;
   updatedAt: string;
 }
@@ -780,7 +853,7 @@ export interface TimeCardApproval {
   timeCardId: string;
   approverId: string;
   approverName: string;
-  action: 'approved' | 'rejected' | 'needs-changes';
+  action: "approved" | "rejected" | "needs-changes";
   notes?: string;
   timestamp: string;
   level: number;
@@ -834,7 +907,7 @@ export interface ManagerProfile {
   id: string;
   userId: string;
   studioId: string;
-  role: 'co-admin' | 'manager' | 'employee';
+  role: "co-admin" | "manager" | "employee";
   responsibilities: string[];
   standardWorkHours: {
     monday: { start: string; end: string; isAvailable: boolean };
@@ -875,7 +948,7 @@ export interface ManagerProfile {
   lastActivity?: string;
   notes?: string;
   hourlyRate?: number;
-  salaryType?: 'hourly' | 'salary';
+  salaryType?: "hourly" | "salary";
   overtimeEligible: boolean;
 }
 
@@ -888,7 +961,7 @@ export interface WorkLog {
   hoursWorked: number;
   responsibilities: string[];
   notes?: string;
-  status: 'scheduled' | 'in-progress' | 'completed' | 'absent';
+  status: "scheduled" | "in-progress" | "completed" | "absent";
   locationId?: string;
   createdAt: string;
   updatedAt: string;
@@ -898,7 +971,7 @@ export interface WorkLog {
 export interface DiscountCode {
   id: string;
   code: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: "percentage" | "fixed";
   discountValue: number;
   maxUses?: number;
   currentUses: number;
@@ -914,7 +987,7 @@ export interface ClassMaterial {
   price: number;
   isRequired: boolean;
   productLink?: string;
-  category: 'clay' | 'tools' | 'glazes' | 'other';
+  category: "clay" | "tools" | "glazes" | "other";
 }
 
 export interface ClassAttendance {
@@ -922,7 +995,7 @@ export interface ClassAttendance {
   classId: string;
   sessionDate: string;
   studentId: string;
-  status: 'present' | 'absent' | 'late' | 'excused';
+  status: "present" | "absent" | "late" | "excused";
   notes?: string;
   markedAt: string;
   markedBy: string;
@@ -942,18 +1015,18 @@ export interface ClassHoliday {
 export interface BadgeDesign {
   id: string;
   name: string;
-  shape: 'circle' | 'square' | 'shield' | 'hexagon' | 'star' | 'diamond';
+  shape: "circle" | "square" | "shield" | "hexagon" | "star" | "diamond";
   backgroundColor: string;
   borderColor: string;
   borderWidth: number;
-  iconType: 'emoji' | 'custom' | 'predefined';
+  iconType: "emoji" | "custom" | "predefined";
   icon?: string;
   customIconUrl?: string;
   textColor: string;
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: "small" | "medium" | "large";
   gradientEnabled: boolean;
   gradientColors?: string[];
-  gradientDirection?: 'vertical' | 'horizontal' | 'diagonal';
+  gradientDirection?: "vertical" | "horizontal" | "diagonal";
   shadowEnabled: boolean;
   shadowColor?: string;
   shadowBlur?: number;
@@ -966,14 +1039,14 @@ export interface BadgeTemplate {
   name: string;
   description: string;
   designId: string;
-  category: 'completion' | 'achievement' | 'skill' | 'participation' | 'custom';
+  category: "completion" | "achievement" | "skill" | "participation" | "custom";
   isDefault: boolean;
   isActive: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
   completionCriteria: {
-    type: 'attendance' | 'grading' | 'manual' | 'time-based' | 'project-based';
+    type: "attendance" | "grading" | "manual" | "time-based" | "project-based";
     requirements: {
       minimumAttendance?: number;
       minimumGrade?: number;
@@ -994,7 +1067,7 @@ export interface BadgeTemplate {
   textOverlay?: {
     title: string;
     subtitle?: string;
-    dateFormat?: 'none' | 'month-year' | 'full-date';
+    dateFormat?: "none" | "month-year" | "full-date";
     showInstructorName: boolean;
     showStudioName: boolean;
     customText?: string;
@@ -1009,8 +1082,8 @@ export interface StudentBadge {
   studentName: string;
   awardedDate: string;
   awardedBy: string;
-  awardMethod: 'automatic' | 'manual' | 'imported';
-  status: 'active' | 'revoked' | 'archived';
+  awardMethod: "automatic" | "manual" | "imported";
+  status: "active" | "revoked" | "archived";
   verificationCode: string;
   socialShareEnabled: boolean;
   finalGrade?: number;
@@ -1041,7 +1114,7 @@ export interface ClassBadgeSettings {
   selectedBadgeId?: string;
   customBadgeDesign?: BadgeDesign;
   awardingCriteria: {
-    type: 'attendance' | 'grading' | 'manual' | 'combined';
+    type: "attendance" | "grading" | "manual" | "combined";
     attendanceThreshold?: number;
     gradeThreshold?: number;
     requiresBothCriteria?: boolean;

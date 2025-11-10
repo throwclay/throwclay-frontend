@@ -99,7 +99,9 @@ export function MemberManagement() {
   const [locationsError, setLocationsError] = useState<string | null>(null);
 
   // Invite form state
+  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<InviteRole>("member");
   const [inviteLocationId, setInviteLocationId] = useState<string | "">("");
   const [inviteMembershipType, setInviteMembershipType] = useState<
@@ -414,6 +416,11 @@ export function MemberManagement() {
       return;
     }
 
+    if (!inviteName) {
+      toast.error("Please enter an Name");
+      return;
+    }
+
     if (!inviteEmail) {
       toast.error("Please enter an email");
       return;
@@ -438,7 +445,9 @@ export function MemberManagement() {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
+          name: inviteName,
           email: inviteEmail,
+          phone: invitePhone,
           role: inviteRole, // DB expects: member | employee | manager | co-admin
           locationId: inviteLocationId,
           membershipType: inviteMembershipType,
@@ -458,7 +467,9 @@ export function MemberManagement() {
       toast.success("Invite sent!");
 
       // Reset form
+      setInviteName("");
       setInviteEmail("");
+      setInvitePhone("");
       setInviteRole("member");
       setInviteLocationId("");
       setInviteMembershipType("basic");
@@ -552,6 +563,18 @@ export function MemberManagement() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="inviteName">Name</Label>
+                  <Input
+                    id="inviteName"
+                    type="name"
+                    placeholder=""
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                  />
+                </div>
+
                 {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="inviteEmail">Email</Label>
@@ -561,6 +584,18 @@ export function MemberManagement() {
                     placeholder="artist@example.com"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <Label htmlFor="invitePhone">Phone</Label>
+                  <Input
+                    id="invitePhone"
+                    type="phone"
+                    placeholder="000-000-0000"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
                   />
                 </div>
 
@@ -580,7 +615,7 @@ export function MemberManagement() {
                       <SelectItem value="member">Member</SelectItem>
                       <SelectItem value="employee">Employee</SelectItem>
                       <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="co-admin">Admin</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -663,7 +698,9 @@ export function MemberManagement() {
                     variant="outline"
                     type="button"
                     onClick={() => {
+                      setInviteName("");
                       setInviteEmail("");
+                      setInvitePhone("");
                       setInviteRole("member");
                       setInviteLocationId("");
                       setInviteMembershipType("basic");
