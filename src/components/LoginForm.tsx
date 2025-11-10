@@ -15,7 +15,9 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLogin, onBack }: LoginFormProps) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [selectedUserType, setSelectedUserType] = useState<"artist" | "studio">(
@@ -65,7 +67,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           email,
           password,
           options: {
-            data: { user_type: userType },
+            data: { user_type: userType, name, phone },
           },
         });
 
@@ -90,21 +92,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // (Optional) if you want to keep demo buttons later, you can re-wire them
-  const demoLogin = (userType: "studio" | "artist") => {
-    // For now this is just a helper to quickly fill in the fields;
-    // it will still hit real Supabase auth when you click Sign in.
-    const demoCredentials = {
-      studio: { email: "admin@clayandfire.com", password: "demo123" },
-      artist: { email: "alex@artist.com", password: "demo123" },
-    };
-
-    setEmail(demoCredentials[userType].email);
-    setPassword(demoCredentials[userType].password);
-    setSelectedUserType(userType);
-    // Then user clicks the normal button to actually auth
   };
 
   const title =
@@ -213,18 +200,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                       ? "Sign in to Studio"
                       : "Create Studio Account"}
                   </Button>
-
-                  {/* Optional demo button */}
-                  {/* 
-                  <Button
-                    variant="outline"
-                    onClick={() => demoLogin("studio")}
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    Try Studio Demo
-                  </Button>
-                  */}
                 </div>
               </TabsContent>
 
@@ -241,6 +216,19 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                 </div>
 
                 <div className="space-y-4">
+                  {authMode === "signup" && (
+                    <div>
+                      <Label htmlFor="artist-name">Full Name</Label>
+                      <Input
+                        id="artist-name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your name"
+                        required
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="artist-email">Email</Label>
                     <Input
@@ -252,6 +240,19 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                       required
                     />
                   </div>
+                  {authMode === "signup" && (
+                    <div>
+                      <Label htmlFor="artist-phone">Phone</Label>
+                      <Input
+                        id="artist-phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(555) 123-4567"
+                        required
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="artist-password">Password</Label>
                     <Input
@@ -265,7 +266,12 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                   </div>
                   <Button
                     onClick={() => handleSubmit("artist")}
-                    disabled={isLoading || !email || !password}
+                    disabled={
+                      isLoading ||
+                      !email ||
+                      !password ||
+                      (authMode === "signup" && (!name || !phone))
+                    }
                     className="w-full"
                   >
                     {isLoading
@@ -276,18 +282,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                       ? "Sign in as Artist"
                       : "Create Artist Account"}
                   </Button>
-
-                  {/* Optional demo button */}
-                  {/* 
-                  <Button
-                    variant="outline"
-                    onClick={() => demoLogin("artist")}
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    Try Artist Demo
-                  </Button>
-                  */}
                 </div>
               </TabsContent>
             </Tabs>

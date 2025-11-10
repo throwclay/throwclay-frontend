@@ -32,14 +32,16 @@ export async function ensureProfile(userType?: UserType) {
 
   // Derive a simple default handle/name from email if needed
   const baseHandle = email.split("@")[0] || "user";
-  const defaultName = user.user_metadata?.full_name || baseHandle;
+  const name = user.user_metadata?.name || baseHandle;
+  const phone = user.user_metadata?.phone || "";
 
   if (!existing) {
     // 2) Insert a new profile
     const { error: insertError } = await supabase.from("profiles").insert({
       id: userId,
       email,
-      name: defaultName,
+      name: name,
+      phone: phone,
       handle: baseHandle, // we can later let them change this, and/or enforce uniqueness more strictly
       type: userType ?? user.user_metadata?.user_type ?? "artist",
     });
@@ -64,6 +66,4 @@ export async function ensureProfile(userType?: UserType) {
       return;
     }
   }
-
-  // Already exists and is fine
 }
