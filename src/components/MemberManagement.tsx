@@ -112,6 +112,7 @@ export function MemberManagement() {
   const [invites, setInvites] = useState<StudioInvite[]>([]);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [invitesError, setInvitesError] = useState<string | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const { authToken, currentUser, currentStudio } = useAppContext();
 
@@ -474,6 +475,9 @@ export function MemberManagement() {
       setInviteLocationId("");
       setInviteMembershipType("basic");
 
+      // ✅ auto-close the dialog on success
+      setInviteDialogOpen(false);
+
       // Refresh pending invites list
       fetchInvites();
     } catch (e) {
@@ -546,7 +550,7 @@ export function MemberManagement() {
           </Button>
 
           {/* Invite dialog */}
-          <Dialog>
+          <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
