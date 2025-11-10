@@ -36,16 +36,14 @@ export async function POST(
   }
 
   const body = await req.json().catch(() => null);
-  const name = body?.name as string | undefined;
   const email = body?.email as string | undefined;
-  const phone = body?.phone as string | undefined;
   const role = body?.role as string | undefined;
   const locationId = body?.locationId as string | undefined;
   const membershipType = body?.membershipType as string | undefined;
 
-  if (!name || !email || !role) {
+  if (!email || !role) {
     return NextResponse.json(
-      { error: "name, email and role are required" },
+      { error: "email and role are required" },
       { status: 400 }
     );
   }
@@ -100,9 +98,7 @@ export async function POST(
     .from("studio_invites")
     .insert({
       studio_id: studioId,
-      name,
       email,
-      phone,
       role,
       token: inviteToken,
       status: "pending",
@@ -114,9 +110,7 @@ export async function POST(
       `
       id,
       studio_id,
-      name,
       email,
-      phone,
       role,
       status,
       invited_at,
@@ -194,9 +188,7 @@ export async function GET(
       `
       id,
       studio_id,
-      name,
       email,
-      phone,
       role,
       status,
       invited_at,

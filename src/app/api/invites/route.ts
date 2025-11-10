@@ -43,9 +43,7 @@ export async function GET(req: Request) {
       `
         id,
         studio_id,
-        name,
         email,
-        phone,
         role,
         status,
         invited_at,
