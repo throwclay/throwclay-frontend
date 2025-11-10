@@ -1,32 +1,45 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppContext } from "@/app/context/AppContext";
+import { supabase } from "@/lib/apis/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export function InvitesPanel() {
-  const {
-    authToken,
-    currentUser,
-    currentStudio,
-    pendingInvites,
-    setPendingInvites,
-  } = useAppContext();
+interface StudioSummary {
+  id: string;
+  name: string;
+  handle: string;
+}
 
-  const [isLoadingInvites, setIsLoadingInvites] = useState(false);
-  const [invitesError, setInvitesError] = useState<string | null>(null);
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+interface StudioInvite {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  invited_at: string | null;
+  location_id: string | null;
+  membership_type: string | null;
+  studios?: StudioSummary | null; // comes from the join in /api/invites
+}
+
+export function InvitesPanel() {
+  const { authToken, currentUser } = useAppContext();
+
+  const [invites, setInvites] = useState<StudioInvite[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchInvites = async () => {
     if (!authToken) {
-      setInvitesError("You must be logged in to view invites.");
-      setPendingInvites([]);
+      setError("You must be logged in to view invites.");
+      setInvites([]);
       return;
     }
 
     try {
-      setIsLoadingInvites(true);
-      setInvitesError(null);
+      setIsLoading(true);
+      setError(null);
 
       const res = await fetch("/api/invites", {
         headers: {
@@ -36,29 +49,34 @@ export function InvitesPanel() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setInvitesError(body.error || "Failed to load invites");
-        setPendingInvites([]);
+        setError(body.error || "Failed to load invites");
+        setInvites([]);
         return;
       }
 
       const body = await res.json();
-      setPendingInvites(body.invites || []);
+      setInvites((body.invites || []) as StudioInvite[]);
     } catch (err) {
       console.error("Error fetching invites", err);
-      setInvitesError("Failed to load invites");
-      setPendingInvites([]);
+      setError("Failed to load invites");
+      setInvites([]);
     } finally {
-      setIsLoadingInvites(false);
+      setIsLoading(false);
     }
   };
 
-  const handleAccept = async (invite: any) => {
+  // 🔁 Load invites on mount
+  useEffect(() => {
+    fetchInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authToken]);
+
+  const handleAccept = async (inviteId: string) => {
     if (!authToken) {
       toast.error("You must be logged in to accept invites.");
       return;
     }
 
-    setAcceptingId(invite.id);
     try {
       const res = await fetch("/api/invites/accept", {
         method: "POST",
@@ -66,10 +84,7 @@ export function InvitesPanel() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({
-          token: invite.token,
-          studioId: currentStudio?.id,
-        }), // your accept route expects { token }
+        body: JSON.stringify({ inviteId }),
       });
 
       if (!res.ok) {
@@ -81,124 +96,114 @@ export function InvitesPanel() {
 
       toast.success("Invite accepted!");
 
-      // Remove from shared list
-      setPendingInvites((prev) => prev.filter((i) => i.id !== invite.id));
+      // Remove accepted invite from local state
+      setInvites((prev) => prev.filter((i) => i.id !== inviteId));
+
+      // Optionally: refetch invites or refresh memberships here
+      // await fetchInvites();
     } catch (err) {
       console.error("Error accepting invite", err);
       toast.error("Something went wrong accepting the invite");
-    } finally {
-      setAcceptingId(null);
     }
   };
-
-  useEffect(() => {
-    // Load invites when this panel mounts
-    fetchInvites();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   if (!currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center">
         <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-muted-foreground">
-          Please log in to view your studio invites.
-        </p>
+        <p className="text-muted-foreground">Please log in to view invites.</p>
       </div>
     );
   }
 
-  if (isLoadingInvites && pendingInvites.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center text-muted-foreground">
+        Loading invites…
+      </div>
+    );
+  }
+
+  if (error) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center">
         <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-muted-foreground">Loading your invites…</p>
-      </div>
-    );
-  }
-
-  if (invitesError && pendingInvites.length === 0) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center space-y-3">
-        <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-red-500 text-sm">{invitesError}</p>
+        <p className="text-sm text-red-500 mb-4">{error}</p>
         <Button variant="outline" size="sm" onClick={fetchInvites}>
-          Try again
+          Retry
         </Button>
       </div>
     );
   }
 
-  if (pendingInvites.length === 0) {
+  if (invites.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-8 text-center space-y-2">
+      <div className="max-w-4xl mx-auto p-8 text-center">
         <h1 className="text-2xl font-semibold mb-2">Invites</h1>
         <p className="text-muted-foreground">
           You don’t have any pending studio invites.
         </p>
-        <Button variant="outline" size="sm" onClick={fetchInvites}>
-          Refresh
-        </Button>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-semibold">Studio Invites</h1>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Studio Invites</h1>
+          <p className="text-sm text-muted-foreground">
+            These studios have invited you to join.
+          </p>
+        </div>
         <Button variant="outline" size="sm" onClick={fetchInvites}>
           Refresh
         </Button>
       </div>
 
-      {pendingInvites.map((invite) => (
-        <div
-          key={invite.id}
-          className="flex items-center justify-between border rounded-lg p-4"
-        >
-          <div>
-            <p className="font-medium">
-              {invite.studios?.name ?? "A studio"} invited you
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Role:{" "}
-              <span className="capitalize">
-                {invite.role.replace("-", " ")}
-              </span>
-              {invite.studios?.handle && (
-                <>
-                  {" "}
-                  • Handle: <span>@{invite.studios.handle}</span>
-                </>
-              )}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Invited at{" "}
-              {invite.invited_at
-                ? new Date(invite.invited_at).toLocaleString()
-                : "—"}
-            </p>
-            {invite.status !== "pending" && (
-              <p className="text-xs mt-1">
+      <div className="space-y-3">
+        {invites.map((invite) => (
+          <Card key={invite.id} className="p-4">
+            <div className="flex w-full items-center justify-between gap-4">
+              {/* Left side: studio + role/handle/invited */}
+              <div className="min-w-0">
+                <p className="font-medium truncate">
+                  {invite.studios?.name ?? "A studio"} invited you
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Role: <span className="capitalize">{invite.role}</span>
+                  {invite.studios?.handle && (
+                    <>
+                      {" "}
+                      • Handle: <span>@{invite.studios.handle}</span>
+                    </>
+                  )}
+                </p>
+                {invite.invited_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Invited{" "}
+                    {new Date(invite.invited_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              {/* Right side: status + button */}
+              <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
                 <Badge variant="secondary" className="capitalize">
                   {invite.status}
                 </Badge>
-              </p>
-            )}
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              size="sm"
-              onClick={() => handleAccept(invite)}
-              disabled={acceptingId === invite.id}
-            >
-              {acceptingId === invite.id ? "Accepting…" : "Accept"}
-            </Button>
-            {/* Later: Decline button to mark invite as revoked/declined */}
-          </div>
-        </div>
-      ))}
+                <Button size="sm" onClick={() => handleAccept(invite.id)}>
+                  Accept
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

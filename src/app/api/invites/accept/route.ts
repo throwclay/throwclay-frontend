@@ -2,27 +2,32 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
 
-export async function POST(req: Request) {
-  // 1) Get and validate Bearer token (same pattern as GET /api/invites)
+function getBearerToken(req: Request): string | null {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
+  if (!authHeader) return null;
+  const [scheme, value] = authHeader.split(" ");
+  if (!scheme || scheme.toLowerCase() !== "bearer" || !value) return null;
+  return value;
+}
 
-  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+export async function POST(req: Request) {
+  // 1) Get and validate Bearer token
+  const token = getBearerToken(req);
+
+  if (!token) {
     return NextResponse.json(
       { error: "Missing or invalid Authorization header" },
       { status: 401 }
     );
   }
 
-  const token = authHeader.slice("bearer ".length).trim();
-  if (!token) {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(token);
 
-  const { data: userResult, error: userError } =
-    await supabaseAdmin.auth.getUser(token);
-
-  if (userError || !userResult?.user) {
+  if (userError || !user) {
     console.error("Error verifying access token:", userError);
     return NextResponse.json(
       { error: "Invalid or expired token" },
@@ -30,12 +35,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const user = userResult.user;
   if (!user.email) {
     return NextResponse.json({ error: "User has no email" }, { status: 400 });
   }
 
-  // 2) Parse body: expect inviteId (not token) for in-app acceptance
+  // 2) Parse body: expect inviteId for in-app acceptance
   const body = await req.json().catch(() => null);
   const inviteId = body?.inviteId as string | undefined;
 
@@ -46,7 +50,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3) Look up the invite using admin client (bypass RLS)
+  // 3) Look up the invite (admin client bypasses RLS)
   const { data: invite, error: inviteError } = await supabaseAdmin
     .from("studio_invites")
     .select("*")
@@ -62,43 +66,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // 4) Enforce email match (safety: invite must match this user)
-  if (invite.email && invite.email.toLowerCase() !== user.email.toLowerCase()) {
+  // 4) Enforce email match
+  if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
     return NextResponse.json(
       { error: "This invite was sent to a different email address" },
       { status: 403 }
     );
   }
 
-  const studioId = invite.studio_id;
+  const studioId = invite.studio_id as string;
   const role = invite.role as string;
 
-  // 5) get profile id for accepted_by (profiles.id)
-  let profileId: string | null = null;
-  const { data: profileRow, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("id")
-    .eq("id", invite.accepted_by ?? "") // try existing
-    .maybeSingle();
-
-  if (!profileRow) {
-    // Try to find profile by auth user id if your profiles table has user_id
-    const { data: profileByUser, error: profileByUserError } =
-      await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        // adjust this if your profiles table uses a different column
-        .eq("id", user.id)
-        .maybeSingle();
-
-    if (!profileByUserError && profileByUser) {
-      profileId = profileByUser.id;
-    }
-  } else {
-    profileId = profileRow.id;
-  }
-
-  // 6) Upsert membership (studio_id, user_id must be unique)
+  // 5) Upsert membership (studio_id,user_id must be unique)
   const { error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .upsert(
@@ -123,12 +102,13 @@ export async function POST(req: Request) {
     );
   }
 
-  // 7) Mark invite as accepted
+  // 6) Mark invite as accepted
   const { error: updateError } = await supabaseAdmin
     .from("studio_invites")
     .update({
       status: "accepted",
-      accepted_by: profileId, // can be null; FK allows NULL
+      // assuming profiles.id === auth.users.id (your current pattern)
+      accepted_by: user.id,
       accepted_at: new Date().toISOString(),
     })
     .eq("id", invite.id);

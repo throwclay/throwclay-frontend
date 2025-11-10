@@ -693,14 +693,14 @@ export function MemberManagement() {
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="active">Active Members</TabsTrigger>
-            <TabsTrigger value="pending">
+            {/* <TabsTrigger value="pending">
               Pending Applications
               {applications.length > 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {applications.length}
                 </Badge>
               )}
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="invites">
               Pending Invites
               {invites.length > 0 && (

@@ -90,6 +90,8 @@ export function Navigation({
     (i) => i.status === "pending"
   ).length;
 
+  console.log(`Pending invites: ${pendingInvitesCount}`);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([
     currentStudio?.locations?.[0]?.id || "",
