@@ -269,9 +269,16 @@ export interface User {
   type: "artist" | "studio";
 
   // Artist-specific fields
-  subscription?: "free" | "passion" | "small-artist" | "studio-pro";
+  artistPlan?:
+    | "artist-free"
+    | "artist-plus"
+    | "artist-studio-lite"
+    | "artist-studio-enterprise";
+  subscription?: string | null;
   subscriptionLimits?: SubscriptionLimits;
   usageStats?: UsageStats;
+  availableModes?: ("artist" | "studio")[];
+  activeMode?: "artist" | "studio";
 
   // Shared fields
   profile?: ArtistProfile;

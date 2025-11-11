@@ -57,7 +57,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         setAuthToken?.(data.session.access_token);
 
         // ✅ User is logged in, make sure profile exists
-        await ensureProfile(userType);
+        await ensureProfile();
 
         // Then bubble up to parent
         onLogin({ email, userType });
@@ -83,7 +83,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           );
         } else {
           // Email confirmation OFF: user already logged in
-          await ensureProfile(userType);
+          await ensureProfile();
           onLogin({ email, userType });
         }
       }

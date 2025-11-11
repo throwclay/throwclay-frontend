@@ -45,8 +45,6 @@ export default function Home() {
     setAuthToken,
     pendingInvites,
     setPendingInvites,
-    currentMode,
-    setCurrentMode,
   } = useAppContext();
 
   const [currentPage, setCurrentPage] = useState("landing");
@@ -248,9 +246,17 @@ export default function Home() {
       (profileRow as any)?.handle ??
       fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
 
-    const type: "artist" | "studio" =
-      ((profileRow as any)?.type as "artist" | "studio" | null) ??
-      userData.userType;
+    // after fetching profileRow from profiles
+    const artistPlan = (profileRow as any)?.artist_plan ?? "artist-free";
+
+    // optional: get active profile subscription row (if you’re using subscriptions now)
+    const { data: profileSub } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("owner_type", "profile")
+      .eq("owner_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
 
     // 4) Build front-end User object
     const appUser: UserType = {
@@ -259,8 +265,9 @@ export default function Home() {
       handle,
       email,
       phone,
-      type,
-      subscription: undefined,
+      type: "artist",
+      subscription: profileSub?.plan_code ?? null,
+      artistPlan,
       subscriptionLimits: undefined,
       usageStats: undefined,
       profile: {
@@ -277,8 +284,6 @@ export default function Home() {
       lastLogin: (profileRow as any)?.last_login ?? undefined,
       isActive: (profileRow as any)?.is_active ?? true,
     };
-
-    setCurrentUser(appUser);
 
     // 5) Fetch their studio memberships
     const { data: memberships, error: membershipError } = await supabase
@@ -330,7 +335,7 @@ export default function Home() {
           description: s.description ?? "",
           locations: studioLocations,
           isActive: s.is_active ?? true,
-          plan: (s.plan as Studio["plan"]) ?? "studio-pro",
+          plan: (s.plan as Studio["plan"]) ?? "studio-free",
           createdAt: s.created_at,
           memberCount: 0, // TODO: compute via count/view later
           classCount: 0, // TODO
@@ -340,19 +345,21 @@ export default function Home() {
       }
     }
 
+    // 🔑 6) Derive availableModes + activeMode from memberships
+    const hasStudioRole = (memberships ?? []).some((m: any) =>
+      ["owner", "admin", "manager", "instructor"].includes(m.role)
+    );
+
+    appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
+
+    appUser.activeMode =
+      // if they *asked* for studio mode and actually have a studio role, honor it
+      userData.userType === "studio" && hasStudioRole ? "studio" : "artist";
+
     setCurrentStudio(studioForState);
-
-    // 🆕 set mode based on whether we have a studio
-    if (studioForState) {
-      setLocations(studioForState.locations);
-      setCurrentMode("studio");
-    } else {
-      setCurrentMode("artist");
-    }
-
+    setCurrentUser(appUser);
     setIsLoggedIn(true);
-
-    setCurrentPage(studioForState ? "dashboard" : "profile"); // use studio presence instead of type
+    setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
 
     fetchInvites();
   };
@@ -394,7 +401,7 @@ export default function Home() {
 
     switch (currentPage) {
       case "dashboard":
-        return currentMode === "studio" && currentStudio ? (
+        return currentUser.activeMode === "studio" && currentStudio ? (
           <StudioDashboard />
         ) : (
           <DashboardMockup />
@@ -407,7 +414,7 @@ export default function Home() {
         );
 
       case "classes":
-        return currentMode === "studio" && currentStudio ? (
+        return currentUser.activeMode === "studio" && currentStudio ? (
           <ClassesManagement />
         ) : (
           <ArtistClasses />

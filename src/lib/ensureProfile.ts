@@ -1,69 +1,32 @@
-// src/lib/ensureProfile.ts
-import { supabase } from "../lib/apis/supabaseClient";
+// lib/ensureProfile.ts
+import { supabase } from "./apis/supabaseClient";
 
-export type UserType = "artist" | "studio";
-
-export async function ensureProfile(userType?: UserType) {
-  // Get the current authenticated user
+export async function ensureProfile() {
   const {
     data: { user },
-    error: userError,
+    error,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    console.warn("ensureProfile: no authenticated user", userError);
-    return;
-  }
+  if (error || !user) throw error ?? new Error("No user");
 
-  const userId = user.id;
-  const email = user.email ?? "";
+  const email = user.email ?? null;
+  const name =
+    (user.user_metadata as any)?.name ??
+    (user.user_metadata as any)?.full_name ??
+    email?.split("@")[0] ??
+    null;
 
-  // 1) Check if a profile already exists
-  const { data: existing, error: selectError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (selectError) {
-    console.error("ensureProfile: error checking profile", selectError);
-    return;
-  }
-
-  // Derive a simple default handle/name from email if needed
-  const baseHandle = email.split("@")[0] || "user";
-  const name = user.user_metadata?.name || baseHandle;
-  const phone = user.user_metadata?.phone || "";
-
-  if (!existing) {
-    // 2) Insert a new profile
-    const { error: insertError } = await supabase.from("profiles").insert({
-      id: userId,
+  const { error: upsertError } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
       email,
-      name: name,
-      phone: phone,
-      handle: baseHandle, // we can later let them change this, and/or enforce uniqueness more strictly
-      type: userType ?? user.user_metadata?.user_type ?? "artist",
-    });
+      name,
+      type: "artist", // 👈 keep everyone as "artist" now
+      artist_plan: "artist-free", // 👈 safe default
+      is_active: true,
+    },
+    { onConflict: "id" }
+  );
 
-    if (insertError) {
-      console.error("ensureProfile: error creating profile", insertError);
-      return;
-    }
-
-    return;
-  }
-
-  // 3) Optionally, update profile type if it's missing and we got one
-  if (!existing.type && userType) {
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ type: userType })
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("ensureProfile: error updating profile type", updateError);
-      return;
-    }
-  }
+  if (upsertError) throw upsertError;
 }
