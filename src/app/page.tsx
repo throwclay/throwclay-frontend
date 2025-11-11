@@ -199,11 +199,7 @@ export default function Home() {
     }
   };
 
-  const handleLogin = async (userData: {
-    email: string;
-    phone: string;
-    userType: "artist" | "studio";
-  }) => {
+  const handleLogin = async (userData: { email: string; phone?: string }) => {
     // 1) Get the current session (has both user + access token)
     const {
       data: { session },
@@ -351,10 +347,7 @@ export default function Home() {
     );
 
     appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
-
-    appUser.activeMode =
-      // if they *asked* for studio mode and actually have a studio role, honor it
-      userData.userType === "studio" && hasStudioRole ? "studio" : "artist";
+    appUser.activeMode = hasStudioRole ? "studio" : "artist";
 
     setCurrentStudio(studioForState);
     setCurrentUser(appUser);
