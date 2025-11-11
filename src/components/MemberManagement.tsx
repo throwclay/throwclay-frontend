@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Search,
   Download,
+  DollarSign,
   Upload,
   Plus,
   Edit,
@@ -94,6 +95,12 @@ export function MemberManagement() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
 
+  // Members
+  const [members, setMembers] = useState<MemberData[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
+
+  // Locations
   const [locations, setLocations] = useState<StudioLocation[]>([]);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
@@ -126,118 +133,6 @@ export function MemberManagement() {
       </div>
     );
   }
-
-  // Mock member data (still mock for now)
-  const [members] = useState<MemberData[]>([
-    {
-      id: "mem1",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@email.com",
-      handle: "sarahj",
-      type: "artist",
-      studioId: currentStudio.id,
-      phone: "(503) 555-0101",
-      subscription: "free",
-      role: "member",
-      membership: {
-        id: "membership1",
-        userId: "mem1",
-        studioId: currentStudio.id || "",
-        locationId: "loc1",
-        membershipType: "basic",
-        status: "active",
-        startDate: "2025-01-15",
-        shelfNumber: "A-12",
-        monthlyRate: 85,
-        passionProjectsUpgrade: true,
-        passionProjectsRate: 5,
-        joinedAt: "2025-01-15",
-        lastActivity: "2025-06-13",
-      },
-      invoices: [
-        {
-          id: "inv1",
-          userId: "mem1",
-          studioId: currentStudio.id || "",
-          type: "membership",
-          amount: 85,
-          description: "Monthly Membership - June 2025",
-          dueDate: "2025-06-01",
-          paidDate: "2025-06-01",
-          status: "paid",
-        },
-      ],
-      classHistory: [
-        {
-          id: "class1",
-          title: "Wheel Throwing Basics",
-          status: "completed",
-          date: "2025-03-15",
-        },
-        {
-          id: "class2",
-          title: "Glazing Workshop",
-          status: "enrolled",
-          date: "2025-06-20",
-        },
-      ],
-      eventHistory: [
-        {
-          id: "event1",
-          title: "Spring Pottery Sale",
-          status: "participated",
-          date: "2025-04-12",
-        },
-      ],
-    },
-    {
-      id: "mem2",
-      name: "Mike Rodriguez",
-      email: "mike.r@email.com",
-      handle: "mikerod",
-      type: "artist",
-      studioId: currentStudio.id,
-      phone: "(503) 555-0102",
-      subscription: "free",
-      role: "member",
-      membership: {
-        id: "membership2",
-        userId: "mem2",
-        studioId: currentStudio.id || "",
-        locationId: "loc2",
-        membershipType: "premium",
-        status: "active",
-        startDate: "2025-02-01",
-        shelfNumber: "B-08",
-        monthlyRate: 125,
-        passionProjectsUpgrade: false,
-        passionProjectsRate: 5,
-        joinedAt: "2025-02-01",
-        lastActivity: "2025-06-12",
-      },
-      invoices: [
-        {
-          id: "inv3",
-          userId: "mem2",
-          studioId: currentStudio.id || "",
-          type: "membership",
-          amount: 125,
-          description: "Premium Membership - June 2025",
-          dueDate: "2025-06-01",
-          status: "overdue",
-        },
-      ],
-      classHistory: [
-        {
-          id: "class3",
-          title: "Advanced Throwing",
-          status: "enrolled",
-          date: "2025-06-15",
-        },
-      ],
-      eventHistory: [],
-    },
-  ]);
 
   // Mock pending applications
   const [applications] = useState<MembershipApplication[]>([
@@ -511,12 +406,96 @@ export function MemberManagement() {
     loadLocations();
   }, [currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-fetch invites when tab is "invites"
-  // useEffect(() => {
-  //   if (activeTab === "invites" && currentStudio.id) {
-  //     fetchInvites();
-  //   }
-  // }, [activeTab, currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!currentStudio?.id) {
+      setMembers([]);
+      return;
+    }
+
+    const loadMembers = async () => {
+      setIsLoadingMembers(true);
+      setMembersError(null);
+
+      const { data, error } = await supabaseClient
+        .from("studio_memberships")
+        .select(
+          `
+          id,
+          user_id,
+          studio_id,
+          role,
+          status,
+          location_id,
+          membership_type,
+          created_at,
+          profiles:user_id (
+            id,
+            name,
+            handle,
+            email
+          )
+        `
+        )
+        .eq("studio_id", currentStudio.id);
+
+      if (error) {
+        console.error("Error fetching members", error);
+        setMembersError("Failed to load members");
+        setMembers([]);
+      } else {
+        const mapped: MemberData[] = (data || []).map((row: any) => {
+          const profile = row.profiles;
+
+          const membershipType =
+            (row.membership_type as "basic" | "premium" | "unlimited") ||
+            "basic";
+
+          return {
+            id: profile?.id ?? row.user_id,
+            name: profile?.name ?? "Member",
+            email: profile?.email ?? "",
+            handle: profile?.handle ?? "",
+            type: "artist",
+            studioId: row.studio_id,
+            phone: null,
+            subscription: "free",
+            role: row.role ?? "member",
+            createdAt: profile.created_at,
+            isActive: profile.status,
+            membership: {
+              id: row.id,
+              userId: row.user_id,
+              studioId: row.studio_id,
+              locationId: row.location_id,
+              membershipType,
+              status: row.status ?? "active",
+              startDate: row.created_at,
+              shelfNumber: null,
+              monthlyRate:
+                membershipType === "basic"
+                  ? 85
+                  : membershipType === "premium"
+                  ? 125
+                  : 185,
+              passionProjectsUpgrade: false,
+              passionProjectsRate: 0,
+              joinedAt: row.created_at,
+              lastActivity: null,
+            },
+            invoices: [],
+            classHistory: [],
+            eventHistory: [],
+          };
+        });
+
+        setMembers(mapped);
+      }
+
+      setIsLoadingMembers(false);
+    };
+
+    loadMembers();
+  }, [currentStudio?.id]);
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -802,112 +781,136 @@ export function MemberManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedMembers.includes(member.id)}
-                        onCheckedChange={(checked) =>
-                          handleMemberSelect(member.id, checked as boolean)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <Users2 className="w-8 h-8 text-muted-foreground" />
-                        <div className="space-y-1">
-                          <div className="font-medium">{member.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            @{member.handle}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm">
-                          <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                          {member.email}
-                        </div>
-                        {member.phone && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Phone className="w-4 h-4 mr-2" />
-                            {member.phone}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-                        {getLocationName(member.membership.locationId)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="font-medium capitalize">
-                          {member.membership.membershipType}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          ${member.membership.monthlyRate}/month
-                        </div>
-                        {member.membership.passionProjectsUpgrade && (
-                          <Badge variant="secondary" className="text-xs">
-                            +Passion Projects
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {member.membership.shelfNumber || "Unassigned"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {getMembershipStatusBadge(member.membership.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">
-                        {member.membership.lastActivity
-                          ? new Date(
-                              member.membership.lastActivity
-                            ).toLocaleDateString()
-                          : "Never"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Member
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Send Message
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <FileText className="w-4 h-4 mr-2" />
-                            View Invoices
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove Member
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {isLoadingMembers ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
+                      Loading members…
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredMembers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={9}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
+                      No members found for this studio.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredMembers.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedMembers.includes(member.id)}
+                          onCheckedChange={(checked) =>
+                            handleMemberSelect(member.id, checked as boolean)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <Users2 className="w-8 h-8 text-muted-foreground" />
+                          <div className="space-y-1">
+                            <div className="font-medium">{member.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              @{member.handle}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm">
+                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                            {member.email}
+                          </div>
+                          {member.phone && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Phone className="w-4 h-4 mr-2" />
+                              {member.phone}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {getLocationName(member.membership.locationId)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <div className="font-medium capitalize">
+                            {member.membership.membershipType}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ${member.membership.monthlyRate}/month
+                          </div>
+                          {member.membership.passionProjectsUpgrade && (
+                            <Badge variant="secondary" className="text-xs">
+                              +Passion Projects
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {member.membership.shelfNumber || "Unassigned"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getMembershipStatusBadge(member.membership.status)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {member.membership.lastActivity
+                            ? new Date(
+                                member.membership.lastActivity
+                              ).toLocaleDateString()
+                            : "Never"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Member
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Send Message
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <FileText className="w-4 h-4 mr-2" />
+                              View Invoices
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Payment History
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Remove Member
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
