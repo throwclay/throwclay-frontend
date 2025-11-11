@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
+const MEMBERSHIP_ROLES = ["admin", "manager", "employee", "member"];
 
 function getBearerToken(req: Request): string | null {
   const authHeader =
@@ -48,8 +49,11 @@ export async function POST(
     );
   }
 
-  if (!INVITER_ROLES.includes(role) && role !== "member") {
-    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  if (!MEMBERSHIP_ROLES.includes(role)) {
+    return NextResponse.json(
+      { error: `Invalid role: ${role}` },
+      { status: 400 }
+    );
   }
 
   if (!locationId) {
