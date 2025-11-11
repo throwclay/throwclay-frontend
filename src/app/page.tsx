@@ -23,7 +23,12 @@ import { LandingPage } from "@/components/LandingPage";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
 import { InvitesPanel } from "@/components/InvitesPanel";
-import type { User as UserType, Studio, PotteryEntry } from "@/types";
+import type {
+  User as UserType,
+  Studio,
+  PotteryEntry,
+  StudioLocation,
+} from "@/types";
 import { getSubscriptionLimits } from "@/utils/subscriptions";
 import { useAppContext } from "./context/AppContext";
 
@@ -46,6 +51,11 @@ export default function Home() {
 
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Locations
+  const [locations, setLocations] = useState<StudioLocation[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [locationsError, setLocationsError] = useState<string | null>(null);
 
   // Mock studios data
   const mockStudios: Studio[] = [
@@ -163,8 +173,37 @@ export default function Home() {
     }
   };
 
+  const fetchLocationsForStudio = async (
+    studioId: string,
+    token: string
+  ): Promise<StudioLocation[]> => {
+    console.log(`Fetching Locations | Studio ID: ${studioId}`);
+
+    try {
+      const res = await fetch(`/api/studios/${studioId}/locations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("Error fetching studio locations", body);
+        return [];
+      }
+
+      const body = await res.json();
+      const data = (body.locations || []) as StudioLocation[];
+
+      console.log(`Studio Locations: ${data.length}`);
+      return data;
+    } catch (err) {
+      console.error("Error fetching studio locations", err);
+      return [];
+    }
+  };
+
   const handleLogin = async (userData: {
     email: string;
+    phone: string;
     userType: "artist" | "studio";
   }) => {
     // 1) Get the current session (has both user + access token)
@@ -197,6 +236,7 @@ export default function Home() {
     }
 
     const email = user.email ?? userData.email;
+    const phone = user.phone ?? userData.phone;
     const fallbackName = email?.split("@")[0] ?? "Unnamed";
 
     const name =
@@ -218,6 +258,7 @@ export default function Home() {
       name,
       handle,
       email,
+      phone,
       type,
       subscription: undefined,
       subscriptionLimits: undefined,
@@ -274,6 +315,12 @@ export default function Home() {
       const s = membership.studios;
 
       if (s) {
+        // fetch locations for THIS studio using the session token
+        const studioLocations = await fetchLocationsForStudio(
+          s.id,
+          session.access_token
+        );
+
         studioForState = {
           id: s.id,
           name: s.name,
@@ -281,7 +328,7 @@ export default function Home() {
           email: s.email ?? "",
           website: s.website ?? "",
           description: s.description ?? "",
-          locations: [], // TODO: wire real locations
+          locations: studioLocations,
           isActive: s.is_active ?? true,
           plan: (s.plan as Studio["plan"]) ?? "studio-pro",
           createdAt: s.created_at,
@@ -297,6 +344,7 @@ export default function Home() {
 
     // 🆕 set mode based on whether we have a studio
     if (studioForState) {
+      setLocations(studioForState.locations);
       setCurrentMode("studio");
     } else {
       setCurrentMode("artist");

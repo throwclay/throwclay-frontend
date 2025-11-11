@@ -62,7 +62,6 @@ import { useAppContext } from "@/app/context/AppContext";
 
 import type {
   User as UserType,
-  StudioLocation,
   StudioMembership,
   MembershipApplication,
   PaymentInvoice,
@@ -101,11 +100,6 @@ export function MemberManagement() {
   const [members, setMembers] = useState<MemberData[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
-
-  // Locations
-  const [locations, setLocations] = useState<StudioLocation[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [locationsError, setLocationsError] = useState<string | null>(null);
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState("");
@@ -225,14 +219,10 @@ export function MemberManagement() {
   const getLocationName = (locationId?: string | null) => {
     if (!locationId) return "Unassigned";
 
-    // Prefer DB-loaded locations
-    const fromLoaded = locations.find((loc) => loc.id === locationId);
-    if (fromLoaded) return fromLoaded.name;
-
-    // Fallback to any locations on currentStudio
     const fromStudio = currentStudio.locations?.find(
       (loc) => loc.id === locationId
     );
+
     return fromStudio?.name || "Unknown Location";
   };
 
@@ -373,54 +363,6 @@ export function MemberManagement() {
     }
   };
 
-  // Load studio locations on mount / studio change
-  useEffect(() => {
-    if (!currentStudio.id) return;
-
-    const loadLocations = async () => {
-      setIsLoadingLocations(true);
-      setLocationsError(null);
-
-      try {
-        // call our new backend API
-        const res = await fetch(`/api/studios/${currentStudio.id}/locations`, {
-          headers: authToken
-            ? { Authorization: `Bearer ${authToken}` }
-            : undefined,
-        });
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          console.error("Error fetching studio locations", body);
-          setLocationsError(body.error || "Failed to load locations");
-          setLocations([]);
-          return;
-        }
-
-        const body = await res.json();
-        const data = (body.locations || []) as StudioLocation[];
-
-        console.log(`Studio Locations: ${data.length}`);
-        setLocations(data);
-
-        // auto-select first location
-        if (!inviteLocationId && data.length > 0) {
-          setInviteLocationId(data[0].id);
-        }
-      } catch (err) {
-        console.error("Error fetching studio locations", err);
-        setLocationsError("Failed to load locations");
-        setLocations([]);
-      } finally {
-        setIsLoadingLocations(false);
-        // still fine to refresh invites afterwards
-        fetchInvites();
-      }
-    };
-
-    loadLocations();
-  }, [currentStudio.id]); // you can later add authToken, inviteLocationId, fetchInvites if needed
-
   useEffect(() => {
     if (!currentStudio?.id) {
       setMembers([]);
@@ -507,6 +449,23 @@ export function MemberManagement() {
     console.log("Members updated:", members.length, members);
   }, [members]);
 
+  const studioLocations = currentStudio.locations ?? [];
+
+  useEffect(() => {
+    const studioLocations = currentStudio.locations ?? [];
+    if (!inviteLocationId && studioLocations.length > 0) {
+      setInviteLocationId(studioLocations[0].id);
+    }
+  }, [currentStudio.locations, inviteLocationId, setInviteLocationId]);
+
+  useEffect(() => {
+    if (!currentStudio?.id || !authToken) {
+      setInvites([]);
+      return;
+    }
+    fetchInvites();
+  }, [currentStudio?.id, authToken]);
+
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
       {/* Header */}
@@ -587,21 +546,19 @@ export function MemberManagement() {
                   <Select
                     value={inviteLocationId}
                     onValueChange={(value) => setInviteLocationId(value)}
-                    disabled={isLoadingLocations || locations.length === 0}
+                    disabled={studioLocations.length === 0}
                   >
                     <SelectTrigger id="inviteLocation">
                       <SelectValue
                         placeholder={
-                          isLoadingLocations
-                            ? "Loading locations..."
-                            : locations.length === 0
+                          studioLocations.length === 0
                             ? "No locations available"
                             : "Select location"
                         }
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {locations.map((loc) => (
+                      {studioLocations.map((loc) => (
                         <SelectItem key={loc.id} value={loc.id}>
                           {loc.name}
                           {loc.city && loc.state
@@ -611,18 +568,10 @@ export function MemberManagement() {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {locationsError && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {locationsError}
-                    </p>
-                  )}
-                  {!locationsError && (
-                    <p className="text-xs text-muted-foreground">
-                      Location is required. The member will be associated with
-                      this studio location when they accept.
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Location is required. The member will be associated with +
+                    this studio location when they accept.
+                  </p>
                 </div>
 
                 {/* Membership type */}
@@ -730,7 +679,7 @@ export function MemberManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
-                {locations?.map((location) => (
+                {studioLocations?.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name}
                   </SelectItem>
