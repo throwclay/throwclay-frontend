@@ -89,7 +89,7 @@ interface ArtistProfileProps {
 }
 
 export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
-  const { currentUser, currentMode, currentStudio } = useAppContext();
+  const { currentUser, currentStudio } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
   const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(
@@ -437,7 +437,7 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
     );
   }
 
-  const isStudio = currentMode === "studio" && currentStudio;
+  const isStudio = currentUser.activeMode === "studio" && currentStudio;
 
   return (
     <TooltipProvider>

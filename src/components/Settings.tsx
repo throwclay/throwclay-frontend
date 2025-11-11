@@ -6,7 +6,7 @@ import { StudioSettings } from "./StudioSettings";
 import { useAppContext } from "@/app/context/AppContext";
 
 export function Settings() {
-  const { currentUser, currentMode, currentStudio } = useAppContext();
+  const { currentUser, currentStudio } = useAppContext();
 
   if (!currentUser) {
     return (
@@ -27,19 +27,23 @@ export function Settings() {
         <h1>Settings</h1>
         <p className="text-muted-foreground">
           Manage your{" "}
-          {currentMode === "studio" && currentStudio ? "studio" : "account"}{" "}
+          {currentUser.activeMode === "studio" && currentStudio
+            ? "studio"
+            : "account"}{" "}
           settings and preferences
         </p>
       </div>
 
       <Tabs
         defaultValue={
-          currentMode === "studio" && currentStudio ? "studio" : "profile"
+          currentUser.activeMode === "studio" && currentStudio
+            ? "studio"
+            : "profile"
         }
         className="space-y-6"
       >
         <TabsList className="grid w-full grid-cols-4">
-          {currentMode === "studio" && currentStudio && (
+          {currentUser.activeMode === "studio" && currentStudio && (
             <TabsTrigger value="studio" className="flex items-center space-x-2">
               <Building2 className="w-4 h-4" />
               <span>Studio</span>
@@ -63,7 +67,7 @@ export function Settings() {
         </TabsList>
 
         {/* Studio Settings Tab */}
-        {currentMode === "studio" && currentStudio && (
+        {currentUser.activeMode === "studio" && currentStudio && (
           <TabsContent value="studio">
             <StudioSettings />
           </TabsContent>

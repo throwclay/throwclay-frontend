@@ -85,13 +85,8 @@ export function Navigation({
   onPageChange,
   onLogout,
 }: NavigationProps) {
-  const {
-    currentUser,
-    currentStudio,
-    pendingInvites,
-    currentMode,
-    setCurrentMode,
-  } = useAppContext();
+  const { currentUser, setCurrentUser, currentStudio, pendingInvites } =
+    useAppContext();
   const pendingInvitesCount = pendingInvites.filter(
     (i) => i.status === "pending"
   ).length;
@@ -144,24 +139,30 @@ export function Navigation({
 
   // Main navigation items based on user type
   const getMainNavigationItems = () => {
-    if (currentMode === "studio" && currentStudio) {
+    if (currentUser.activeMode === "studio" && currentStudio) {
       return [
         { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-        { id: "messages", label: "Messages", icon: MessageCircle },
         { id: "classes", label: "Classes", icon: GraduationCap },
         { id: "members", label: "Members", icon: Users },
         { id: "staff", label: "Staff", icon: UserCog },
         { id: "blog", label: "Blog", icon: BookOpen },
+        { id: "messages", label: "Messages", icon: MessageCircle },
         { id: "profile", label: "Profile", icon: User },
       ];
     } else {
       return [
-        { id: "profile", label: "Profile", icon: User },
+        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+        {
+          id: "studios",
+          label: "Studios",
+          icon: Building2,
+          description: "Find pottery studios",
+        },
         { id: "classes", label: "Classes", icon: GraduationCap },
         { id: "journal", label: "Journal", icon: Brush },
         { id: "blog", label: "Blog", icon: BookOpen },
         { id: "messages", label: "Messages", icon: MessageCircle },
-        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+        { id: "profile", label: "Profile", icon: User },
       ];
     }
   };
@@ -174,7 +175,7 @@ export function Navigation({
       icon: Mail,
       description: "Studio invitations",
     };
-    if (currentMode === "studio" && currentStudio) {
+    if (currentUser.activeMode === "studio" && currentStudio) {
       return [
         {
           id: "events",
@@ -215,12 +216,6 @@ export function Navigation({
           label: "Marketplace",
           icon: ShoppingBag,
           description: "Sell your work",
-        },
-        {
-          id: "studios",
-          label: "Studios",
-          icon: Building2,
-          description: "Find pottery studios",
         },
         {
           id: "ceramics",
@@ -288,7 +283,7 @@ export function Navigation({
             <Icon className="w-4 h-4 mr-2" />
             {item.label}
             {item.id === "staff" &&
-              currentMode === "studio" &&
+              currentUser.activeMode === "studio" &&
               currentStudio && (
                 <Badge
                   variant="secondary"
@@ -453,7 +448,7 @@ export function Navigation({
           {/* Right Section - Studio Menu + User Menu */}
           <div className="flex items-center space-x-4">
             {/* Studio Menu for Studio Users */}
-            {currentMode === "studio" && currentStudio && (
+            {currentUser.activeMode === "studio" && currentStudio && (
               <DropdownMenu
                 open={showStudioMenu}
                 onOpenChange={setShowStudioMenu}
@@ -675,26 +670,29 @@ export function Navigation({
                   Settings
                 </DropdownMenuItem>
 
-                {currentStudio && (
+                {currentUser.availableModes?.includes("studio") && (
                   <>
                     <DropdownMenuSeparator />
-                    {currentMode === "artist" ? (
-                      <DropdownMenuItem
-                        onClick={() => setCurrentMode("studio")}
-                        className="cursor-pointer"
-                      >
-                        <Building2 className="mr-3 h-4 w-4" />
-                        Switch to Studio Mode
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() => setCurrentMode("artist")}
-                        className="cursor-pointer"
-                      >
-                        <User className="mr-3 h-4 w-4" />
-                        Switch to Artist Mode
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (!currentUser) return;
+
+                        const nextMode =
+                          currentUser.activeMode === "studio"
+                            ? "artist"
+                            : "studio";
+
+                        setCurrentUser({
+                          ...currentUser,
+                          activeMode: nextMode,
+                        });
+                      }}
+                    >
+                      {currentUser.activeMode === "studio"
+                        ? "Switch to Artist mode"
+                        : "Switch to Studio mode"}
+                    </DropdownMenuItem>
                   </>
                 )}
 
@@ -752,7 +750,7 @@ export function Navigation({
                       <Icon className="w-5 h-5" />
                       <span className="flex-1 text-left">{item.label}</span>
                       {item.id === "staff" &&
-                        currentMode === "studio" &&
+                        currentUser.activeMode === "studio" &&
                         currentStudio && (
                           <Badge
                             variant="secondary"
