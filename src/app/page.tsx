@@ -40,6 +40,8 @@ export default function Home() {
     setAuthToken,
     pendingInvites,
     setPendingInvites,
+    currentMode,
+    setCurrentMode,
   } = useAppContext();
 
   const [currentPage, setCurrentPage] = useState("landing");
@@ -293,8 +295,16 @@ export default function Home() {
 
     setCurrentStudio(studioForState);
 
+    // 🆕 set mode based on whether we have a studio
+    if (studioForState) {
+      setCurrentMode("studio");
+    } else {
+      setCurrentMode("artist");
+    }
+
     setIsLoggedIn(true);
-    setCurrentPage(type === "studio" ? "dashboard" : "profile");
+
+    setCurrentPage(studioForState ? "dashboard" : "profile"); // use studio presence instead of type
 
     fetchInvites();
   };
@@ -336,7 +346,7 @@ export default function Home() {
 
     switch (currentPage) {
       case "dashboard":
-        return currentUser.type === "studio" ? (
+        return currentMode === "studio" && currentStudio ? (
           <StudioDashboard />
         ) : (
           <DashboardMockup />
@@ -344,13 +354,12 @@ export default function Home() {
       case "profile":
         return (
           <ArtistProfile
-            currentUser={currentUser}
             onProfileUpdated={(updated) => setCurrentUser(updated)}
           />
         );
 
       case "classes":
-        return currentUser.type === "studio" ? (
+        return currentMode === "studio" && currentStudio ? (
           <ClassesManagement />
         ) : (
           <ArtistClasses />
@@ -364,7 +373,7 @@ export default function Home() {
       case "marketplace":
         return <CommerceMarketplace />;
       case "settings":
-        return <Settings currentUser={currentUser} />;
+        return <Settings />;
       case "events":
         return <EventsManagement />;
       case "messages":

@@ -85,7 +85,13 @@ export function Navigation({
   onPageChange,
   onLogout,
 }: NavigationProps) {
-  const { currentUser, currentStudio, pendingInvites } = useAppContext();
+  const {
+    currentUser,
+    currentStudio,
+    pendingInvites,
+    currentMode,
+    setCurrentMode,
+  } = useAppContext();
   const pendingInvitesCount = pendingInvites.filter(
     (i) => i.status === "pending"
   ).length;
@@ -138,7 +144,7 @@ export function Navigation({
 
   // Main navigation items based on user type
   const getMainNavigationItems = () => {
-    if (currentUser.type === "studio") {
+    if (currentMode === "studio" && currentStudio) {
       return [
         { id: "dashboard", label: "Dashboard", icon: BarChart3 },
         { id: "messages", label: "Messages", icon: MessageCircle },
@@ -168,7 +174,7 @@ export function Navigation({
       icon: Mail,
       description: "Studio invitations",
     };
-    if (currentUser.type === "studio") {
+    if (currentMode === "studio" && currentStudio) {
       return [
         {
           id: "events",
@@ -281,11 +287,16 @@ export function Navigation({
           >
             <Icon className="w-4 h-4 mr-2" />
             {item.label}
-            {item.id === "staff" && currentUser.type === "studio" && (
-              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0.5">
-                5
-              </Badge>
-            )}
+            {item.id === "staff" &&
+              currentMode === "studio" &&
+              currentStudio && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 text-xs px-1.5 py-0.5"
+                >
+                  5
+                </Badge>
+              )}
           </Button>
         );
       })}
@@ -442,7 +453,7 @@ export function Navigation({
           {/* Right Section - Studio Menu + User Menu */}
           <div className="flex items-center space-x-4">
             {/* Studio Menu for Studio Users */}
-            {currentUser.type === "studio" && currentStudio && (
+            {currentMode === "studio" && currentStudio && (
               <DropdownMenu
                 open={showStudioMenu}
                 onOpenChange={setShowStudioMenu}
@@ -664,7 +675,31 @@ export function Navigation({
                   Settings
                 </DropdownMenuItem>
 
+                {currentStudio && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {currentMode === "artist" ? (
+                      <DropdownMenuItem
+                        onClick={() => setCurrentMode("studio")}
+                        className="cursor-pointer"
+                      >
+                        <Building2 className="mr-3 h-4 w-4" />
+                        Switch to Studio Mode
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => setCurrentMode("artist")}
+                        className="cursor-pointer"
+                      >
+                        <User className="mr-3 h-4 w-4" />
+                        Switch to Artist Mode
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+
                 <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   onClick={onLogout}
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -716,14 +751,16 @@ export function Navigation({
                     >
                       <Icon className="w-5 h-5" />
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.id === "staff" && currentUser.type === "studio" && (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs px-1.5 py-0.5"
-                        >
-                          5
-                        </Badge>
-                      )}
+                      {item.id === "staff" &&
+                        currentMode === "studio" &&
+                        currentStudio && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs px-1.5 py-0.5"
+                          >
+                            5
+                          </Badge>
+                        )}
                       {isInvites && pendingInvitesCount > 0 && (
                         <Badge
                           variant="secondary"

@@ -3,14 +3,11 @@ import { User, Building2, Bell, Shield, Palette, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { StudioSettings } from "./StudioSettings";
+import { useAppContext } from "@/app/context/AppContext";
 
-import type { User as UserType } from "@/types";
+export function Settings() {
+  const { currentUser, currentMode, currentStudio } = useAppContext();
 
-interface SettingsProps {
-  currentUser: UserType | null;
-}
-
-export function Settings({ currentUser }: SettingsProps) {
   if (!currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -29,17 +26,20 @@ export function Settings({ currentUser }: SettingsProps) {
       <div className="mb-8">
         <h1>Settings</h1>
         <p className="text-muted-foreground">
-          Manage your {currentUser.type === "studio" ? "studio" : "account"}{" "}
+          Manage your{" "}
+          {currentMode === "studio" && currentStudio ? "studio" : "account"}{" "}
           settings and preferences
         </p>
       </div>
 
       <Tabs
-        defaultValue={currentUser.type === "studio" ? "studio" : "profile"}
+        defaultValue={
+          currentMode === "studio" && currentStudio ? "studio" : "profile"
+        }
         className="space-y-6"
       >
         <TabsList className="grid w-full grid-cols-4">
-          {currentUser.type === "studio" && (
+          {currentMode === "studio" && currentStudio && (
             <TabsTrigger value="studio" className="flex items-center space-x-2">
               <Building2 className="w-4 h-4" />
               <span>Studio</span>
@@ -63,7 +63,7 @@ export function Settings({ currentUser }: SettingsProps) {
         </TabsList>
 
         {/* Studio Settings Tab */}
-        {currentUser.type === "studio" && (
+        {currentMode === "studio" && currentStudio && (
           <TabsContent value="studio">
             <StudioSettings />
           </TabsContent>

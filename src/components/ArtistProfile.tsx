@@ -82,15 +82,14 @@ import type {
 
 import { toast } from "sonner";
 
+import { useAppContext } from "@/app/context/AppContext";
+
 interface ArtistProfileProps {
-  currentUser: UserType | null;
   onProfileUpdated?: (user: UserType) => void;
 }
 
-export function ArtistProfile({
-  currentUser,
-  onProfileUpdated,
-}: ArtistProfileProps) {
+export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
+  const { currentUser, currentMode, currentStudio } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
   const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(
@@ -360,7 +359,7 @@ export function ArtistProfile({
   const handleSave = () => {
     if (!currentUser) return;
 
-    const updatedUser: User = {
+    const updatedUser: UserType = {
       ...currentUser,
       profile: editedProfile,
     };
@@ -438,7 +437,7 @@ export function ArtistProfile({
     );
   }
 
-  const isStudio = currentUser.type === "studio";
+  const isStudio = currentMode === "studio" && currentStudio;
 
   return (
     <TooltipProvider>
