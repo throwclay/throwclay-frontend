@@ -1,3 +1,5 @@
+"user client";
+
 import { useState, useEffect } from "react";
 import {
   Search,
@@ -198,10 +200,10 @@ export function MemberManagement() {
       selectedLocation === "all" ||
       member.membership.locationId === selectedLocation;
 
-    const matchesStatus =
-      activeTab === "all" || member.membership.status === activeTab;
+    // const matchesStatus =
+    //   activeTab === "all" || member.membership.status === activeTab;
 
-    return matchesSearch && matchesLocation && matchesStatus;
+    return matchesSearch && matchesLocation; // && matchesStatus;
   });
 
   const handleMemberSelect = (memberId: string, checked: boolean) => {
@@ -379,32 +381,45 @@ export function MemberManagement() {
       setIsLoadingLocations(true);
       setLocationsError(null);
 
-      const { data, error } = await supabaseClient
-        .from("studio_locations")
-        .select("*")
-        .eq("studio_id", currentStudio.id)
-        .order("name", { ascending: true });
+      try {
+        // call our new backend API
+        const res = await fetch(`/api/studios/${currentStudio.id}/locations`, {
+          headers: authToken
+            ? { Authorization: `Bearer ${authToken}` }
+            : undefined,
+        });
 
-      console.log(`Studio Locations: ${data?.length}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error("Error fetching studio locations", body);
+          setLocationsError(body.error || "Failed to load locations");
+          setLocations([]);
+          return;
+        }
 
-      if (error) {
-        console.error("Error fetching studio locations", error);
-        setLocationsError("Failed to load locations");
-      } else {
-        setLocations((data || []) as StudioLocation[]);
+        const body = await res.json();
+        const data = (body.locations || []) as StudioLocation[];
+
+        console.log(`Studio Locations: ${data.length}`);
+        setLocations(data);
 
         // auto-select first location
-        if (!inviteLocationId && data && data.length > 0) {
+        if (!inviteLocationId && data.length > 0) {
           setInviteLocationId(data[0].id);
         }
+      } catch (err) {
+        console.error("Error fetching studio locations", err);
+        setLocationsError("Failed to load locations");
+        setLocations([]);
+      } finally {
+        setIsLoadingLocations(false);
+        // still fine to refresh invites afterwards
+        fetchInvites();
       }
-
-      setIsLoadingLocations(false);
-      fetchInvites();
     };
 
     loadLocations();
-  }, [currentStudio.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentStudio.id]); // you can later add authToken, inviteLocationId, fetchInvites if needed
 
   useEffect(() => {
     if (!currentStudio?.id) {
@@ -413,89 +428,84 @@ export function MemberManagement() {
     }
 
     const loadMembers = async () => {
+      if (!authToken || !currentStudio?.id) {
+        setMembers([]);
+        return;
+      }
+
       setIsLoadingMembers(true);
       setMembersError(null);
 
-      const { data, error } = await supabaseClient
-        .from("studio_memberships")
-        .select(
-          `
-          id,
-          user_id,
-          studio_id,
-          role,
-          status,
-          location_id,
-          membership_type,
-          created_at,
-          profiles:user_id (
-            id,
-            name,
-            handle,
-            email
-          )
-        `
-        )
-        .eq("studio_id", currentStudio.id);
+      const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-      if (error) {
-        console.error("Error fetching members", error);
-        setMembersError("Failed to load members");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("Error fetching members", body);
+        setMembersError(body.error || "Failed to load members");
         setMembers([]);
-      } else {
-        const mapped: MemberData[] = (data || []).map((row: any) => {
-          const profile = row.profiles;
-
-          const membershipType =
-            (row.membership_type as "basic" | "premium" | "unlimited") ||
-            "basic";
-
-          return {
-            id: profile?.id ?? row.user_id,
-            name: profile?.name ?? "Member",
-            email: profile?.email ?? "",
-            handle: profile?.handle ?? "",
-            type: "artist",
-            studioId: row.studio_id,
-            phone: null,
-            subscription: "free",
-            role: row.role ?? "member",
-            createdAt: profile.created_at,
-            isActive: profile.status,
-            membership: {
-              id: row.id,
-              userId: row.user_id,
-              studioId: row.studio_id,
-              locationId: row.location_id,
-              membershipType,
-              status: row.status ?? "active",
-              startDate: row.created_at,
-              shelfNumber: null,
-              monthlyRate:
-                membershipType === "basic"
-                  ? 85
-                  : membershipType === "premium"
-                  ? 125
-                  : 185,
-              passionProjectsUpgrade: false,
-              passionProjectsRate: 0,
-              joinedAt: row.created_at,
-              lastActivity: null,
-            },
-            invoices: [],
-            classHistory: [],
-            eventHistory: [],
-          };
-        });
-
-        setMembers(mapped);
+        setIsLoadingMembers(false);
+        return;
       }
 
+      const body = await res.json();
+
+      const mapped: MemberData[] = (body.members || []).map((row: any) => {
+        const profile = row.profiles ?? {};
+        const membershipType =
+          (row.membership_type as "basic" | "premium" | "unlimited") || "basic";
+
+        return {
+          id: profile.id ?? row.user_id,
+          name: profile.name ?? "Member",
+          email: profile.email ?? "",
+          handle: profile.handle ?? "",
+          type: "artist",
+          studioId: row.studio_id,
+          phone: profile.phone ?? "",
+          subscription: "free",
+          role: row.role ?? "member",
+          createdAt: row.created_at,
+          isActive: profile.is_active ?? true,
+          membership: {
+            id: row.id,
+            userId: row.user_id,
+            studioId: row.studio_id,
+            locationId: row.location_id,
+            membershipType,
+            status: row.status ?? "active",
+            startDate: row.created_at,
+            shelfNumber: null,
+            monthlyRate:
+              membershipType === "basic"
+                ? 85
+                : membershipType === "premium"
+                ? 125
+                : 185,
+            passionProjectsUpgrade: false,
+            passionProjectsRate: 0,
+            joinedAt: row.created_at,
+            lastActivity: null,
+          },
+          invoices: [],
+          classHistory: [],
+          eventHistory: [],
+        };
+      });
+
+      setMembers(mapped);
       setIsLoadingMembers(false);
     };
 
     loadMembers();
   }, [currentStudio?.id]);
+
+  useEffect(() => {
+    console.log("Members updated:", members.length, members);
+  }, [members]);
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -720,7 +730,7 @@ export function MemberManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Locations</SelectItem>
-                {currentStudio.locations?.map((location) => (
+                {locations?.map((location) => (
                   <SelectItem key={location.id} value={location.id}>
                     {location.name}
                   </SelectItem>
