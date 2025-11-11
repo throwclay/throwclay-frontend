@@ -203,6 +203,22 @@ export interface StudioLocation {
   isActive: boolean;
 }
 
+export interface StudioInvite {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  phone: string;
+  status: string;
+  invited_at: string;
+  token: string;
+  studios?: {
+    id: string;
+    name: string;
+    handle: string;
+  } | null;
+}
+
 export interface Studio {
   id: string;
   name: string;
