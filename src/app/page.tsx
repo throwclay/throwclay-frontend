@@ -199,38 +199,74 @@ export default function Home() {
     }
   };
 
-  const handleLogin = async (userData: { email: string; phone?: string }) => {
-    // 1) Get the current session (has both user + access token)
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+  const handleLogin = async (userData: {
+    email: string;
+    phone?: string;
+    session: any;
+  }) => {
+    const { session } = userData;
 
-    if (sessionError || !session || !session.user) {
-      console.error("handleLogin: no Supabase session/user", sessionError);
-      // Optionally show a toast here
+    if (!session || !session.user) {
+      console.error("handleLogin: missing session or user");
       return;
     }
 
     const user = session.user;
 
-    // 2) Store access token in AppContext for API routes
+    // 1) Store access token in AppContext for API routes
     setAuthToken(session.access_token);
 
-    // 3) Fetch their profile row from public.profiles
-    const { data: profileRow, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
+    // 2) Parallel fetch: profile, active subscription, memberships
+    const [
+      { data: profileRow, error: profileError },
+      { data: profileSub, error: subError },
+      { data: memberships, error: membershipError },
+    ] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("owner_type", "profile")
+        .eq("owner_id", user.id)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase
+        .from("studio_memberships")
+        .select(
+          `
+        studio_id,
+        role,
+        status,
+        studios:studio_id (
+          id,
+          name,
+          handle,
+          email,
+          description,
+          is_active,
+          plan,
+          created_at
+        )
+      `
+        )
+        .eq("user_id", user.id)
+        .eq("status", "active"),
+    ]);
+
+    console.log(`Prof name: ${profileRow?.name}`);
 
     if (profileError) {
       console.error("handleLogin: error fetching profile", profileError);
-      // We can still proceed with reasonable defaults
+    }
+    if (membershipError) {
+      console.error("handleLogin: error fetching memberships", membershipError);
+    }
+    if (subError) {
+      console.error("handleLogin: error fetching subscription", subError);
     }
 
     const email = user.email ?? userData.email;
-    const phone = user.phone ?? userData.phone;
+    const phone = (user as any).phone ?? userData.phone;
     const fallbackName = email?.split("@")[0] ?? "Unnamed";
 
     const name =
@@ -242,19 +278,9 @@ export default function Home() {
       (profileRow as any)?.handle ??
       fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
 
-    // after fetching profileRow from profiles
     const artistPlan = (profileRow as any)?.artist_plan ?? "artist-free";
 
-    // optional: get active profile subscription row (if you’re using subscriptions now)
-    const { data: profileSub } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("owner_type", "profile")
-      .eq("owner_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-
-    // 4) Build front-end User object
+    // 3) Build front-end User object
     const appUser: UserType = {
       id: user.id,
       name,
@@ -281,42 +307,15 @@ export default function Home() {
       isActive: (profileRow as any)?.is_active ?? true,
     };
 
-    // 5) Fetch their studio memberships
-    const { data: memberships, error: membershipError } = await supabase
-      .from("studio_memberships")
-      .select(
-        `
-        studio_id,
-        role,
-        status,
-        studios:studio_id (
-          id,
-          name,
-          handle,
-          email,
-          description,
-          is_active,
-          plan,
-          created_at
-        )
-      `
-      )
-      .eq("user_id", user.id)
-      .eq("status", "active");
-
-    if (membershipError) {
-      console.error("handleLogin: error fetching memberships", membershipError);
-    }
-
+    // 4) Build studio (if any memberships)
     let studioForState: Studio | null = null;
 
     if (memberships && memberships.length > 0) {
-      // For now: just take the first active studio
       const membership = memberships[0] as any;
       const s = membership.studios;
 
       if (s) {
-        // fetch locations for THIS studio using the session token
+        // If you want to keep fetching locations here:
         const studioLocations = await fetchLocationsForStudio(
           s.id,
           session.access_token
@@ -327,21 +326,21 @@ export default function Home() {
           name: s.name,
           handle: s.handle,
           email: s.email ?? "",
-          website: s.website ?? "",
+          website: (s as any).website ?? "",
           description: s.description ?? "",
-          locations: studioLocations,
+          locations: studioLocations, // or studioLocations if you keep that helper
           isActive: s.is_active ?? true,
           plan: (s.plan as Studio["plan"]) ?? "studio-free",
           createdAt: s.created_at,
-          memberCount: 0, // TODO: compute via count/view later
-          classCount: 0, // TODO
+          memberCount: 0,
+          classCount: 0,
           glazes: [],
           firingSchedule: [],
         };
       }
     }
 
-    // 🔑 6) Derive availableModes + activeMode from memberships
+    // 5) Derive modes
     const hasStudioRole = (memberships ?? []).some((m: any) =>
       ["owner", "admin", "manager", "instructor"].includes(m.role)
     );
@@ -349,12 +348,14 @@ export default function Home() {
     appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
     appUser.activeMode = hasStudioRole ? "studio" : "artist";
 
+    // 6) Push into context + app state
     setCurrentStudio(studioForState);
     setCurrentUser(appUser);
     setIsLoggedIn(true);
     setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
 
-    fetchInvites();
+    // 7) Optional: fetch invites for nav badge
+    // fetchInvites();
   };
 
   const handleLogout = () => {

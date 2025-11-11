@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Building2, Palette } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
@@ -9,7 +9,7 @@ import { supabase } from "../lib/apis/supabaseClient";
 import { ensureProfile } from "../lib/ensureProfile";
 
 interface LoginFormProps {
-  onLogin: (userData: { email: string; phone?: string }) => void;
+  onLogin: (userData: { email: string; phone?: string; session: any }) => void;
   onBack: () => void;
 }
 
@@ -42,23 +42,24 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         }
 
         if (!data.session) {
+          // If email confirmations are enabled and user hasn't confirmed yet
           setMessage(
             "Check your email to verify your account before signing in."
           );
           return;
         }
 
-        // make sure profile exists (always artist + artist_plan default)
+        // ✅ User is logged in, make sure profile exists
         await ensureProfile();
 
-        onLogin({ email });
+        // Bubble up to parent with session info
+        onLogin({ email, phone, session: data.session });
       } else {
         // --- SIGNUP FLOW ---
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            // metadata is optional now – we can still store name/phone here
             data: { name, phone },
           },
         });
@@ -69,12 +70,14 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         }
 
         if (!data.session) {
+          // Email confirmation ON: user must verify before logging in
           setMessage(
             "Account created! Please check your email and click the verification link to activate your account."
           );
         } else {
+          // Email confirmation OFF: user already logged in
           await ensureProfile();
-          onLogin({ email, phone });
+          onLogin({ email, phone, session: data.session });
         }
       }
     } catch (err: any) {
@@ -85,20 +88,11 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
   };
 
   const title =
-    authMode === "login" ? "Welcome back" : "Create your Throw Clay account";
+    authMode === "login" ? "Welcome Back" : "Create your Throw Clay account";
   const subtitle =
     authMode === "login"
-      ? "Sign in to manage your pottery practice and studio tools."
-      : "Sign up once, then switch between artist and studio modes as you grow.";
-
-  const buttonLabel =
-    authMode === "login"
-      ? isLoading
-        ? "Signing in..."
-        : "Sign in"
-      : isLoading
-      ? "Creating account..."
-      : "Create account";
+      ? "Sign in to your account"
+      : "Sign up to start using Throw Clay";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
@@ -125,34 +119,35 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
               <span className="text-xl font-bold">Throw Clay</span>
             </div>
             <CardTitle>{title}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+            <p className="text-muted-foreground text-sm">{subtitle}</p>
           </CardHeader>
           <CardContent>
-            {/* Little “what you can do” row */}
-            <div className="flex items-center justify-center gap-6 mb-6 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4" />
-                <span>Track your pottery & classes</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                <span>Manage studio members</span>
-              </div>
-            </div>
-
             <div className="space-y-4">
               {authMode === "signup" && (
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="(555) 123-4567"
+                      required
+                    />
+                  </div>
+                </>
               )}
 
               <div>
@@ -166,20 +161,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                   required
                 />
               </div>
-
-              {authMode === "signup" && (
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              )}
-
               <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -187,7 +168,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   required
                 />
               </div>
@@ -198,11 +179,17 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                   isLoading ||
                   !email ||
                   !password ||
-                  (authMode === "signup" && !name)
+                  (authMode === "signup" && (!name || !phone))
                 }
                 className="w-full"
               >
-                {buttonLabel}
+                {isLoading
+                  ? authMode === "login"
+                    ? "Signing in..."
+                    : "Creating account..."
+                  : authMode === "login"
+                  ? "Sign in"
+                  : "Create account"}
               </Button>
             </div>
 

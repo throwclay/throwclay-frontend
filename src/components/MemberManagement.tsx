@@ -294,6 +294,88 @@ export function MemberManagement() {
     }
   };
 
+  // --API: fetch members --
+  const fetchMembers = async () => {
+    if (!authToken || !currentStudio?.id) {
+      setMembers([]);
+      return;
+    }
+
+    try {
+      setIsLoadingMembers(true);
+      setMembersError(null);
+
+      const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("Error fetching members", body);
+        setMembersError(body.error || "Failed to load members");
+        setMembers([]);
+        setIsLoadingMembers(false);
+        return;
+      }
+
+      const body = await res.json();
+
+      const mapped: MemberData[] = (body.members || []).map((row: any) => {
+        const profile = row.profiles ?? {};
+        const membershipType =
+          (row.membership_type as "basic" | "premium" | "unlimited") || "basic";
+
+        return {
+          id: profile.id ?? row.user_id,
+          name: profile.name ?? "Member",
+          email: profile.email ?? "",
+          handle: profile.handle ?? "",
+          type: "artist",
+          studioId: row.studio_id,
+          phone: profile.phone ?? "",
+          subscription: "free",
+          role: row.role ?? "member",
+          createdAt: row.created_at,
+          isActive: profile.is_active ?? true,
+          membership: {
+            id: row.id,
+            userId: row.user_id,
+            studioId: row.studio_id,
+            locationId: row.location_id,
+            membershipType,
+            status: row.status ?? "active",
+            startDate: row.created_at,
+            shelfNumber: null,
+            monthlyRate:
+              membershipType === "basic"
+                ? 85
+                : membershipType === "premium"
+                ? 125
+                : 185,
+            passionProjectsUpgrade: false,
+            passionProjectsRate: 0,
+            joinedAt: row.created_at,
+            lastActivity: null,
+          },
+          invoices: [],
+          classHistory: [],
+          eventHistory: [],
+        };
+      });
+
+      setMembers(mapped);
+      setIsLoadingMembers(false);
+    } catch (err) {
+      console.error("Error fetching members", err);
+      setMembersError("Failed to load invites");
+      setMembers([]);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
   // --- API: send invite ---
   const handleSendInvite = async () => {
     if (!currentStudio) {
@@ -369,80 +451,82 @@ export function MemberManagement() {
       return;
     }
 
-    const loadMembers = async () => {
-      if (!authToken || !currentStudio?.id) {
-        setMembers([]);
-        return;
-      }
+    // const loadMembers = async () => {
+    //   if (!authToken || !currentStudio?.id) {
+    //     setMembers([]);
+    //     return;
+    //   }
 
-      setIsLoadingMembers(true);
-      setMembersError(null);
+    //   setIsLoadingMembers(true);
+    //   setMembersError(null);
 
-      const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+    //   const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
+    //     headers: {
+    //       Authorization: `Bearer ${authToken}`,
+    //     },
+    //   });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error("Error fetching members", body);
-        setMembersError(body.error || "Failed to load members");
-        setMembers([]);
-        setIsLoadingMembers(false);
-        return;
-      }
+    //   if (!res.ok) {
+    //     const body = await res.json().catch(() => ({}));
+    //     console.error("Error fetching members", body);
+    //     setMembersError(body.error || "Failed to load members");
+    //     setMembers([]);
+    //     setIsLoadingMembers(false);
+    //     return;
+    //   }
 
-      const body = await res.json();
+    //   const body = await res.json();
 
-      const mapped: MemberData[] = (body.members || []).map((row: any) => {
-        const profile = row.profiles ?? {};
-        const membershipType =
-          (row.membership_type as "basic" | "premium" | "unlimited") || "basic";
+    //   const mapped: MemberData[] = (body.members || []).map((row: any) => {
+    //     const profile = row.profiles ?? {};
+    //     const membershipType =
+    //       (row.membership_type as "basic" | "premium" | "unlimited") || "basic";
 
-        return {
-          id: profile.id ?? row.user_id,
-          name: profile.name ?? "Member",
-          email: profile.email ?? "",
-          handle: profile.handle ?? "",
-          type: "artist",
-          studioId: row.studio_id,
-          phone: profile.phone ?? "",
-          subscription: "free",
-          role: row.role ?? "member",
-          createdAt: row.created_at,
-          isActive: profile.is_active ?? true,
-          membership: {
-            id: row.id,
-            userId: row.user_id,
-            studioId: row.studio_id,
-            locationId: row.location_id,
-            membershipType,
-            status: row.status ?? "active",
-            startDate: row.created_at,
-            shelfNumber: null,
-            monthlyRate:
-              membershipType === "basic"
-                ? 85
-                : membershipType === "premium"
-                ? 125
-                : 185,
-            passionProjectsUpgrade: false,
-            passionProjectsRate: 0,
-            joinedAt: row.created_at,
-            lastActivity: null,
-          },
-          invoices: [],
-          classHistory: [],
-          eventHistory: [],
-        };
-      });
+    //     return {
+    //       id: profile.id ?? row.user_id,
+    //       name: profile.name ?? "Member",
+    //       email: profile.email ?? "",
+    //       handle: profile.handle ?? "",
+    //       type: "artist",
+    //       studioId: row.studio_id,
+    //       phone: profile.phone ?? "",
+    //       subscription: "free",
+    //       role: row.role ?? "member",
+    //       createdAt: row.created_at,
+    //       isActive: profile.is_active ?? true,
+    //       membership: {
+    //         id: row.id,
+    //         userId: row.user_id,
+    //         studioId: row.studio_id,
+    //         locationId: row.location_id,
+    //         membershipType,
+    //         status: row.status ?? "active",
+    //         startDate: row.created_at,
+    //         shelfNumber: null,
+    //         monthlyRate:
+    //           membershipType === "basic"
+    //             ? 85
+    //             : membershipType === "premium"
+    //             ? 125
+    //             : 185,
+    //         passionProjectsUpgrade: false,
+    //         passionProjectsRate: 0,
+    //         joinedAt: row.created_at,
+    //         lastActivity: null,
+    //       },
+    //       invoices: [],
+    //       classHistory: [],
+    //       eventHistory: [],
+    //     };
+    //   });
 
-      setMembers(mapped);
-      setIsLoadingMembers(false);
-    };
+    //   setMembers(mapped);
+    //   setIsLoadingMembers(false);
+    // };
 
-    loadMembers();
+    // }
+    fetchMembers();
+    // loadMembers();
   }, [currentStudio?.id]);
 
   useEffect(() => {
@@ -646,7 +730,7 @@ export function MemberManagement() {
             <TabsTrigger value="invites">
               Pending Invites
               {invites.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="destructive" className="ml-2">
                   {invites.length}
                 </Badge>
               )}
@@ -714,6 +798,23 @@ export function MemberManagement() {
               </div>
             </div>
           )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Active Members</h2>
+              {/* <p className="text-sm text-muted-foreground">
+                These invites haven&apos;t been accepted yet.
+              </p> */}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchMembers}
+              disabled={isLoadingMembers}
+            >
+              Refresh
+            </Button>
+          </div>
 
           {/* Members Table */}
           <div className="border rounded-lg">
