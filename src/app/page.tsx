@@ -303,10 +303,12 @@ export default function Home() {
         },
       },
       createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(),
-      lastLogin: (profileRow as any)?.last_login ?? undefined,
+      lastLogin:
+        (profileRow as any)?.last_login ?? user.last_sign_in_at ?? undefined,
       isActive: (profileRow as any)?.is_active ?? true,
     };
 
+    console.log(`User ${appUser.name} last logged in ${appUser.lastLogin}`);
     // 4) Build studio (if any memberships)
     let studioForState: Studio | null = null;
 
