@@ -6,7 +6,6 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 import { supabase } from "../lib/apis/supabaseClient";
-import { ensureProfile } from "../lib/ensureProfile";
 
 interface LoginFormProps {
   onLogin: (userData: { email: string; phone?: string; session: any }) => void;
@@ -49,9 +48,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           return;
         }
 
-        // ✅ User is logged in, make sure profile exists
-        await ensureProfile();
-
         // Bubble up to parent with session info
         onLogin({ email, phone, session: data.session });
       } else {
@@ -60,7 +56,10 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           email,
           password,
           options: {
-            data: { name, phone },
+            data: {
+              name,
+              profile_phone: phone,
+            },
           },
         });
 
@@ -76,7 +75,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
           );
         } else {
           // Email confirmation OFF: user already logged in
-          await ensureProfile();
           onLogin({ email, phone, session: data.session });
         }
       }
