@@ -23,6 +23,8 @@ import { LandingPage } from "@/components/LandingPage";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
 import { InvitesPanel } from "@/components/InvitesPanel";
+import { MyStudios } from "@/components/MyStudios";
+
 import type {
   User as UserType,
   Studio,
@@ -344,7 +346,7 @@ export default function Home() {
 
     // 5) Derive modes
     const hasStudioRole = (memberships ?? []).some((m: any) =>
-      ["owner", "admin", "manager", "instructor"].includes(m.role)
+      ["owner", "admin"].includes(m.role)
     );
 
     appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
@@ -443,6 +445,8 @@ export default function Home() {
         return <PublicCeramicsMarketplace onNavigate={setCurrentPage} />;
       case "invites":
         return <InvitesPanel />;
+      case "mystudios":
+        return <MyStudios />;
 
       default:
         return (
@@ -500,6 +504,3 @@ function DashboardMockup() {
     </div>
   );
 }
-
-// Export the AppContext and useAppContext for use in other components
-// export { AppContext };

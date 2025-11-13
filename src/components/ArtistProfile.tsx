@@ -490,7 +490,7 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
                           </Button>
                         ) : (
                           <Button
-                            variant="secondary"
+                            variant="default"
                             onClick={() => setIsEditing(true)}
                             className="flex-1 sm:flex-none"
                           >
@@ -500,7 +500,7 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="secondary" size="icon">
+                            <Button variant="default" size="icon">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
