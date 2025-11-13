@@ -138,33 +138,45 @@ export function Navigation({
   };
 
   // Main navigation items based on user type
-  const getMainNavigationItems = () => {
-    if (currentUser.activeMode === "studio" && currentStudio) {
-      return [
-        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-        { id: "classes", label: "Classes", icon: GraduationCap },
-        { id: "members", label: "Members", icon: Users },
-        { id: "staff", label: "Staff", icon: UserCog },
-        { id: "blog", label: "Blog", icon: BookOpen },
-        { id: "messages", label: "Messages", icon: MessageCircle },
-        { id: "profile", label: "Profile", icon: User },
-      ];
-    } else {
-      return [
-        { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-        {
-          id: "studios",
-          label: "Studios",
-          icon: Building2,
-          description: "Find pottery studios",
-        },
-        { id: "classes", label: "Classes", icon: GraduationCap },
-        { id: "journal", label: "Journal", icon: Brush },
-        { id: "blog", label: "Blog", icon: BookOpen },
-        { id: "messages", label: "Messages", icon: MessageCircle },
-        { id: "profile", label: "Profile", icon: User },
-      ];
-    }
+  type NavItem = { id: string; label: string; icon: any; description?: string };
+
+  const getMainNavigationItems = (): NavItem[] => {
+    const inStudio = currentUser.activeMode === "studio" && !!currentStudio;
+
+    // Common base for both modes
+    const base: NavItem[] = [
+      { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+      { id: "classes", label: "Classes", icon: GraduationCap },
+      { id: "blog", label: "Blog", icon: BookOpen },
+      { id: "messages", label: "Messages", icon: MessageCircle },
+      { id: "profile", label: "Profile", icon: User },
+    ];
+
+    return [
+      base[0],
+      // Only show My Studios if there IS a currentStudio and artist mode
+      ...(currentStudio && currentUser.activeMode === "artist"
+        ? [
+            {
+              id: "mystudios",
+              label: "My Studios",
+              icon: Building2,
+              description: "Your studio resources & community",
+            } as NavItem,
+          ]
+        : []),
+      ...base.slice(1),
+      // Studio-only items
+      ...(inStudio
+        ? [
+            { id: "members", label: "Members", icon: Users },
+            { id: "staff", label: "Staff", icon: UserCog },
+          ]
+        : [
+            // Artist-only items
+            { id: "journal", label: "Journal", icon: Brush },
+          ]),
+    ];
   };
 
   // More dropdown items based on user type
@@ -216,6 +228,12 @@ export function Navigation({
           label: "Marketplace",
           icon: ShoppingBag,
           description: "Sell your work",
+        },
+        {
+          id: "studios",
+          label: "Studios",
+          icon: Building2,
+          description: "Find pottery studios",
         },
         {
           id: "ceramics",
