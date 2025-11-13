@@ -1163,3 +1163,101 @@ export interface ClassBadgeSettings {
   createdAt: string;
   updatedAt: string;
 }
+
+export type UUID = string;
+
+export type MembershipStatus =
+  | "active"
+  | "paused"
+  | "canceled"
+  | "pending"
+  | "inactive"
+  | (string & {}); // allow other backend values
+
+export type MembershipType =
+  | "month-to-month"
+  | "annual"
+  | "drop-in"
+  | "student"
+  | "resident"
+  | (string & {});
+
+export interface StudioMembership {
+  id: UUID;
+  userId: UUID;
+  studioId: UUID;
+
+  // Used by your UI:
+  shelfNumber?: string | null;
+  locationId?: UUID | null;
+  membershipType?: MembershipType | null;
+  monthlyRate?: number | null;
+  passionProjectsUpgrade?: boolean | null;
+
+  status?: MembershipStatus;
+  lastActivity?: string | Date | null;
+
+  // Room for whatever else you already have:
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type InvoiceStatus =
+  | "draft"
+  | "open"
+  | "paid"
+  | "partial"
+  | "overdue"
+  | "void"
+  | "refunded"
+  | (string & {});
+
+export interface PaymentInvoice {
+  id: UUID;
+  memberId?: UUID;
+  amount?: number; // e.g., dollars
+  amountCents?: number; // or cents
+  dueDate?: string | Date | null;
+  paidAt?: string | Date | null;
+  status: InvoiceStatus; // required since UI expects it
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type ExperienceLevel =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | (string & {});
+
+export interface EmergencyContact {
+  name: string;
+  phone: string;
+  relationship?: string;
+}
+
+export interface MembershipApplication {
+  id: UUID;
+
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone?: string | null;
+
+  submittedAt: string | Date;
+
+  membershipType?: MembershipType | null;
+  locationId?: UUID | null;
+  studioId?: UUID | null;
+
+  experience?: ExperienceLevel | number | null;
+
+  emergencyContact?: EmergencyContact | null;
+
+  interests?: string[];
+  goals?: string[];
+
+  notes?: string | null;
+  referralSource?: string | null;
+  customFields?: {};
+  status?: "submitted" | "reviewing" | "accepted" | "rejected" | (string & {});
+}

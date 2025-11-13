@@ -142,7 +142,7 @@ export function MemberManagement() {
       membershipType: "basic",
       experience: "Beginner - took a few classes elsewhere",
       interests: ["Wheel Throwing", "Glazing"],
-      goals: "Learn pottery as a hobby and stress relief",
+      goals: ["Learn pottery as a hobby and stress relief"],
       referralSource: "Google Search",
       emergencyContact: {
         name: "John Thompson",
@@ -166,7 +166,7 @@ export function MemberManagement() {
       membershipType: "premium",
       experience: "Intermediate - 2 years experience",
       interests: ["Hand Building", "Sculpture", "Raku"],
-      goals: "Develop advanced techniques and sell work",
+      goals: ["Develop advanced techniques and sell work"],
       referralSource: "Instagram",
       emergencyContact: {
         name: "Lisa Kim",
@@ -847,7 +847,9 @@ export function MemberManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {getMembershipStatusBadge(member.membership.status)}
+                        {getMembershipStatusBadge(
+                          member.membership.status ?? "inactive"
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-muted-foreground">
@@ -971,11 +973,11 @@ export function MemberManagement() {
                     </Label>
                     <div className="space-y-1">
                       <div className="text-sm">
-                        {application.emergencyContact.name}
+                        {application.emergencyContact?.name}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {application.emergencyContact.phone} (
-                        {application.emergencyContact.relationship})
+                        {application.emergencyContact?.phone} (
+                        {application.emergencyContact?.relationship})
                       </div>
                     </div>
                   </div>
@@ -987,7 +989,7 @@ export function MemberManagement() {
                       Interests
                     </Label>
                     <div className="flex flex-wrap gap-2">
-                      {application.interests.map((interest, index) => (
+                      {application.interests?.map((interest, index) => (
                         <Badge key={index} variant="secondary">
                           {interest}
                         </Badge>
