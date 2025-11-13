@@ -27,3 +27,6 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# General Dev Files
+scratch.sh
