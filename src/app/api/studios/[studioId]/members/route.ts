@@ -75,7 +75,8 @@ export async function GET(
         handle,
         email,
         is_active,
-        phone
+        phone,
+        last_login
       )
     `
     )
