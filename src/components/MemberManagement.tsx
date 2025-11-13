@@ -357,7 +357,7 @@ export function MemberManagement() {
             passionProjectsUpgrade: false,
             passionProjectsRate: 0,
             joinedAt: row.created_at,
-            lastActivity: null,
+            lastActivity: profile.last_login,
           },
           invoices: [],
           classHistory: [],
@@ -451,82 +451,7 @@ export function MemberManagement() {
       return;
     }
 
-    // const loadMembers = async () => {
-    //   if (!authToken || !currentStudio?.id) {
-    //     setMembers([]);
-    //     return;
-    //   }
-
-    //   setIsLoadingMembers(true);
-    //   setMembersError(null);
-
-    //   const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
-    //     headers: {
-    //       Authorization: `Bearer ${authToken}`,
-    //     },
-    //   });
-
-    //   if (!res.ok) {
-    //     const body = await res.json().catch(() => ({}));
-    //     console.error("Error fetching members", body);
-    //     setMembersError(body.error || "Failed to load members");
-    //     setMembers([]);
-    //     setIsLoadingMembers(false);
-    //     return;
-    //   }
-
-    //   const body = await res.json();
-
-    //   const mapped: MemberData[] = (body.members || []).map((row: any) => {
-    //     const profile = row.profiles ?? {};
-    //     const membershipType =
-    //       (row.membership_type as "basic" | "premium" | "unlimited") || "basic";
-
-    //     return {
-    //       id: profile.id ?? row.user_id,
-    //       name: profile.name ?? "Member",
-    //       email: profile.email ?? "",
-    //       handle: profile.handle ?? "",
-    //       type: "artist",
-    //       studioId: row.studio_id,
-    //       phone: profile.phone ?? "",
-    //       subscription: "free",
-    //       role: row.role ?? "member",
-    //       createdAt: row.created_at,
-    //       isActive: profile.is_active ?? true,
-    //       membership: {
-    //         id: row.id,
-    //         userId: row.user_id,
-    //         studioId: row.studio_id,
-    //         locationId: row.location_id,
-    //         membershipType,
-    //         status: row.status ?? "active",
-    //         startDate: row.created_at,
-    //         shelfNumber: null,
-    //         monthlyRate:
-    //           membershipType === "basic"
-    //             ? 85
-    //             : membershipType === "premium"
-    //             ? 125
-    //             : 185,
-    //         passionProjectsUpgrade: false,
-    //         passionProjectsRate: 0,
-    //         joinedAt: row.created_at,
-    //         lastActivity: null,
-    //       },
-    //       invoices: [],
-    //       classHistory: [],
-    //       eventHistory: [],
-    //     };
-    //   });
-
-    //   setMembers(mapped);
-    //   setIsLoadingMembers(false);
-    // };
-
-    // }
     fetchMembers();
-    // loadMembers();
   }, [currentStudio?.id]);
 
   useEffect(() => {
@@ -719,14 +644,14 @@ export function MemberManagement() {
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="active">Active Members</TabsTrigger>
-            {/* <TabsTrigger value="pending">
+            <TabsTrigger value="pending">
               Pending Applications
               {applications.length > 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {applications.length}
                 </Badge>
               )}
-            </TabsTrigger> */}
+            </TabsTrigger>
             <TabsTrigger value="invites">
               Pending Invites
               {invites.length > 0 && (
