@@ -47,6 +47,7 @@ export default function Home() {
     setAuthToken,
     pendingInvites,
     setPendingInvites,
+    refreshInvites,
   } = useAppContext();
 
   const [currentPage, setCurrentPage] = useState("landing");
@@ -64,34 +65,6 @@ export default function Home() {
 
   const navigateToPage = (page: string) => {
     setCurrentPage(page);
-  };
-
-  const fetchInvites = async () => {
-    if (!authToken) {
-      setPendingInvites([]);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/invites", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error("fetchInvites: non-OK response", res.status, body);
-        setPendingInvites([]);
-        return;
-      }
-
-      const data = await res.json();
-      setPendingInvites(data.invites ?? []);
-    } catch (err) {
-      console.error("fetchInvites error", err);
-      setPendingInvites([]);
-    }
   };
 
   const fetchLocationsForStudio = async (
@@ -135,9 +108,10 @@ export default function Home() {
     }
 
     const user = session.user;
+    const accessToken = session.access_token;
 
     // 1) Store access token in AppContext for API routes
-    setAuthToken(session.access_token);
+    setAuthToken(accessToken);
 
     // 2) Parallel fetch: profile, active subscription, memberships
     const [
@@ -263,9 +237,6 @@ export default function Home() {
           classCount: 0,
           glazes: [],
           firingSchedule: [],
-          // 👇 add this extra field for frontend use
-          // (if Studio type doesn't have it yet, TS will just see it as "any" at runtime)
-          // you can extend the Studio type later to include it.
           roleForCurrentUser: studioRoleForCurrentUser as any,
         };
       }
@@ -287,12 +258,20 @@ export default function Home() {
     setCurrentUser(appUser);
     setIsLoggedIn(true);
     setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
+
+    // 7) Fetch user-level invites with the *fresh* token
+    await refreshInvites({
+      status: "pending",
+      tokenOverride: accessToken,
+    });
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentStudio(null);
     setCurrentThrow(null);
+    setAuthToken(null); // clear token
+    setPendingInvites([]); // clear invites for previous user
     setIsLoggedIn(false);
     setCurrentPage("landing");
   };

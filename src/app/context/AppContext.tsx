@@ -1,23 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
-import type { User, Studio, StudioInvite, PotteryEntry } from "@/types";
-
-type AppContextType = {
-  currentUser: User | null;
-  setCurrentUser: (u: User | null) => void;
-  currentStudio: Studio | null;
-  setCurrentStudio: (s: Studio | null) => void;
-  currentThrow: PotteryEntry | null;
-  setCurrentThrow: (t: PotteryEntry | null) => void;
-
-  authToken: string | null;
-  setAuthToken: (token: string | null) => void;
-
-  // user-level pending invites (for nav badge + InvitesPanel)
-  pendingInvites: StudioInvite[];
-  setPendingInvites: (invites: StudioInvite[]) => void;
-};
+import React, { createContext, useContext, useState, useCallback } from "react";
+import type {
+  AppContextType,
+  User,
+  Studio,
+  PotteryEntry,
+  StudioInvite,
+} from "@/types";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -27,6 +17,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentThrow, setCurrentThrow] = useState<PotteryEntry | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [pendingInvites, setPendingInvites] = useState<StudioInvite[]>([]);
+
+  /**
+   * User-level invite fetcher
+   * - hits /api/invites (optionally filtered by ?status=)
+   * - stores result in pendingInvites for nav + InvitesPanel
+   * - can accept a fresh tokenOverride (so login can avoid stale closure)
+   */
+  const refreshInvites = useCallback(
+    async (opts?: { status?: string; tokenOverride?: string }) => {
+      const token = opts?.tokenOverride ?? authToken;
+
+      if (!token) {
+        setPendingInvites([]);
+        return [];
+      }
+
+      const status = opts?.status;
+      const query = status ? `?status=${encodeURIComponent(status)}` : "";
+      const url = `/api/invites${query}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          console.error("refreshInvites: non-OK response", res.status, body);
+          setPendingInvites([]);
+          return [];
+        }
+
+        const body = await res.json();
+        const invites: StudioInvite[] = body.invites || [];
+        setPendingInvites(invites);
+        return invites;
+      } catch (err) {
+        console.error("refreshInvites error", err);
+        setPendingInvites([]);
+        return [];
+      }
+    },
+    [authToken]
+  );
 
   const value: AppContextType = {
     currentUser,
@@ -39,6 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setAuthToken,
     pendingInvites,
     setPendingInvites,
+    refreshInvites,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

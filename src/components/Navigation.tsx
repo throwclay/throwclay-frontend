@@ -46,7 +46,7 @@ import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 
 import { useAppContext } from "@/app/context/AppContext";
-import { StudioRole } from "@/types";
+import { StudioRole, NotificationItem } from "@/types";
 
 interface NavigationProps {
   currentPage: string;
@@ -179,7 +179,7 @@ export function Navigation({
       { id: "classes", label: "Classes", icon: GraduationCap },
       { id: "blog", label: "Blog", icon: BookOpen },
       { id: "messages", label: "Messages", icon: MessageCircle },
-      { id: "profile", label: "Profile", icon: User },
+      // { id: "profile", label: "Profile", icon: User },
     ];
 
     return [
@@ -211,12 +211,6 @@ export function Navigation({
 
   // More dropdown items based on user type
   const getMoreItems = () => {
-    const invitesItem = {
-      id: "invites",
-      label: "Invites",
-      icon: Mail,
-      description: "Studio invitations",
-    };
     if (currentUser.activeMode === "studio" && currentStudio) {
       return [
         {
@@ -270,45 +264,35 @@ export function Navigation({
           icon: Grid3X3,
           description: "Browse ceramics",
         },
-        invitesItem,
       ];
     }
   };
 
-  // Mock notifications data - in real app this would come from API
-  const getNotifications = () => [
-    {
-      id: "1",
-      type: "kiln",
-      title: "Firing Complete",
-      message:
-        "Main Electric Kiln has finished firing and is ready for unloading",
-      timestamp: "2 minutes ago",
-      isRead: false,
-    },
-    {
-      id: "2",
-      type: "class",
-      title: "New Class Enrollment",
-      message: "Sarah Wilson enrolled in Advanced Wheel Throwing",
-      timestamp: "1 hour ago",
-      isRead: false,
-    },
-    {
-      id: "3",
-      type: "membership",
-      title: "Membership Renewal",
-      message: "Mike Chen renewed their studio membership",
-      timestamp: "3 hours ago",
-      isRead: true,
-    },
-  ];
+  const getNotifications = (): NotificationItem[] => {
+    const inviteNotifications: NotificationItem[] = pendingInvites
+      .filter((i) => i.status === "pending" && i.email === currentUser.email)
+      .map((invite) => ({
+        id: `invite-${invite.id}`,
+        type: "invite",
+        title: `Studio invite: @${invite.studios?.handle}`,
+        message: `You’ve been invited as ${invite.role} at ${invite.studios?.name}`,
+        timestamp: new Date(invite.invited_at).toLocaleDateString(),
+        isRead: false,
+      }));
+
+    const systemNotifications: NotificationItem[] = []; // TODO: Integrate notifications
+
+    return [...inviteNotifications, ...systemNotifications];
+  };
 
   const mainNavigationItems = getMainNavigationItems();
   const moreAppsItems = getMoreItems();
   const allNavigationItems = [...mainNavigationItems, ...moreAppsItems];
   const notifications = getNotifications();
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const baseUnread = notifications.filter(
+    (n) => !n.isRead && n.type !== "invite"
+  ).length;
+  const unreadCount = baseUnread + pendingInvitesCount;
 
   const NavigationContent = () => (
     <div className="flex items-center space-x-2">
@@ -360,7 +344,6 @@ export function Navigation({
             {moreAppsItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
-              const isInvites = item.id === "invites";
 
               return (
                 <DropdownMenuItem
@@ -378,14 +361,6 @@ export function Navigation({
                         </p>
                       </div>
                     </div>
-                    {isInvites && pendingInvitesCount > 0 && (
-                      <Badge
-                        variant="secondary"
-                        className="ml-2 text-xs px-1.5 py-0.5"
-                      >
-                        {pendingInvitesCount}
-                      </Badge>
-                    )}
                   </div>
                 </DropdownMenuItem>
               );
@@ -432,6 +407,12 @@ export function Navigation({
                   className={`cursor-pointer p-4 ${
                     !notification.isRead ? "bg-accent/30" : ""
                   }`}
+                  // Optional: only clickable for non-invite notifications
+                  onClick={() => {
+                    if (notification.type !== "invite") {
+                      // e.g. open Messages or whatever
+                    }
+                  }}
                 >
                   <div className="w-full space-y-2">
                     <div className="flex items-start justify-between">
@@ -450,6 +431,21 @@ export function Navigation({
                         <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1 ml-2" />
                       )}
                     </div>
+
+                    {notification.type === "invite" && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPageChange("invites");
+                          }}
+                        >
+                          Review invite
+                        </Button>
+                        {/* later: Accept/Decline in place, hooked to API */}
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuItem>
               ))

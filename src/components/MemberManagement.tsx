@@ -1,4 +1,4 @@
-"user client";
+"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -65,6 +65,7 @@ import type {
   StudioMembership,
   MembershipApplication,
   PaymentInvoice,
+  StudioInvite,
 } from "@/types";
 
 import { MemberIntakeFormBuilder } from "./MemberIntakeFormBuilder";
@@ -76,16 +77,6 @@ interface MemberData extends UserType {
   invoices: PaymentInvoice[];
   classHistory: any[];
   eventHistory: any[];
-}
-
-interface StudioInvite {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  invited_at: string;
-  location_id: string | null;
-  membership_type: string | null;
 }
 
 type InviteRole = "member" | "employee" | "manager" | "admin";
@@ -115,8 +106,7 @@ export function MemberManagement() {
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const { authToken, currentUser, currentStudio, setPendingInvites } =
-    useAppContext();
+  const { authToken, currentUser, currentStudio } = useAppContext();
 
   // Guard: only studios should see this
   if (!currentStudio) {
@@ -254,10 +244,15 @@ export function MemberManagement() {
     }
   };
 
-  // --- API: fetch invites ---
+  // --- API: fetch invites (studio-level only) ---
   const fetchInvites = async () => {
     if (!authToken) {
       setInvitesError("You must be logged in to view invites.");
+      setInvites([]);
+      return;
+    }
+    if (!currentStudio) {
+      setInvitesError("No studio selected.");
       setInvites([]);
       return;
     }
@@ -283,8 +278,7 @@ export function MemberManagement() {
       }
 
       const body = await res.json();
-      setInvites(body.invites || []);
-      setPendingInvites(body.invites || []);
+      setInvites((body.invites || []) as StudioInvite[]); // local studio-level table
     } catch (err) {
       console.error("Error fetching invites", err);
       setInvitesError("Failed to load invites");
