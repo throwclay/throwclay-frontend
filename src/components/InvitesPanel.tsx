@@ -1,30 +1,21 @@
 import { useEffect, useState } from "react";
 import { useAppContext } from "@/app/context/AppContext";
-import { supabase } from "@/lib/apis/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
-interface StudioSummary {
-  id: string;
-  name: string;
-  handle: string;
-}
-
-interface StudioInvite {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  invited_at: string | null;
-  location_id: string | null;
-  membership_type: string | null;
-  studios?: StudioSummary | null; // comes from the join in /api/invites
-}
+import type { StudioInvite } from "@/types";
 
 export function InvitesPanel() {
-  const { authToken, currentUser } = useAppContext();
+  const {
+    authToken,
+    currentUser,
+    setCurrentUser,
+    currentStudio,
+    setCurrentStudio,
+    refreshInvites,
+  } = useAppContext();
 
   const [invites, setInvites] = useState<StudioInvite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +67,16 @@ export function InvitesPanel() {
       toast.error("You must be logged in to accept invites.");
       return;
     }
+    if (!currentUser) {
+      toast.error("No current user in context.");
+      return;
+    }
+
+    const invite = invites.find((i) => i.id === inviteId);
+    if (!invite) {
+      toast.error("Invite not found in local state.");
+      return;
+    }
 
     try {
       const res = await fetch("/api/invites/accept", {
@@ -96,11 +97,74 @@ export function InvitesPanel() {
 
       toast.success("Invite accepted!");
 
-      // Remove accepted invite from local state
+      // 1) Remove accepted invite from local panel state
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
 
-      // Optionally: refetch invites or refresh memberships here
-      // await fetchInvites();
+      // 2) Re-sync user-level pending invites for the bell badge
+      await refreshInvites({ status: "pending" });
+
+      // 3) Update the user so:
+      //    - My Studios appears (hasStudioMemberships = true)
+      //    - Studio mode becomes available if role is owner/admin
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const updated: any = { ...prev };
+
+        // This is what Navigation checks via hasAnyStudioMemberships()
+        updated.hasStudioMemberships = true;
+
+        const isStudioRole = ["owner", "admin"].includes(invite.role);
+
+        if (isStudioRole) {
+          // Grant studio mode
+          const currentModes = updated.availableModes ?? ["artist"];
+          if (!currentModes.includes("studio")) {
+            updated.availableModes = ["artist", "studio"];
+          }
+
+          // We *don't* have to auto-switch them to studio mode;
+          // they can toggle from the avatar menu.  if we want
+          // to default it, we can uncomment this:
+          //
+          // if (updated.activeMode !== "studio") {
+          //   updated.activeMode = "studio";
+          // }
+          //
+          // For now, we keep them in artist mode so they can
+          // see "My Studios" and explore first.
+          if (!updated.activeMode) {
+            updated.activeMode = "artist";
+          }
+        }
+
+        return updated;
+      });
+
+      // 4) If they didn't have a studio yet, seed currentStudio so the
+      //    "Switch to Studio mode" guard can pass for owner/admin.
+      if (!currentStudio && invite.studios) {
+        setCurrentStudio((prev) => {
+          if (prev) return prev; // if someone else already set it, don't stomp
+
+          return {
+            id: invite.studios?.id,
+            name: invite.studios?.name,
+            handle: invite.studios?.handle,
+            email: "",
+            website: "",
+            description: "",
+            locations: [], // MyStudios / StudioDashboard can later hydrate this
+            isActive: true,
+            plan: "studio-solo", // default; backend can override when fetched
+            createdAt: new Date().toISOString(),
+            memberCount: 0,
+            classCount: 0,
+            glazes: [],
+            firingSchedule: [],
+            roleForCurrentUser: invite.role as any,
+          };
+        });
+      }
     } catch (err) {
       console.error("Error accepting invite", err);
       toast.error("Something went wrong accepting the invite");
@@ -196,7 +260,12 @@ export function InvitesPanel() {
                 <Badge variant="secondary" className="capitalize">
                   {invite.status}
                 </Badge>
-                <Button size="sm" onClick={() => handleAccept(invite.id)}>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    handleAccept(invite.id);
+                  }}
+                >
                   Accept
                 </Button>
               </div>

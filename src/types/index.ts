@@ -205,18 +205,25 @@ export interface StudioLocation {
 
 export interface StudioInvite {
   id: string;
-  name: string;
   email: string;
   role: string;
-  phone: string;
   status: string;
   invited_at: string;
-  token: string;
+
+  // ---- User-level invite metadata (optional) ----
+  name?: string | null;
+  phone?: string | null;
+  token?: string | null;
   studios?: {
     id: string;
     name: string;
     handle: string;
   } | null;
+
+  // ---- Studio-membership specific fields (optional) ----
+  location_id?: string | null;
+  membership_type?: string | null;
+  studio_id?: string | null;
 }
 
 export interface Studio {
@@ -230,6 +237,7 @@ export interface Studio {
   isActive: boolean;
   plan: "studio-solo" | "studio-duo" | "studio-pro" | "studio-unlimited";
   createdAt: string;
+  roleForCurrentUser: string;
   memberCount: number;
   classCount: number;
   glazes?: string[];
@@ -1261,3 +1269,43 @@ export interface MembershipApplication {
   customFields?: {};
   status?: "submitted" | "reviewing" | "accepted" | "rejected" | (string & {});
 }
+
+// ---- Studio-mode policy guards ----
+export type StudioRole =
+  | "owner"
+  | "admin"
+  | "manager"
+  | "instructor"
+  | "employee"
+  | "member";
+
+export type NotificationItem = {
+  id: string;
+  type: "invite" | "kiln" | "class" | "membership" | string;
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+};
+
+export type AppContextType = {
+  currentUser: User | null;
+  setCurrentUser: (u: User | null) => void;
+  currentStudio: Studio | null;
+  setCurrentStudio: (s: Studio | null) => void;
+  currentThrow: PotteryEntry | null;
+  setCurrentThrow: (t: PotteryEntry | null) => void;
+
+  authToken: string | null;
+  setAuthToken: (token: string | null) => void;
+
+  // user-level pending invites (for nav badge + InvitesPanel)
+  pendingInvites: StudioInvite[];
+  setPendingInvites: (invites: StudioInvite[]) => void;
+
+  // central user-level invite fetcher
+  refreshInvites: (opts?: {
+    status?: string;
+    tokenOverride?: string;
+  }) => Promise<StudioInvite[]>;
+};
