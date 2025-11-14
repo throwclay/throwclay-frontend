@@ -36,7 +36,7 @@ import { BlogManagement } from "./components/BlogManagement";
 
 import { GlazeManagement } from "./components/GlazeManagement";
 
-import { LoginForm } from "./components/LoginForm";
+import { LoginForm } from "./app/login/page";
 import { Navigation } from "./components/Navigation";
 import { LandingPage } from "./components/LandingPage";
 import { PublicStudiosDirectory } from "./components/PublicStudiosDirectory";
