@@ -57,85 +57,6 @@ export default function Home() {
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
 
-  // Mock studios data
-  const mockStudios: Studio[] = [
-    {
-      id: "studio_1",
-      name: "Clay & Fire Studio",
-      handle: "clayandfire",
-      email: "hello@clayandfire.com",
-      website: "https://clayandfire.com",
-      description:
-        "A community pottery studio offering classes for all skill levels in the heart of Portland.",
-      locations: [
-        {
-          id: "loc_1",
-          name: "Main Studio",
-          address: "123 Pottery Lane",
-          city: "Portland",
-          state: "OR",
-          zipCode: "97205",
-          phone: "(503) 555-0123",
-          email: "main@clayandfire.com",
-          manager: "Sarah Martinez",
-          capacity: 24,
-          amenities: [
-            "Wheels",
-            "Kilns",
-            "Glazing Station",
-            "Hand-building Area",
-          ],
-          isActive: true,
-        },
-        {
-          id: "loc_2",
-          name: "Eastside Location",
-          address: "456 Arts District Blvd",
-          city: "Portland",
-          state: "OR",
-          zipCode: "97214",
-          phone: "(503) 555-0124",
-          email: "eastside@clayandfire.com",
-          manager: "Mike Chen",
-          capacity: 16,
-          amenities: ["Wheels", "Raku Kiln", "Outdoor Firing Area"],
-          isActive: true,
-        },
-      ],
-      isActive: true,
-      plan: "studio-pro",
-      createdAt: "2018-06-15T00:00:00Z",
-      memberCount: 142,
-      classCount: 28,
-      glazes: [
-        "Clear",
-        "Celadon",
-        "Iron Red",
-        "Copper Green",
-        "Matte White",
-        "Cobalt Blue",
-      ],
-      firingSchedule: [
-        {
-          id: "firing_1",
-          type: "Bisque",
-          date: "2025-01-20T09:00:00Z",
-          temperature: "1000°C",
-          capacity: 30,
-          bookedSlots: 15,
-        },
-        {
-          id: "firing_2",
-          type: "Glaze",
-          date: "2025-01-25T09:00:00Z",
-          temperature: "1240°C",
-          capacity: 25,
-          bookedSlots: 20,
-        },
-      ],
-    },
-  ];
-
   const updateThrow = (throwEntry: PotteryEntry) => {
     // In a real app, this would update the backend
     console.log("Updating throw:", throwEntry);
@@ -313,13 +234,15 @@ export default function Home() {
     console.log(`User ${appUser.name} last logged in ${appUser.lastLogin}`);
     // 4) Build studio (if any memberships)
     let studioForState: Studio | null = null;
+    let studioRoleForCurrentUser: string | null = null;
 
     if (memberships && memberships.length > 0) {
       const membership = memberships[0] as any;
       const s = membership.studios;
 
       if (s) {
-        // If you want to keep fetching locations here:
+        studioRoleForCurrentUser = membership.role; // "owner" | "admin" | etc.
+
         const studioLocations = await fetchLocationsForStudio(
           s.id,
           session.access_token
@@ -332,7 +255,7 @@ export default function Home() {
           email: s.email ?? "",
           website: (s as any).website ?? "",
           description: s.description ?? "",
-          locations: studioLocations, // or studioLocations if you keep that helper
+          locations: studioLocations,
           isActive: s.is_active ?? true,
           plan: (s.plan as Studio["plan"]) ?? "studio-free",
           createdAt: s.created_at,
@@ -340,6 +263,10 @@ export default function Home() {
           classCount: 0,
           glazes: [],
           firingSchedule: [],
+          // 👇 add this extra field for frontend use
+          // (if Studio type doesn't have it yet, TS will just see it as "any" at runtime)
+          // you can extend the Studio type later to include it.
+          roleForCurrentUser: studioRoleForCurrentUser as any,
         };
       }
     }
@@ -352,14 +279,14 @@ export default function Home() {
     appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
     appUser.activeMode = hasStudioRole ? "studio" : "artist";
 
+    // Did they have *any* studio membership (any role)?
+    (appUser as any).hasStudioMemberships = (memberships ?? []).length > 0;
+
     // 6) Push into context + app state
     setCurrentStudio(studioForState);
     setCurrentUser(appUser);
     setIsLoggedIn(true);
     setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
-
-    // 7) Optional: fetch invites for nav badge
-    // fetchInvites();
   };
 
   const handleLogout = () => {

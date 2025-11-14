@@ -230,6 +230,7 @@ export interface Studio {
   isActive: boolean;
   plan: "studio-solo" | "studio-duo" | "studio-pro" | "studio-unlimited";
   createdAt: string;
+  roleForCurrentUser: string;
   memberCount: number;
   classCount: number;
   glazes?: string[];
@@ -1261,3 +1262,12 @@ export interface MembershipApplication {
   customFields?: {};
   status?: "submitted" | "reviewing" | "accepted" | "rejected" | (string & {});
 }
+
+// ---- Studio-mode policy guards ----
+export type StudioRole =
+  | "owner"
+  | "admin"
+  | "manager"
+  | "instructor"
+  | "employee"
+  | "member";

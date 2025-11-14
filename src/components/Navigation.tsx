@@ -46,6 +46,7 @@ import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 
 import { useAppContext } from "@/app/context/AppContext";
+import { StudioRole } from "@/types";
 
 interface NavigationProps {
   currentPage: string;
@@ -137,13 +138,42 @@ export function Navigation({
     setSelectedLocations([]);
   };
 
+  const canEnterStudioMode = (user: any, studio: any) => {
+    if (!user || !studio) return false;
+
+    // Frontend Studio uses camelCase isActive
+    if (studio.isActive === false) return false;
+
+    const role: StudioRole | undefined = (studio as any).roleForCurrentUser;
+    if (!role) return false;
+
+    return role === "owner" || role === "admin";
+  };
+
+  const hasAnyStudioMemberships = (user: any) =>
+    Boolean((user as any)?.hasStudioMemberships);
+
   // Main navigation items based on user type
   type NavItem = { id: string; label: string; icon: any; description?: string };
 
-  const getMainNavigationItems = (): NavItem[] => {
-    const inStudio = currentUser.activeMode === "studio" && !!currentStudio;
+  console.log(
+    `User is active membership: ${hasAnyStudioMemberships(currentUser)}`
+  );
 
-    // Common base for both modes
+  console.log(
+    `User can enter studio mode: ${canEnterStudioMode(
+      currentUser,
+      currentStudio
+    )}`
+  );
+
+  const getMainNavigationItems = (): NavItem[] => {
+    const isArtistMode = currentUser.activeMode === "artist";
+    const inStudioMode =
+      currentUser.activeMode === "studio" &&
+      !!currentStudio &&
+      canEnterStudioMode(currentUser, currentStudio);
+
     const base: NavItem[] = [
       { id: "dashboard", label: "Dashboard", icon: BarChart3 },
       { id: "classes", label: "Classes", icon: GraduationCap },
@@ -154,8 +184,9 @@ export function Navigation({
 
     return [
       base[0],
-      // Only show My Studios if there IS a currentStudio and artist mode
-      ...(currentStudio && currentUser.activeMode === "artist"
+
+      // My Studios → artist mode only
+      ...(isArtistMode && hasAnyStudioMemberships(currentUser)
         ? [
             {
               id: "mystudios",
@@ -165,17 +196,16 @@ export function Navigation({
             } as NavItem,
           ]
         : []),
+
       ...base.slice(1),
-      // Studio-only items
-      ...(inStudio
+
+      // Studio mode (owner/admin) vs artist mode
+      ...(inStudioMode
         ? [
             { id: "members", label: "Members", icon: Users },
             { id: "staff", label: "Staff", icon: UserCog },
           ]
-        : [
-            // Artist-only items
-            { id: "journal", label: "Journal", icon: Brush },
-          ]),
+        : [{ id: "journal", label: "Journal", icon: Brush }]),
     ];
   };
 
@@ -219,7 +249,6 @@ export function Navigation({
           icon: Grid3X3,
           description: "Browse ceramics",
         },
-        // invitesItem,
       ];
     } else {
       return [
@@ -465,145 +494,147 @@ export function Navigation({
 
           {/* Right Section - Studio Menu + User Menu */}
           <div className="flex items-center space-x-4">
-            {/* Studio Menu for Studio Users */}
-            {currentUser.activeMode === "studio" && currentStudio && (
-              <DropdownMenu
-                open={showStudioMenu}
-                onOpenChange={setShowStudioMenu}
-              >
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="h-9 px-3 flex items-center space-x-2"
-                  >
-                    <Building2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      @{currentStudio.handle}
-                    </span>
-                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-80"
-                  align="end"
-                  sideOffset={8}
+            {/* Studio Menu for Studio Users (guarded) */}
+            {currentUser.activeMode === "studio" &&
+              currentStudio &&
+              canEnterStudioMode(currentUser, currentStudio) && (
+                <DropdownMenu
+                  open={showStudioMenu}
+                  onOpenChange={setShowStudioMenu}
                 >
-                  {/* Studio Header */}
-                  <div className="flex items-center space-x-3 p-4">
-                    <Building2 className="w-8 h-8 text-muted-foreground" />
-                    <div className="flex flex-col space-y-1 flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">
-                        {currentStudio.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="h-9 px-3 flex items-center space-x-2"
+                    >
+                      <Building2 className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
                         @{currentStudio.handle}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {currentStudio.locations?.length || 0} location
-                        {(currentStudio.locations?.length || 0) !== 1
-                          ? "s"
-                          : ""}
-                      </p>
+                      </span>
+                      <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-80"
+                    align="end"
+                    sideOffset={8}
+                  >
+                    {/* Studio Header */}
+                    <div className="flex items-center space-x-3 p-4">
+                      <Building2 className="w-8 h-8 text-muted-foreground" />
+                      <div className="flex flex-col space-y-1 flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">
+                          {currentStudio.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          @{currentStudio.handle}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {currentStudio.locations?.length || 0} location
+                          {(currentStudio.locations?.length || 0) !== 1
+                            ? "s"
+                            : ""}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  {/* Location Selection */}
-                  {currentStudio.locations &&
-                    currentStudio.locations.length > 0 && (
-                      <>
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-sm">
-                              Select Locations
-                            </h4>
-                            {currentStudio.locations.length > 1 && (
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={selectAllLocations}
+                    {/* Location Selection */}
+                    {currentStudio.locations &&
+                      currentStudio.locations.length > 0 && (
+                        <>
+                          <div className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-sm">
+                                Select Locations
+                              </h4>
+                              {currentStudio.locations.length > 1 && (
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={selectAllLocations}
+                                  >
+                                    All
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearLocationSelection}
+                                  >
+                                    Clear
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              {currentStudio.locations.map((location) => (
+                                <div
+                                  key={location.id}
+                                  className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent"
                                 >
-                                  All
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={clearLocationSelection}
-                                >
-                                  Clear
-                                </Button>
+                                  {currentStudio.locations.length > 1 ? (
+                                    <Checkbox
+                                      checked={selectedLocations.includes(
+                                        location.id
+                                      )}
+                                      onCheckedChange={() =>
+                                        toggleLocationSelection(location.id)
+                                      }
+                                    />
+                                  ) : (
+                                    <div className="w-4 h-4 flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-primary" />
+                                    </div>
+                                  )}
+                                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">
+                                      {location.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {location.city}, {location.state}
+                                    </p>
+                                  </div>
+                                  {currentStudio.locations.length > 1 &&
+                                    selectedLocations.includes(location.id) && (
+                                      <Check className="w-4 h-4 text-primary" />
+                                    )}
+                                </div>
+                              ))}
+                            </div>
+                            {selectedLocations.length > 1 && (
+                              <div className="mt-3 p-3 bg-accent/50 rounded-md">
+                                <p className="text-xs text-muted-foreground">
+                                  Bulk operations will apply to{" "}
+                                  {selectedLocations.length} selected locations
+                                </p>
                               </div>
                             )}
                           </div>
-                          <div className="space-y-3">
-                            {currentStudio.locations.map((location) => (
-                              <div
-                                key={location.id}
-                                className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent"
-                              >
-                                {currentStudio.locations.length > 1 ? (
-                                  <Checkbox
-                                    checked={selectedLocations.includes(
-                                      location.id
-                                    )}
-                                    onCheckedChange={() =>
-                                      toggleLocationSelection(location.id)
-                                    }
-                                  />
-                                ) : (
-                                  <div className="w-4 h-4 flex items-center justify-center">
-                                    <Check className="w-3 h-3 text-primary" />
-                                  </div>
-                                )}
-                                <MapPin className="w-4 h-4 text-muted-foreground" />
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">
-                                    {location.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {location.city}, {location.state}
-                                  </p>
-                                </div>
-                                {currentStudio.locations.length > 1 &&
-                                  selectedLocations.includes(location.id) && (
-                                    <Check className="w-4 h-4 text-primary" />
-                                  )}
-                              </div>
-                            ))}
-                          </div>
-                          {selectedLocations.length > 1 && (
-                            <div className="mt-3 p-3 bg-accent/50 rounded-md">
-                              <p className="text-xs text-muted-foreground">
-                                Bulk operations will apply to{" "}
-                                {selectedLocations.length} selected locations
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        <DropdownMenuSeparator />
-                      </>
-                    )}
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
 
-                  {/* Studio Actions */}
-                  <DropdownMenuItem
-                    onClick={() => onPageChange("profile")}
-                    className="cursor-pointer"
-                  >
-                    <Building2 className="mr-3 h-4 w-4" />
-                    Studio Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onPageChange("settings")}
-                    className="cursor-pointer"
-                  >
-                    <SettingsIcon className="mr-3 h-4 w-4" />
-                    Studio Settings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    {/* Studio Actions */}
+                    <DropdownMenuItem
+                      onClick={() => onPageChange("profile")}
+                      className="cursor-pointer"
+                    >
+                      <Building2 className="mr-3 h-4 w-4" />
+                      Studio Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onPageChange("settings")}
+                      className="cursor-pointer"
+                    >
+                      <SettingsIcon className="mr-3 h-4 w-4" />
+                      Studio Settings
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
             {/* User Avatar Menu */}
             <DropdownMenu>
@@ -696,14 +727,27 @@ export function Navigation({
                       onClick={() => {
                         if (!currentUser) return;
 
-                        const nextMode =
-                          currentUser.activeMode === "studio"
-                            ? "artist"
-                            : "studio";
+                        // If switching *into* studio, enforce guard.
+                        const goingToStudio =
+                          currentUser.activeMode !== "studio";
+                        if (goingToStudio) {
+                          if (
+                            !currentStudio ||
+                            !canEnterStudioMode(currentUser, currentStudio)
+                          ) {
+                            // Gentle refusal: I'm routing them to dashboard for now
+                            // TODO: (replace alert with toast)
+                            alert(
+                              "You don’t have permission to enter Studio mode. Ask an owner/admin or open My Studios."
+                            );
+                            onPageChange("dashboard");
+                            return;
+                          }
+                        }
 
                         setCurrentUser({
                           ...currentUser,
-                          activeMode: nextMode,
+                          activeMode: goingToStudio ? "studio" : "artist",
                         });
                       }}
                     >
