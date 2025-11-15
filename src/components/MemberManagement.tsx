@@ -755,6 +755,7 @@ export function MemberManagement() {
                   <TableHead>Membership</TableHead>
                   <TableHead>Shelf</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Member Since</TableHead>
                   <TableHead>Last Active</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -847,6 +848,15 @@ export function MemberManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-muted-foreground">
+                          {member.membership.startDate
+                            ? new Date(
+                                member.membership.startDate
+                              ).toLocaleDateString()
+                            : "Never"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
                           {member.membership.lastActivity
                             ? new Date(
                                 member.membership.lastActivity
@@ -854,6 +864,7 @@ export function MemberManagement() {
                             : "Never"}
                         </div>
                       </TableCell>
+
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
