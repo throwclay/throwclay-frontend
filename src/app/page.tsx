@@ -1,71 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { PotteryJournal } from "@/components/PotteryJournal";
-import { WhiteboardEditor } from "@/components/WhiteboardEditor";
-import { StudioDashboard } from "@/components/StudioDashboard";
+
 import { ArtistProfile } from "@/components/ArtistProfile";
 import { ArtistClasses } from "@/components/ArtistClasses";
-import { CommerceMarketplace } from "@/components/CommerceMarketplace";
-import { Settings } from "@/components/Settings";
-import { ClassesManagement } from "@/components/ClassesManagement";
-import { EventsManagement } from "@/components/EventsManagement";
-import { MessagingCenter } from "@/components/MessagingCenter";
-import { MemberManagement } from "@/components/MemberManagement";
-import { StaffManagement } from "@/components/StaffManagement";
-import { KilnManagement } from "@/components/KilnManagement";
 import { BlogManagement } from "@/components/BlogManagement";
+import { Card, CardContent } from "@/components/ui/card";
+import { ClassesManagement } from "@/components/ClassesManagement";
+import { CommerceMarketplace } from "@/components/CommerceMarketplace";
+import { EventsManagement } from "@/components/EventsManagement";
 import { GlazeManagement } from "@/components/GlazeManagement";
-import { LoginForm } from "@/components/LoginForm";
-import { Navigation } from "@/components/Navigation";
+import { InvitesPanel } from "@/components/InvitesPanel";
+import { KilnManagement } from "@/components/KilnManagement";
 import { LandingPage } from "@/components/LandingPage";
+import { LoginForm } from "@/components/LoginForm";
+import { MemberManagement } from "@/components/MemberManagement";
+import { MessagingCenter } from "@/components/MessagingCenter";
+import { MyStudios } from "@/components/MyStudios";
+import { Navigation } from "@/components/Navigation";
+import { PotteryJournal } from "@/components/PotteryJournal";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
-import { InvitesPanel } from "@/components/InvitesPanel";
-import { MyStudios } from "@/components/MyStudios";
+import { Settings } from "@/components/Settings";
+import { StaffManagement } from "@/components/StaffManagement";
+import { StudioDashboard } from "@/components/StudioDashboard";
+import { WhiteboardEditor } from "@/components/WhiteboardEditor";
 
-import type {
-  User as UserType,
-  Studio,
-  PotteryEntry,
-  StudioLocation,
-} from "@/types";
-import { getSubscriptionLimits } from "@/utils/subscriptions";
+import type { User as UserType, Studio, StudioLocation } from "@/types";
+
 import { useAppContext } from "./context/AppContext";
-
 import { supabase } from "@/lib/apis/supabaseClient";
 
 export default function Home() {
-  const {
-    currentUser,
-    setCurrentUser,
-    currentStudio,
-    setCurrentStudio,
-    setCurrentThrow,
-    authToken,
-    setAuthToken,
-    pendingInvites,
-    setPendingInvites,
-    refreshInvites,
-  } = useAppContext();
+  const context = useAppContext();
 
   const [currentPage, setCurrentPage] = useState("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Locations
-  const [locations, setLocations] = useState<StudioLocation[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [locationsError, setLocationsError] = useState<string | null>(null);
-
-  const updateThrow = (throwEntry: PotteryEntry) => {
-    // In a real app, this would update the backend
-    console.log("Updating throw:", throwEntry);
-  };
-
-  const navigateToPage = (page: string) => {
-    setCurrentPage(page);
-  };
 
   const fetchLocationsForStudio = async (
     studioId: string,
@@ -111,7 +81,7 @@ export default function Home() {
     const accessToken = session.access_token;
 
     // 1) Store access token in AppContext for API routes
-    setAuthToken(accessToken);
+    context.setAuthToken(accessToken);
 
     // 2) Parallel fetch: profile, active subscription, memberships
     const [
@@ -254,24 +224,23 @@ export default function Home() {
     (appUser as any).hasStudioMemberships = (memberships ?? []).length > 0;
 
     // 6) Push into context + app state
-    setCurrentStudio(studioForState);
-    setCurrentUser(appUser);
+    context.setCurrentStudio(studioForState);
+    context.setCurrentUser(appUser);
     setIsLoggedIn(true);
     setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
 
     // 7) Fetch user-level invites with the *fresh* token
-    await refreshInvites({
+    await context.refreshInvites({
       status: "pending",
       tokenOverride: accessToken,
     });
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    setCurrentStudio(null);
-    setCurrentThrow(null);
-    setAuthToken(null); // clear token
-    setPendingInvites([]); // clear invites for previous user
+    context.setCurrentUser(null);
+    context.setCurrentStudio(null);
+    context.setAuthToken(null); // clear token
+    context.setPendingInvites([]); // clear invites for previous user
     setIsLoggedIn(false);
     setCurrentPage("landing");
   };
@@ -287,15 +256,15 @@ export default function Home() {
             />
           );
         case "studios":
-          return <PublicStudiosDirectory onNavigate={setCurrentPage} />;
+          return <PublicStudiosDirectory />;
         case "ceramics":
-          return <PublicCeramicsMarketplace onNavigate={setCurrentPage} />;
+          return <PublicCeramicsMarketplace />;
         default:
           return <LandingPage onNavigate={setCurrentPage} />;
       }
     }
 
-    if (!currentUser)
+    if (!context.currentUser)
       return (
         <LoginForm
           onLogin={handleLogin}
@@ -305,7 +274,8 @@ export default function Home() {
 
     switch (currentPage) {
       case "dashboard":
-        return currentUser.activeMode === "studio" && currentStudio ? (
+        return context.currentUser.activeMode === "studio" &&
+          context.currentStudio ? (
           <StudioDashboard />
         ) : (
           <DashboardMockup />
@@ -313,12 +283,13 @@ export default function Home() {
       case "profile":
         return (
           <ArtistProfile
-            onProfileUpdated={(updated) => setCurrentUser(updated)}
+            onProfileUpdated={(updated) => context.setCurrentUser(updated)}
           />
         );
 
       case "classes":
-        return currentUser.activeMode === "studio" && currentStudio ? (
+        return context.currentUser.activeMode === "studio" &&
+          context.currentStudio ? (
           <ClassesManagement />
         ) : (
           <ArtistClasses />
@@ -346,9 +317,9 @@ export default function Home() {
       case "glazes":
         return <GlazeManagement />;
       case "studios":
-        return <PublicStudiosDirectory onNavigate={setCurrentPage} />;
+        return <PublicStudiosDirectory />;
       case "ceramics":
-        return <PublicCeramicsMarketplace onNavigate={setCurrentPage} />;
+        return <PublicCeramicsMarketplace />;
       case "invites":
         return <InvitesPanel />;
       case "mystudios":
@@ -365,7 +336,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {isLoggedIn && currentUser && (
+      {isLoggedIn && context.currentUser && (
         <Navigation
           currentPage={currentPage}
           onPageChange={setCurrentPage}
