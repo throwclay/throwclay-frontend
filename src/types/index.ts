@@ -1204,6 +1204,7 @@ export interface StudioMembership {
 
   status?: MembershipStatus;
   lastActivity?: string | Date | null;
+  startDate?: string;
 
   // Room for whatever else you already have:
   createdAt?: string;
