@@ -81,7 +81,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 

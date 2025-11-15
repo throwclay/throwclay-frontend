@@ -718,6 +718,7 @@ export function Navigation({
                 {currentUser.availableModes?.includes("studio") && (
                   <>
                     <DropdownMenuSeparator />
+
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => {
@@ -740,7 +741,7 @@ export function Navigation({
                             return;
                           }
                         }
-
+                        onPageChange("dashboard");
                         setCurrentUser({
                           ...currentUser,
                           activeMode: goingToStudio ? "studio" : "artist",
