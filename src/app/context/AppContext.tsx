@@ -7,6 +7,7 @@ import type {
   Studio,
   PotteryEntry,
   StudioInvite,
+  StudioMembership,
 } from "@/types";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -14,6 +15,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentStudio, setCurrentStudio] = useState<Studio | null>(null);
+
+  const [currentMembership, setCurrentMembership] =
+    useState<StudioMembership | null>(null);
+
   const [currentThrow, setCurrentThrow] = useState<PotteryEntry | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [pendingInvites, setPendingInvites] = useState<StudioInvite[]>([]);
@@ -69,6 +74,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser,
     currentStudio,
     setCurrentStudio,
+    currentMembership,
+    setCurrentMembership,
     currentThrow,
     setCurrentThrow,
     authToken,

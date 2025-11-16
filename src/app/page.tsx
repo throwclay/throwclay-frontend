@@ -26,7 +26,12 @@ import { StaffManagement } from "@/components/StaffManagement";
 import { StudioDashboard } from "@/components/StudioDashboard";
 import { WhiteboardEditor } from "@/components/WhiteboardEditor";
 
-import type { User as UserType, Studio, StudioLocation } from "@/types";
+import type {
+  User as UserType,
+  Studio,
+  StudioLocation,
+  StudioMembership,
+} from "@/types";
 
 import { useAppContext } from "./context/AppContext";
 import { supabase } from "@/lib/apis/supabaseClient";
@@ -101,9 +106,14 @@ export default function Home() {
         .from("studio_memberships")
         .select(
           `
+        id,
+        user_id,
         studio_id,
         role,
         status,
+        location_id,
+        membership_type,
+        created_at,
         studios:studio_id (
           id,
           name,
@@ -179,6 +189,7 @@ export default function Home() {
     // 4) Build studio (if any memberships)
     let studioForState: Studio | null = null;
     let studioRoleForCurrentUser: string | null = null;
+    let membershipForState: StudioMembership | null = null;
 
     if (memberships && memberships.length > 0) {
       const membership = memberships[0] as any;
@@ -209,6 +220,22 @@ export default function Home() {
           firingSchedule: [],
           roleForCurrentUser: studioRoleForCurrentUser as any,
         };
+
+        membershipForState = {
+          id: membership.id,
+          userId: membership.user_id,
+          studioId: membership.studio_id,
+          locationId: membership.location_id,
+          membershipType: membership.membership_type,
+          status: membership.status,
+          startDate: membership.created_at,
+          lastActivity: profileRow?.last_login ?? null,
+          createdAt: membership.created_at,
+          updatedAt: membership.updated_at ?? membership.created_at,
+          shelfNumber: null,
+          monthlyRate: null,
+          passionProjectsUpgrade: null,
+        };
       }
     }
 
@@ -226,6 +253,7 @@ export default function Home() {
     // 6) Push into context + app state
     context.setCurrentStudio(studioForState);
     context.setCurrentUser(appUser);
+    context.setCurrentMembership(membershipForState);
     setIsLoggedIn(true);
     setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
 
