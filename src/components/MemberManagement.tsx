@@ -165,9 +165,9 @@ export function MemberManagement() {
   const getMembershipStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="default">Active</Badge>;
+        return <Badge variant="secondary">Active</Badge>;
       case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge className="bg-blue-400">Pending</Badge>;
       case "suspended":
         return <Badge variant="destructive">Suspended</Badge>;
       case "expired":
@@ -187,6 +187,26 @@ export function MemberManagement() {
         return <Badge variant="destructive">Overdue</Badge>;
       default:
         return <Badge variant="outline">{invoice.status}</Badge>;
+    }
+  };
+
+  const getInviteStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge className="bg-blue-400">Pending</Badge>;
+      case "accepted":
+        return <Badge variant="secondary">Accepted</Badge>;
+      case "revoked":
+      case "cancelled":
+        return <Badge variant="destructive">Cancelled</Badge>;
+      case "expired":
+        return <Badge variant="outline">Expired</Badge>;
+      default:
+        return (
+          <Badge variant="outline" className="capitalize">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -1226,39 +1246,148 @@ export function MemberManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Invitee</TableHead>
+                    <TableHead>Contact</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Membership</TableHead>
-                    <TableHead>Invited At</TableHead>
+                    <TableHead>Invited</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[80px] text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invites.map((invite) => (
-                    <TableRow key={invite.id}>
-                      <TableCell>{invite.email}</TableCell>
-                      <TableCell className="capitalize">
-                        {invite.role}
-                      </TableCell>
-                      <TableCell>
-                        {getLocationName(invite.location_id)}
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {invite.membership_type || "—"}
-                      </TableCell>
-                      <TableCell>
-                        {invite.invited_at
-                          ? new Date(invite.invited_at).toLocaleString()
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">
-                          {invite.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {invites.map((invite) => {
+                    const membershipType =
+                      (invite.membership_type as
+                        | "basic"
+                        | "premium"
+                        | "unlimited"
+                        | null) ?? null;
+
+                    let membershipLabel = "—";
+                    let membershipPrice: string | null = null;
+
+                    if (membershipType === "basic") {
+                      membershipLabel = "Basic";
+                      membershipPrice = "$85/month";
+                    } else if (membershipType === "premium") {
+                      membershipLabel = "Premium";
+                      membershipPrice = "$125/month";
+                    } else if (membershipType === "unlimited") {
+                      membershipLabel = "Unlimited";
+                      membershipPrice = "$185/month";
+                    }
+
+                    return (
+                      <TableRow key={invite.id}>
+                        {/* Invitee */}
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Users2 className="w-8 h-8 text-muted-foreground" />
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {invite.email.split("@")[0] || "New member"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Studio invite
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Contact */}
+                        <TableCell>
+                          <div className="flex items-center text-sm">
+                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                            {invite.email}
+                          </div>
+                        </TableCell>
+
+                        {/* Location */}
+                        <TableCell>
+                          <div className="flex items-center text-sm">
+                            <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                            {getLocationName(invite.location_id)}
+                          </div>
+                        </TableCell>
+
+                        {/* Membership */}
+                        <TableCell>
+                          {membershipType ? (
+                            <div className="space-y-1">
+                              <div className="font-medium capitalize">
+                                {membershipLabel}
+                              </div>
+                              {membershipPrice && (
+                                <div className="text-xs text-muted-foreground">
+                                  {membershipPrice}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              Not specified
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* Invited At */}
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {invite.invited_at
+                              ? new Date(invite.invited_at).toLocaleDateString(
+                                  undefined,
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "—"}
+                          </div>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          {getInviteStatusBadge(invite.status)}
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  toast.info("Resend invite coming soon");
+                                }}
+                              >
+                                <Mail className="w-4 h-4 mr-2" />
+                                Resend Invite
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  toast.info("Cancel invite coming soon");
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Cancel Invite
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
