@@ -136,6 +136,19 @@ export function MemberManagement() {
     return matchesSearch && matchesLocation; // && matchesStatus;
   });
 
+  const filteredInvites = invites.filter((invite) => {
+    const matchesLocation =
+      selectedLocation === "all" || invite.location_id === selectedLocation;
+
+    // for future if we want to add search-term filtering
+    // const matchesSearch =
+    //   invite.email.toLowerCase().includes(searchTerm.toLowerCase());
+    //
+    // return matchesLocation && matchesSearch;
+
+    return matchesLocation;
+  });
+
   const handleMemberSelect = (memberId: string, checked: boolean) => {
     if (checked) {
       setSelectedMembers((prev) => [...prev, memberId]);
@@ -1258,7 +1271,7 @@ export function MemberManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invites.map((invite) => {
+                  {filteredInvites.map((invite) => {
                     const membershipType =
                       (invite.membership_type as
                         | "basic"
