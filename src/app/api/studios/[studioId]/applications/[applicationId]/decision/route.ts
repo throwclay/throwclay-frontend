@@ -84,6 +84,7 @@ export async function POST(
   }
 
   // If approving, create/activate member
+  // updated to handle invites per location
   if (decision === "approve") {
     const { error: membershipUpsertError } = await supabaseAdmin
       .from("studio_memberships")
@@ -91,13 +92,13 @@ export async function POST(
         {
           studio_id: studioId,
           user_id: application.profile_id,
-          role: "member", // this is where "members" vs "staff" separation happens
+          role: "member",
           status: "active",
           location_id: application.location_id ?? null,
           membership_type: application.requested_membership_type ?? null,
         } as any,
         {
-          onConflict: "studio_id,user_id",
+          onConflict: "studio_id,user_id,location_id",
         }
       );
 
