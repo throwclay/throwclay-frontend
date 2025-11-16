@@ -1251,6 +1251,7 @@ export interface MembershipApplication {
   applicantName: string;
   applicantEmail: string;
   applicantPhone?: string | null;
+  applicantHandle?: string | null;
 
   submittedAt: string | Date;
 
@@ -1294,6 +1295,10 @@ export type AppContextType = {
   setCurrentUser: (u: User | null) => void;
   currentStudio: Studio | null;
   setCurrentStudio: (s: Studio | null) => void;
+
+  currentMembership: StudioMembership | null;
+  setCurrentMembership: (m: StudioMembership | null) => void;
+
   currentThrow: PotteryEntry | null;
   setCurrentThrow: (t: PotteryEntry | null) => void;
 
@@ -1310,3 +1315,47 @@ export type AppContextType = {
     tokenOverride?: string;
   }) => Promise<StudioInvite[]>;
 };
+
+export type PriceRange = "low" | "medium" | "high";
+
+export interface PublicStudioLocationCard {
+  locationId: UUID; // studio_locations.id
+  studioId: UUID; // studios.id (UUID)
+  studioName: string;
+  locationName: string;
+  description: string;
+  addressLine: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  rating: number;
+  reviewCount: number;
+  memberCount: number;
+  specialties: string[];
+  images: string[];
+  contact: {
+    phone?: string;
+    website?: string;
+    instagram?: string;
+    email?: string;
+  };
+  classes: {
+    beginner: boolean;
+    intermediate: boolean;
+    advanced: boolean;
+    workshops: boolean;
+  };
+  amenities: string[];
+  priceRange: PriceRange;
+  openToPublic: boolean;
+  distance?: number;
+}
+
+export interface MemberData extends User {
+  membership: StudioMembership;
+  invoices: PaymentInvoice[];
+  classHistory: any[];
+  eventHistory: any[];
+}
+
+export type InviteRole = "member" | "employee" | "manager" | "admin";

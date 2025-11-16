@@ -22,9 +22,11 @@ import {
   MoreHorizontal,
   FormInput,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Checkbox } from "./ui/checkbox";
+import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Table,
@@ -34,7 +36,6 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { Checkbox } from "./ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -61,25 +62,15 @@ import {
 import { useAppContext } from "@/app/context/AppContext";
 
 import type {
-  User as UserType,
-  StudioMembership,
   MembershipApplication,
+  MemberData,
   PaymentInvoice,
   StudioInvite,
+  InviteRole,
 } from "@/types";
 
 import { MemberIntakeFormBuilder } from "./MemberIntakeFormBuilder";
-import { supabase as supabaseClient } from "@/lib/apis/supabaseClient";
 import { toast } from "sonner";
-
-interface MemberData extends UserType {
-  membership: StudioMembership;
-  invoices: PaymentInvoice[];
-  classHistory: any[];
-  eventHistory: any[];
-}
-
-type InviteRole = "member" | "employee" | "manager" | "admin";
 
 export function MemberManagement() {
   const [activeTab, setActiveTab] = useState("active");
@@ -91,6 +82,13 @@ export function MemberManagement() {
   const [members, setMembers] = useState<MemberData[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
+
+  // applications state
+  const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(false);
+  const [applicationsError, setApplicationsError] = useState<string | null>(
+    null
+  );
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState("");
@@ -106,10 +104,10 @@ export function MemberManagement() {
   const [invitesError, setInvitesError] = useState<string | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const { authToken, currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
 
   // Guard: only studios should see this
-  if (!currentStudio) {
+  if (!context.currentStudio) {
     return (
       <div className="max-w-3xl mx-auto p-8 text-center">
         <h1 className="text-2xl font-semibold mb-2">Member Management</h1>
@@ -119,58 +117,6 @@ export function MemberManagement() {
       </div>
     );
   }
-
-  // Mock pending applications
-  const [applications] = useState<MembershipApplication[]>([
-    {
-      id: "app1",
-      applicantName: "Emma Thompson",
-      applicantEmail: "emma.t@email.com",
-      applicantPhone: "(503) 555-0200",
-      studioId: currentStudio.id || "",
-      locationId: "loc1",
-      membershipType: "basic",
-      experience: "Beginner - took a few classes elsewhere",
-      interests: ["Wheel Throwing", "Glazing"],
-      goals: ["Learn pottery as a hobby and stress relief"],
-      referralSource: "Google Search",
-      emergencyContact: {
-        name: "John Thompson",
-        phone: "(503) 555-0201",
-        relationship: "Spouse",
-      },
-      status: "pending",
-      submittedAt: "2025-06-10",
-      customFields: {
-        hearAboutUs: "Friend recommendation",
-        preferredClassTime: "Evenings",
-      },
-    },
-    {
-      id: "app2",
-      applicantName: "David Kim",
-      applicantEmail: "david.kim@email.com",
-      applicantPhone: "(503) 555-0203",
-      studioId: currentStudio.id || "",
-      locationId: "loc2",
-      membershipType: "premium",
-      experience: "Intermediate - 2 years experience",
-      interests: ["Hand Building", "Sculpture", "Raku"],
-      goals: ["Develop advanced techniques and sell work"],
-      referralSource: "Instagram",
-      emergencyContact: {
-        name: "Lisa Kim",
-        phone: "(503) 555-0204",
-        relationship: "Sister",
-      },
-      status: "pending",
-      submittedAt: "2025-06-12",
-      customFields: {
-        hearAboutUs: "Social media",
-        preferredClassTime: "Weekends",
-      },
-    },
-  ]);
 
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
@@ -209,7 +155,7 @@ export function MemberManagement() {
   const getLocationName = (locationId?: string | null) => {
     if (!locationId) return "Unassigned";
 
-    const fromStudio = currentStudio.locations?.find(
+    const fromStudio = context.currentStudio?.locations?.find(
       (loc) => loc.id === locationId
     );
 
@@ -246,12 +192,12 @@ export function MemberManagement() {
 
   // --- API: fetch invites (studio-level only) ---
   const fetchInvites = async () => {
-    if (!authToken) {
+    if (!context.authToken) {
       setInvitesError("You must be logged in to view invites.");
       setInvites([]);
       return;
     }
-    if (!currentStudio) {
+    if (!context.currentStudio) {
       setInvitesError("No studio selected.");
       setInvites([]);
       return;
@@ -262,10 +208,10 @@ export function MemberManagement() {
       setInvitesError(null);
 
       const res = await fetch(
-        `/api/studios/${currentStudio.id}/invites?status=pending`,
+        `/api/studios/${context.currentStudio?.id}/invites?status=pending`,
         {
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
         }
       );
@@ -290,7 +236,7 @@ export function MemberManagement() {
 
   // --API: fetch members --
   const fetchMembers = async () => {
-    if (!authToken || !currentStudio?.id) {
+    if (!context.authToken || !context.currentStudio?.id) {
       setMembers([]);
       return;
     }
@@ -299,11 +245,14 @@ export function MemberManagement() {
       setIsLoadingMembers(true);
       setMembersError(null);
 
-      const res = await fetch(`/api/studios/${currentStudio.id}/members`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const res = await fetch(
+        `/api/studios/${context.currentStudio?.id}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${context.authToken}`,
+          },
+        }
+      );
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -370,9 +319,83 @@ export function MemberManagement() {
     }
   };
 
+  // --- API: fetch membership applications (studio-level) ---
+  const fetchApplications = async () => {
+    if (!context.authToken || !context.currentStudio?.id) {
+      setApplications([]);
+      return;
+    }
+
+    try {
+      setIsLoadingApplications(true);
+      setApplicationsError(null);
+
+      const res = await fetch(
+        `/api/studios/${context.currentStudio.id}/applications?status=pending`,
+        {
+          headers: {
+            Authorization: `Bearer ${context.authToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error("Error fetching applications", body);
+        setApplicationsError(body.error || "Failed to load applications");
+        setApplications([]);
+        return;
+      }
+
+      const body = await res.json();
+
+      // 🔑 Map DB rows -> MembershipApplication type
+      const mapped: MembershipApplication[] = (body.applications || []).map(
+        (row: any) => {
+          const profile = row.profiles ?? {};
+
+          return {
+            id: row.id,
+            studioId: row.studio_id,
+            locationId: row.location_id,
+            membershipType: row.requested_membership_type,
+
+            submittedAt: row.submitted_at,
+
+            // normalizing our experience
+            // if we're storing a string like "beginner", this still works:
+            experience: row.experience,
+
+            interests: row.interests || [],
+            goals: row.goals || [],
+            referralSource: row.referral_source || null,
+            emergencyContact: row.emergency_contact || null,
+            customFields: row.custom_fields || {},
+
+            status: row.status,
+
+            // This is what our UI uses... may rethink this later
+            applicantName: profile.name ?? "(No name)",
+            applicantEmail: profile.email ?? "",
+            applicantPhone: profile.phone ?? null,
+            applicantHandle: profile.handle ?? null,
+          };
+        }
+      );
+
+      setApplications(mapped);
+    } catch (err) {
+      console.error("Error fetching applications", err);
+      setApplicationsError("Failed to load applications");
+      setApplications([]);
+    } finally {
+      setIsLoadingApplications(false);
+    }
+  };
+
   // --- API: send invite ---
   const handleSendInvite = async () => {
-    if (!currentStudio) {
+    if (!context.currentStudio) {
       toast.error("No studio selected");
       return;
     }
@@ -387,26 +410,29 @@ export function MemberManagement() {
       return;
     }
 
-    if (!authToken) {
+    if (!context.authToken) {
       toast.error("You must be logged in to send invites.");
       return;
     }
 
     setIsInviting(true);
     try {
-      const res = await fetch(`/api/studios/${currentStudio.id}/invites`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole, // DB expects: member | employee | manager | co-admin
-          locationId: inviteLocationId,
-          membershipType: inviteMembershipType,
-        }),
-      });
+      const res = await fetch(
+        `/api/studios/${context.currentStudio?.id}/invites`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${context.authToken}`,
+          },
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: inviteRole, // DB expects: member | employee | manager | co-admin
+            locationId: inviteLocationId,
+            membershipType: inviteMembershipType,
+          }),
+        }
+      );
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -439,35 +465,95 @@ export function MemberManagement() {
     }
   };
 
+  const handleApplicationDecision = async (
+    applicationId: string,
+    decision: "approve" | "reject"
+  ) => {
+    if (!context.currentStudio?.id) {
+      toast.error("No studio selected");
+      return;
+    }
+    if (!context.authToken) {
+      toast.error("You must be logged in to manage applications.");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/studios/${context.currentStudio?.id}/applications/${applicationId}/decision`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${context.authToken}`,
+          },
+          body: JSON.stringify({ decision }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Application decision error", err);
+        toast.error(err.error || "Failed to update application");
+        return;
+      }
+
+      toast.success(
+        decision === "approve"
+          ? "Application approved and member added."
+          : "Application rejected."
+      );
+
+      // Refresh lists
+      await fetchApplications();
+      if (decision === "approve") {
+        await fetchMembers();
+      }
+    } catch (e) {
+      console.error("Application decision error", e);
+      toast.error("Something went wrong updating the application");
+    }
+  };
+
   useEffect(() => {
-    if (!currentStudio?.id) {
+    if (!context.currentStudio?.id) {
       setMembers([]);
       return;
     }
 
     fetchMembers();
-  }, [currentStudio?.id]);
+  }, [context.currentStudio?.id]);
 
   useEffect(() => {
     console.log("Members updated:", members.length, members);
   }, [members]);
 
-  const studioLocations = currentStudio.locations ?? [];
+  const studioLocations = context.currentStudio?.locations ?? [];
 
   useEffect(() => {
-    const studioLocations = currentStudio.locations ?? [];
+    const studioLocations = context.currentStudio?.locations ?? [];
     if (!inviteLocationId && studioLocations.length > 0) {
       setInviteLocationId(studioLocations[0].id);
     }
-  }, [currentStudio.locations, inviteLocationId, setInviteLocationId]);
+  }, [context.currentStudio?.locations, inviteLocationId, setInviteLocationId]);
 
+  // load invites
   useEffect(() => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       setInvites([]);
       return;
     }
     fetchInvites();
-  }, [currentStudio?.id, authToken]);
+  }, [context.currentStudio?.id, context.authToken]);
+
+  // load applications
+  useEffect(() => {
+    if (!context.currentStudio?.id || !context.authToken) {
+      setApplications([]);
+      return;
+    }
+    fetchApplications();
+  }, [context.currentStudio?.id, context.authToken]);
 
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
@@ -502,8 +588,10 @@ export function MemberManagement() {
                 <DialogTitle>Invite a New Member</DialogTitle>
                 <DialogDescription>
                   Send an invite to join{" "}
-                  <span className="font-medium">@{currentStudio.handle}</span>.
-                  They&apos;ll be added as a member after accepting.
+                  <span className="font-medium">
+                    @{context.currentStudio?.handle}
+                  </span>
+                  . They&apos;ll be added as a member after accepting.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
@@ -909,108 +997,193 @@ export function MemberManagement() {
         </TabsContent>
 
         {/* Pending Applications */}
-        <TabsContent value="pending" className="space-y-8">
-          <div className="space-y-8">
-            {applications.map((application) => (
-              <div
-                key={application.id}
-                className="border rounded-lg p-6 space-y-6"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold">
-                      {application.applicantName}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Applied{" "}
-                      {new Date(application.submittedAt).toLocaleDateString()} •{" "}
-                      {application.membershipType} membership
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Button variant="outline" size="sm">
-                      <X className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
-                    <Button size="sm">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                  </div>
-                </div>
+        <TabsContent value="pending" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Pending Applications</h2>
+              <p className="text-sm text-muted-foreground">
+                Review and approve new member applications for this studio.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchApplications}
+              disabled={isLoadingApplications}
+            >
+              Refresh
+            </Button>
+          </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Contact Information
-                    </Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        {application.applicantEmail}
+          {isLoadingApplications ? (
+            <div className="border rounded-lg p-6 text-center text-muted-foreground">
+              Loading applications…
+            </div>
+          ) : applicationsError ? (
+            <div className="border rounded-lg p-6 text-center text-sm text-red-500">
+              {applicationsError}
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="border rounded-lg p-10 text-center space-y-2">
+              <p className="font-medium">No pending applications</p>
+              <p className="text-sm text-muted-foreground">
+                When artists apply to join your studio, their applications will
+                appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {applications.map((application) => (
+                <Card key={application.id} className="border rounded-lg">
+                  <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold">
+                        {application.applicantName}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        @{application.applicantHandle}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Applied{" "}
+                        {new Date(application.submittedAt).toLocaleDateString()}{" "}
+                        • {application.membershipType || "membership"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleApplicationDecision(application.id, "reject")
+                        }
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          handleApplicationDecision(application.id, "approve")
+                        }
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Approve
+                      </Button>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-6">
+                    {/* Core details grid */}
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                      {/* Contact Info */}
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Contact Information
+                        </Label>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center">
+                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                            {application.applicantEmail}
+                          </div>
+                          {application.applicantPhone && (
+                            <div className="flex items-center">
+                              <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                              {application.applicantPhone}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {application.applicantPhone && (
+
+                      {/* Preferred Location */}
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Preferred Location
+                        </Label>
                         <div className="flex items-center text-sm">
-                          <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
-                          {application.applicantPhone}
+                          <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                          {getLocationName(application.locationId || undefined)}
+                        </div>
+                      </div>
+
+                      {/* Experience Level */}
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Experience Level
+                        </Label>
+                        <p className="text-sm">
+                          {typeof application.experience === "string"
+                            ? application.experience
+                            : !application.experience
+                            ? "Not specified"
+                            : application.experience}
+                        </p>
+                      </div>
+
+                      {/* Emergency Contact */}
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Emergency Contact
+                        </Label>
+                        <div className="space-y-1 text-sm">
+                          <div>
+                            {application.emergencyContact?.name ||
+                              "Not provided"}
+                          </div>
+                          {application.emergencyContact?.phone && (
+                            <div className="text-muted-foreground">
+                              {application.emergencyContact.phone}
+                              {application.emergencyContact.relationship
+                                ? ` (${application.emergencyContact.relationship})`
+                                : ""}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional details */}
+                    <div className="border-t pt-4 space-y-4">
+                      {application.interests &&
+                        application.interests.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Interests
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                              {application.interests.map((interest, index) => (
+                                <Badge key={index} variant="secondary">
+                                  {interest}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {application.goals && (
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Goals
+                          </Label>
+                          <p className="text-sm">{application.goals}</p>
+                        </div>
+                      )}
+
+                      {application.notes && (
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Notes
+                          </Label>
+                          <p className="text-sm whitespace-pre-line">
+                            {application.notes}
+                          </p>
                         </div>
                       )}
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Preferred Location
-                    </Label>
-                    <div className="flex items-center text-sm">
-                      <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-                      {getLocationName(application.locationId)}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Experience Level
-                    </Label>
-                    <p className="text-sm">{application.experience}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Emergency Contact
-                    </Label>
-                    <div className="space-y-1">
-                      <div className="text-sm">
-                        {application.emergencyContact?.name}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {application.emergencyContact?.phone} (
-                        {application.emergencyContact?.relationship})
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Interests
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {application.interests?.map((interest, index) => (
-                        <Badge key={index} variant="secondary">
-                          {interest}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Goals
-                    </Label>
-                    <p className="text-sm">{application.goals}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* Pending Invites */}
