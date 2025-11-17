@@ -460,7 +460,7 @@ export function MemberManagement() {
           },
           body: JSON.stringify({
             email: inviteEmail,
-            role: inviteRole, // DB expects: member | employee | manager | co-admin
+            role: inviteRole, // DB expects: member
             locationId: inviteLocationId,
             membershipType: inviteMembershipType,
           }),
@@ -648,15 +648,13 @@ export function MemberManagement() {
                     onValueChange={(value) =>
                       setInviteRole(value as InviteRole)
                     }
+                    disabled
                   >
                     <SelectTrigger id="inviteRole">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
