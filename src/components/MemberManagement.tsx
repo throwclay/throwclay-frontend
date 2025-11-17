@@ -149,19 +149,19 @@ export function MemberManagement() {
     return matchesLocation;
   });
 
-  const handleMemberSelect = (memberId: string, checked: boolean) => {
+  const handleMemberSelect = (membershipId: string, checked: boolean) => {
     if (checked) {
-      setSelectedMembers((prev) => [...prev, memberId]);
+      setSelectedMembers((prev) => [...prev, membershipId]);
     } else {
-      setSelectedMembers((prev) => prev.filter((id) => id !== memberId));
+      setSelectedMembers((prev) => prev.filter((id) => id !== membershipId));
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedMembers(filteredMembers.map((m) => m.id));
-    } else {
-      setSelectedMembers([]);
+      setSelectedMembers(
+        checked ? filteredMembers.map((m) => m.membership.id) : []
+      );
     }
   };
 
@@ -900,12 +900,15 @@ export function MemberManagement() {
                   </TableRow>
                 ) : (
                   filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
+                    <TableRow key={member.membership.id}>
                       <TableCell>
                         <Checkbox
                           checked={selectedMembers.includes(member.id)}
                           onCheckedChange={(checked) =>
-                            handleMemberSelect(member.id, checked as boolean)
+                            handleMemberSelect(
+                              member.membership.id,
+                              checked as boolean
+                            )
                           }
                         />
                       </TableCell>
