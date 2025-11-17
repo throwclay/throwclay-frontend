@@ -321,6 +321,30 @@ export function PublicStudiosDirectory({
     );
   };
 
+  const isStaffOfStudio = (studioId: string) => {
+    const { currentUser, currentStudio } = context;
+    if (!currentUser || !currentStudio) return false;
+
+    if (currentStudio.id !== studioId) return false;
+
+    const role = currentStudio.roleForCurrentUser as
+      | "owner"
+      | "admin"
+      | "manager"
+      | "instructor"
+      | "employee"
+      | "member"
+      | undefined;
+
+    return (
+      role === "owner" ||
+      role === "admin" ||
+      role === "manager" ||
+      role === "instructor" ||
+      role === "employee"
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -556,9 +580,10 @@ export function PublicStudiosDirectory({
                   <div className="flex space-x-2 pt-2">
                     {(() => {
                       const isMember = isMemberOfLocation(loc);
+                      const isStaff = isStaffOfStudio(loc.studioId);
 
                       const handlePrimaryClick = () => {
-                        if (isMember) {
+                        if (isMember || isStaff) {
                           // Route to My Studios view
                           if (onNavigate) {
                             onNavigate("mystudios");
@@ -573,11 +598,12 @@ export function PublicStudiosDirectory({
                         handleApplyToLocation(loc);
                       };
 
-                      const label = isMember
-                        ? "Go to My Studio"
-                        : loc.openToPublic
-                        ? "Apply to Join"
-                        : "Contact Studio";
+                      const label =
+                        isMember || isStaff
+                          ? "Go to My Studio"
+                          : loc.openToPublic
+                          ? "Apply to Join"
+                          : "Contact Studio";
 
                       return (
                         <Button

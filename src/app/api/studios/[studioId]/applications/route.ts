@@ -64,6 +64,40 @@ export async function POST(
     );
   }
 
+  // Check if user already has a membership with this studio
+  const { data: existingMembership, error: existingMembershipError } =
+    await supabaseAdmin
+      .from("studio_memberships")
+      .select("role, status")
+      .eq("studio_id", studioId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+  if (existingMembershipError) {
+    console.error("Membership lookup error", existingMembershipError);
+    return NextResponse.json(
+      { error: "Failed to check existing membership" },
+      { status: 500 }
+    );
+  }
+
+  // If they are already staff for this studio, block applications
+  if (
+    existingMembership &&
+    ["owner", "admin", "manager", "instructor", "employee"].includes(
+      existingMembership.role as string
+    )
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "You already have staff access to this studio and do not need to apply as a member.",
+      },
+      { status: 400 }
+    );
+  }
+
   const { data: application, error: insertError } = await supabaseAdmin
     .from("studio_membership_applications")
     .insert({
