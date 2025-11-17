@@ -66,6 +66,10 @@ export function PublicStudiosDirectory({
   const [appReferralSource, setAppReferralSource] = useState("");
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
+  const [memberships, setMemberships] = useState<
+    { studioId: string; locationId: string | null; status: string }[]
+  >([]);
+
   // --- Fetch studios + locations ---
   useEffect(() => {
     const fetchLocations = async () => {
@@ -166,6 +170,39 @@ export function PublicStudiosDirectory({
 
     fetchLocations();
   }, []);
+
+  // --- Fetch user's active memberships (for all studios/locations) ---
+  useEffect(() => {
+    const loadMemberships = async () => {
+      if (!context.currentUser) {
+        setMemberships([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("studio_memberships")
+        .select("studio_id, location_id, status")
+        .eq("user_id", context.currentUser.id)
+        .eq("status", "active");
+
+      if (error) {
+        console.error("Error loading memberships for directory", error);
+        // we can keep memberships empty on error
+        return;
+      }
+
+      const mapped =
+        (data ?? []).map((row: any) => ({
+          studioId: row.studio_id as string,
+          locationId: row.location_id as string | null,
+          status: row.status as string,
+        })) ?? [];
+
+      setMemberships(mapped);
+    };
+
+    loadMemberships();
+  }, [context.currentUser?.id]);
 
   const filteredLocations = locations.filter((loc) => {
     const term = searchTerm.toLowerCase();
@@ -271,15 +308,17 @@ export function PublicStudiosDirectory({
     }
   };
 
-  const isMemberOfLocation = (locationId: string) => {
-    const { currentUser, currentStudio, currentMembership } = context;
+  const isMemberOfLocation = (loc: PublicStudioLocationCard) => {
+    const { currentUser } = context;
+    if (!currentUser) return false;
 
-    if (!currentUser || !currentStudio || !currentMembership) return false;
-
-    // must match same studio AND same location
-    if (currentMembership.studioId !== currentStudio.id) return false;
-
-    return currentMembership.locationId === locationId;
+    // user is a member if there's an active membership for this studio + location
+    return memberships.some(
+      (m) =>
+        m.studioId === loc.studioId &&
+        m.locationId === loc.locationId &&
+        m.status === "active"
+    );
   };
 
   return (
@@ -516,7 +555,7 @@ export function PublicStudiosDirectory({
                   {/* Action Buttons */}
                   <div className="flex space-x-2 pt-2">
                     {(() => {
-                      const isMember = isMemberOfLocation(loc.locationId);
+                      const isMember = isMemberOfLocation(loc);
 
                       const handlePrimaryClick = () => {
                         if (isMember) {
