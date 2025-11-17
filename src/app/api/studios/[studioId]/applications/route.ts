@@ -3,9 +3,13 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
 import { getBearerToken } from "@/lib/server/auth";
 
-const INVITER_ROLES = ["owner", "admin"];
+const INVITER_ROLES = ["owner", "admin"]; // for GET (reviewing apps)
+const STAFF_ROLES = ["owner", "admin", "manager", "instructor", "employee"];
+const MEMBER_ROLE = "member";
 
-// Artist applies to join studio
+// -----------------------------------------------------------------------------
+// POST – Artist applies to join a studio/location
+// -----------------------------------------------------------------------------
 export async function POST(
   req: Request,
   { params }: { params: { studioId: string } }
@@ -48,31 +52,20 @@ export async function POST(
     );
   }
 
-  // adding this to prevent duplicate pending via DB unique index;
-  const { data: existingPending } = await supabaseAdmin
-    .from("studio_membership_applications")
-    .select("id")
-    .eq("studio_id", studioId)
-    .eq("profile_id", user.id)
-    .eq("status", "pending")
-    .maybeSingle();
-
-  if (existingPending) {
+  if (!locationId) {
     return NextResponse.json(
-      { error: "You already have a pending application for this studio" },
+      { error: "locationId is required" },
       { status: 400 }
     );
   }
 
-  // Check if user already has a membership with this studio
-  const { data: existingMembership, error: existingMembershipError } =
+  // 1) Check if user already has any memberships with this studio
+  const { data: existingMemberships, error: existingMembershipError } =
     await supabaseAdmin
       .from("studio_memberships")
-      .select("role, status")
+      .select("role, status, location_id")
       .eq("studio_id", studioId)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
+      .eq("user_id", user.id);
 
   if (existingMembershipError) {
     console.error("Membership lookup error", existingMembershipError);
@@ -82,13 +75,14 @@ export async function POST(
     );
   }
 
-  // If they are already staff for this studio, block applications
-  if (
-    existingMembership &&
-    ["owner", "admin", "manager", "instructor", "employee"].includes(
-      existingMembership.role as string
-    )
-  ) {
+  const memberships = existingMemberships ?? [];
+
+  // 1a) If they are already staff for this studio, block applications
+  const hasStaffMembership = memberships.some((m) =>
+    STAFF_ROLES.includes((m.role as string) ?? "")
+  );
+
+  if (hasStaffMembership) {
     return NextResponse.json(
       {
         error:
@@ -98,13 +92,60 @@ export async function POST(
     );
   }
 
+  // 1b) If they are already an active member at this specific location, block
+  const hasActiveMemberAtLocation = memberships.some(
+    (m) =>
+      (m.role as string) === MEMBER_ROLE &&
+      (m.status as string) === "active" &&
+      m.location_id === locationId
+  );
+
+  if (hasActiveMemberAtLocation) {
+    return NextResponse.json(
+      {
+        error:
+          "You are already an active member at this location and do not need to apply again.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // 2) Prevent duplicate pending applications for the *same studio + location*
+  const { data: existingPending, error: pendingError } = await supabaseAdmin
+    .from("studio_membership_applications")
+    .select("id")
+    .eq("studio_id", studioId)
+    .eq("profile_id", user.id)
+    .eq("location_id", locationId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (pendingError) {
+    console.error("Pending application lookup error", pendingError);
+    return NextResponse.json(
+      { error: "Failed to check existing applications" },
+      { status: 500 }
+    );
+  }
+
+  if (existingPending) {
+    return NextResponse.json(
+      {
+        error:
+          "You already have a pending application for this studio location.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // 3) Insert application
   const { data: application, error: insertError } = await supabaseAdmin
     .from("studio_membership_applications")
     .insert({
       studio_id: studioId,
       profile_id: user.id,
       status: "pending",
-      location_id: locationId ?? null,
+      location_id: locationId,
       requested_membership_type: requestedMembershipType ?? null,
       experience: experience ?? null,
       interests: Array.isArray(interests) ? interests : null,
@@ -127,7 +168,9 @@ export async function POST(
   return NextResponse.json({ application });
 }
 
-// Studio owner/admin lists applications (e.g., pending)
+// -----------------------------------------------------------------------------
+// GET – Studio owner/admin lists applications (e.g., pending)
+// -----------------------------------------------------------------------------
 export async function GET(
   req: Request,
   { params }: { params: { studioId: string } }
@@ -150,24 +193,31 @@ export async function GET(
   }
 
   // Check they are owner/admin for this studio
-  const { data: membership, error: membershipError } = await supabaseAdmin
+  const { data: memberships, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
     .eq("studio_id", studioId)
     .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+    .eq("status", "active");
 
-  if (membershipError || !membership) {
+  if (membershipError) {
+    console.error("Membership lookup error", membershipError);
     return NextResponse.json(
       { error: "Not authorized to view applications for this studio" },
       { status: 403 }
     );
   }
 
-  if (!INVITER_ROLES.includes(membership.role as string)) {
+  const hasInvitePermission = (memberships ?? []).some((m) =>
+    INVITER_ROLES.includes((m.role as string) ?? "")
+  );
+
+  if (!hasInvitePermission) {
     return NextResponse.json(
-      { error: "Insufficient permissions" },
+      {
+        error:
+          "You do not have permission to view membership applications for this studio",
+      },
       { status: 403 }
     );
   }
