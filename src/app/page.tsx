@@ -123,6 +123,10 @@ export default function Home() {
           is_active,
           plan,
           created_at
+        ),
+        studio_locations:location_id (
+          id,
+          name
         )
       `
         )
@@ -186,17 +190,45 @@ export default function Home() {
     };
 
     console.log(`User ${appUser.name} last logged in ${appUser.lastLogin}`);
+
     // 4) Build studio (if any memberships)
+
+    // Normalize memberships
+    const normalizedMemberships: StudioMembership[] = (memberships ?? []).map(
+      (m: any): StudioMembership => ({
+        id: m.id,
+        userId: m.user_id,
+        studioId: m.studio_id,
+        role: m.role, // StudioRole
+        status: m.status,
+        locationId: m.location_id,
+        locationName: m.studio_locations?.name ?? null,
+        membershipType: m.membership_type,
+        startDate: m.created_at,
+        lastActivity: profileRow?.last_login ?? null,
+        createdAt: m.created_at,
+        shelfNumber: null,
+        monthlyRate: null,
+        passionProjectsUpgrade: null,
+        studioName: m.studios?.name,
+        studioHandle: m.studios?.handle,
+      })
+    );
+
+    context.setStudioMemberships(normalizedMemberships);
+
     let studioForState: Studio | null = null;
     let studioRoleForCurrentUser: string | null = null;
     let membershipForState: StudioMembership | null = null;
 
-    if (memberships && memberships.length > 0) {
-      const membership = memberships[0] as any;
-      const s = membership.studios;
+    if (normalizedMemberships.length > 0) {
+      // For now: just pick the first active membership as the "current" one
+      const membership = normalizedMemberships[0];
+      const raw = (memberships ?? [])[0] as any; // original row to grab studios + locations
+      const s = raw?.studios;
 
       if (s) {
-        studioRoleForCurrentUser = membership.role; // "owner" | "admin" | etc.
+        studioRoleForCurrentUser = membership.role ?? null;
 
         const studioLocations = await fetchLocationsForStudio(
           s.id,
@@ -221,21 +253,7 @@ export default function Home() {
           roleForCurrentUser: studioRoleForCurrentUser as any,
         };
 
-        membershipForState = {
-          id: membership.id,
-          userId: membership.user_id,
-          studioId: membership.studio_id,
-          locationId: membership.location_id,
-          membershipType: membership.membership_type,
-          status: membership.status,
-          startDate: membership.created_at,
-          lastActivity: profileRow?.last_login ?? null,
-          createdAt: membership.created_at,
-          updatedAt: membership.updated_at ?? membership.created_at,
-          shelfNumber: null,
-          monthlyRate: null,
-          passionProjectsUpgrade: null,
-        };
+        membershipForState = membership;
       }
     }
 
