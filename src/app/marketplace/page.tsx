@@ -10,7 +10,7 @@ import { useAppContext, type PotteryEntry } from '@/app/context/AppContext';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 export default function CommerceMarketplace() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [priceFilter, setPriceFilter] = useState('all');
@@ -185,7 +185,7 @@ export default function CommerceMarketplace() {
         <div>
           <h1>Pottery Marketplace</h1>
           <p className="text-muted-foreground">
-            Discover unique handmade pottery from {currentStudio?.name || 'talented artists'}
+            Discover unique handmade pottery from {context.currentStudio?.name || 'talented artists'}
           </p>
         </div>
         <div className="flex items-center space-x-4">
@@ -193,7 +193,7 @@ export default function CommerceMarketplace() {
             <ShoppingBag className="w-3 h-3" />
             <span>{sortedItems.length} items</span>
           </Badge>
-          {currentStudio && (
+          {context.currentStudio && (
             <Badge className="bg-blue-100 text-blue-800">
               Studio Commission: {mockCommissionRate}%
             </Badge>
@@ -320,7 +320,7 @@ export default function CommerceMarketplace() {
                 </div>
 
                 {/* Commission Info for Studio Admin */}
-                {currentUser?.type === 'studio' && currentStudio && (
+                {context.currentUser?.type === 'studio' && context.currentStudio && (
                   <div className="text-xs bg-muted p-2 rounded mb-3">
                     <div className="flex justify-between">
                       <span>Artist receives:</span>
@@ -348,27 +348,27 @@ export default function CommerceMarketplace() {
       )}
 
       {/* Studio Info Footer */}
-      {currentStudio && (
+      {context.currentStudio && (
         <Card className="mt-12">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Building2 className="w-5 h-5" />
-              <span>About {currentStudio.name}</span>
+              <span>About {context.currentStudio.name}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              All pottery featured in this marketplace is created by talented artists at {currentStudio.name}.
+              All pottery featured in this marketplace is created by talented artists at {context.currentStudio.name}.
               Each piece is handmade with care and attention to detail.
             </p>
             <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4" />
-                <span>{currentStudio.memberCount || 0} Artists</span>
+                <span>{context.currentStudio.memberCount || 0} Artists</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Palette className="w-4 h-4" />
-                <span>{currentStudio.glazes?.length || 0} Available Glazes</span>
+                <span>{context.currentStudio.glazes?.length || 0} Available Glazes</span>
               </div>
               <div className="flex items-center space-x-2">
                 <DollarSign className="w-4 h-4" />

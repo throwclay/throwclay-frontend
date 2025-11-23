@@ -43,7 +43,7 @@ interface GlazeExperimentTrackerProps {
 }
 
 export function GlazeExperimentTracker({ onNavigateToEditor }: GlazeExperimentTrackerProps) {
-  const { currentUser } = useAppContext();
+  const context = useAppContext();
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

@@ -24,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAppContext, type TimeCard, type TimeCardEntry, type PayPeriod, type User } from '@/app/context/AppContext';
 
 export function TimeCardManagement() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPayPeriod, setSelectedPayPeriod] = useState('current');
   const [searchTerm, setSearchTerm] = useState('');
@@ -183,11 +183,11 @@ export function TimeCardManagement() {
       handle: 'sarahwilson',
       type: 'artist',
       role: 'manager',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       managerProfile: {
         id: 'mgr1',
         userId: 'emp1',
-        studioId: currentStudio?.id || '1',
+        studioId: context.currentStudio?.id || '1',
         role: 'manager',
         responsibilities: [],
         standardWorkHours: {
@@ -231,11 +231,11 @@ export function TimeCardManagement() {
       handle: 'mikechen',
       type: 'artist',
       role: 'instructor',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       instructorProfile: {
         id: 'inst1',
         userId: 'emp2',
-        studioId: currentStudio?.id || '1',
+        studioId: context.currentStudio?.id || '1',
         specialties: ['Wheel Throwing', 'Glazing'],
         certifications: ['Pottery Safety Certification'],
         experience: '8 years',
@@ -261,11 +261,11 @@ export function TimeCardManagement() {
       handle: 'emmadavis',
       type: 'artist',
       role: 'instructor',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       instructorProfile: {
         id: 'inst2',
         userId: 'emp3',
-        studioId: currentStudio?.id || '1',
+        studioId: context.currentStudio?.id || '1',
         specialties: ['Advanced Ceramics', 'Sculpture'],
         certifications: ['Advanced Ceramics Certification'],
         experience: '12 years',
@@ -286,7 +286,7 @@ export function TimeCardManagement() {
     }
   ]);
 
-  const currentPayPeriod = currentStudio?.payPeriods?.find(pp => pp.status === 'open') || currentStudio?.payPeriods?.[0];
+  const currentPayPeriod = context.currentStudio?.payPeriods?.find(pp => pp.status === 'open') || context.currentStudio?.payPeriods?.[0];
 
   const filteredTimeCards = timeCards.filter(timeCard => {
     const matchesSearch = timeCard.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -376,9 +376,9 @@ export function TimeCardManagement() {
 
   const stats = getSummaryStats();
 
-  const canApproveTimeCards = currentUser?.managerProfile?.permissions?.approveTimeCards ||
-                            currentUser?.role === 'owner' ||
-                            currentUser?.role === 'admin';
+  const canApproveTimeCards = context.currentUser?.managerProfile?.permissions?.approveTimeCards ||
+                            context.currentUser?.role === 'owner' ||
+                            context.currentUser?.role === 'admin';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -391,7 +391,7 @@ export function TimeCardManagement() {
           </p>
         </div>
         <div className="flex items-center space-x-4">
-          {currentStudio?.settings?.allowSelfClockIn && (
+          {context.currentStudio?.settings?.allowSelfClockIn && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -521,7 +521,7 @@ export function TimeCardManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="current">Current Pay Period</SelectItem>
-                {currentStudio?.payPeriods?.map(period => (
+                {context.currentStudio?.payPeriods?.map(period => (
                   <SelectItem key={period.id} value={period.id}>
                     {new Date(period.startDate).toLocaleDateString()} - {new Date(period.endDate).toLocaleDateString()}
                   </SelectItem>
@@ -572,7 +572,7 @@ export function TimeCardManagement() {
             <TableBody>
               {filteredTimeCards.map((timeCard) => {
                 const employee = employees.find(emp => emp.id === timeCard.employeeId);
-                const payPeriod = currentStudio?.payPeriods?.find(pp => pp.id === timeCard.payPeriodId);
+                const payPeriod = context.currentStudio?.payPeriods?.find(pp => pp.id === timeCard.payPeriodId);
                 const pay = employee ? calculateHourlyPay(employee, timeCard.totalRegularHours, timeCard.totalOvertimeHours) : null;
 
                 return (

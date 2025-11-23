@@ -47,7 +47,7 @@ interface GlazeEntry {
 }
 
 export default function GlazeManagement() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('all-glazes');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
@@ -188,7 +188,7 @@ export default function GlazeManagement() {
   const [experiments] = useState<GlazeExperiment[]>([
     {
       id: 'exp1',
-      studioId: currentStudio?.id || '',
+      studioId: context.currentStudio?.id || '',
       name: 'Crystalline Blue Series',
       description: 'Exploring crystalline formations with zinc and titanium',
       glazeType: 'new-recipe',
@@ -205,8 +205,8 @@ export default function GlazeManagement() {
         mixingInstructions: 'Mix dry ingredients thoroughly, add water slowly to create smooth consistency',
         meshSize: 80
       },
-      experimentedBy: currentUser?.id || '',
-      experimenterName: currentUser?.name || 'Unknown',
+      experimentedBy: context.currentUser?.id || '',
+      experimenterName: context.currentUser?.name || 'Unknown',
       testDate: '2025-06-15',
       firingDates: ['2025-06-18'],
       cones: ['9', '10'],

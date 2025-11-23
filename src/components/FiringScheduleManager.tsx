@@ -49,7 +49,7 @@ interface FiringScheduleForm {
 }
 
 export function FiringScheduleManager() {
-  const { currentStudio, currentUser } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('schedules');
   const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -83,7 +83,7 @@ export function FiringScheduleManager() {
       reminderHoursBefore: 2
     },
     specialInstructions: '',
-    locationId: currentStudio?.locations?.[0]?.id || ''
+    locationId: context.currentStudio?.locations?.[0]?.id || ''
   });
 
   // Available rack numbers (mock data)
@@ -164,7 +164,7 @@ export function FiringScheduleManager() {
   };
 
   const handleUseTemplate = (templateId: string) => {
-    const template = currentStudio?.kilnFiringTemplates?.find(t => t.id === templateId);
+    const template = context.currentStudio?.kilnFiringTemplates?.find(t => t.id === templateId);
     if (template) {
       setScheduleForm(prev => ({
         ...prev,
@@ -234,7 +234,7 @@ export function FiringScheduleManager() {
         reminderHoursBefore: 2
       },
       specialInstructions: '',
-      locationId: currentStudio?.locations?.[0]?.id || ''
+      locationId: context.currentStudio?.locations?.[0]?.id || ''
     });
   };
 
@@ -365,7 +365,7 @@ export function FiringScheduleManager() {
                           <SelectValue placeholder="Select kiln" />
                         </SelectTrigger>
                         <SelectContent>
-                          {currentStudio?.kilns?.map(kiln => (
+                          {context.currentStudio?.kilns?.map(kiln => (
                             <SelectItem key={kiln.id} value={kiln.id}>
                               {kiln.name} ({kiln.type})
                             </SelectItem>
@@ -438,7 +438,7 @@ export function FiringScheduleManager() {
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
                         <SelectContent>
-                          {currentStudio?.locations?.map(location => (
+                          {context.currentStudio?.locations?.map(location => (
                             <SelectItem key={location.id} value={location.id}>
                               {location.name}
                             </SelectItem>
@@ -464,12 +464,12 @@ export function FiringScheduleManager() {
                     <div className="flex items-center justify-between">
                       <Label>Use Existing Template (Optional)</Label>
                       <Badge variant="secondary" className="text-xs">
-                        {currentStudio?.kilnFiringTemplates?.length || 0} templates available
+                        {context.currentStudio?.kilnFiringTemplates?.length || 0} templates available
                       </Badge>
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto border rounded-lg p-3">
-                      {currentStudio?.kilnFiringTemplates?.filter(t =>
+                      {context.currentStudio?.kilnFiringTemplates?.filter(t =>
                         !scheduleForm.kilnId || t.kilnId === scheduleForm.kilnId
                       ).map(template => (
                         <div
@@ -800,7 +800,7 @@ export function FiringScheduleManager() {
               </TableHeader>
               <TableBody>
                 {filteredSchedules.map((schedule) => {
-                  const kiln = currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
+                  const kiln = context.currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
                   const operator = operators.find(op => op.id === schedule.assignedEmployeeId);
 
                   return (

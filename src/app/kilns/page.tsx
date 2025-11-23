@@ -1,48 +1,63 @@
-import { useEffect, useState } from 'react';
-  Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock,
-  Thermometer, Users, Package, Settings, Eye, Bell, Download,
-  CheckCircle, AlertTriangle, Info, BarChart3, Camera, MapPin,
-  Zap, Fuel, User, CheckSquare, Square, MoreHorizontal, UserCheck,
-  Play, Pause, RotateCcw, Timer, Gauge, Activity, Video, Monitor,
-  Wifi, WifiOff, Battery, BatteryLow, Palette, Wrench, ClipboardList,
-  FileText, Copy, Share, Star, TrendingUp, Target, Beaker,
-  Layers, BookOpen, PlusCircle, Save, X, Send, Calculator
-} from 'lucide-react';
+import { useAppContext } from '@/app/context/AppContext';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAppContext } from '@/app/context/AppContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    calculateOptimalShelfConfig,
+    calculateTotalCapacity,
+    PIECE_SIZE_PRESETS,
+    type CapacityCalculation
+} from '@/lib/utils/kilnCalculations';
 import type {
-  Kiln, KilnLoad, KilnLoadItem, KilnShelf, FiringSchedule,
-  KilnAssignment, CustomFiringType, KilnCamera, RingIntegration,
-  KilnFiringTemplate
+    Kiln,
+    KilnFiringTemplate
 } from '@/types';
 import {
-  calculateTotalCapacity,
-  calculateOptimalShelfConfig,
-  PIECE_SIZE_PRESETS,
-  type CapacityCalculation
-} from '@/lib/utils/kilnCalculations';
+    Bell,
+    Calculator,
+    Calendar,
+    CheckCircle,
+    Copy,
+    Edit2,
+    Eye,
+    FileText,
+    Flame,
+    MapPin,
+    Monitor,
+    MoreHorizontal,
+    Play,
+    Plus,
+    Save,
+    Search,
+    Send,
+    Share, Star,
+    Target,
+    Thermometer,
+    Timer,
+    Trash2,
+    TrendingUp,
+    Wrench,
+    X
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 // FIXME: something about an auth-token
 
 export default function KilnManagement() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
   const [kilns, setKilns] = useState<any[]>([]);
@@ -85,7 +100,7 @@ export default function KilnManagement() {
     manufacturer: '',
     model: '',
     serialNumber: '',
-    locationId: currentStudio?.locations?.[0]?.id || '',
+    locationId: context.currentStudio?.locations?.[0]?.id || '',
     capacity: 20,
     maxTemp: 1300,
     shelfCount: 4,
@@ -140,7 +155,7 @@ export default function KilnManagement() {
     endTime: '',
     firingType: '',
     operatorId: '',
-    locationId: currentStudio?.locations?.[0]?.id || '',
+    locationId: context.currentStudio?.locations?.[0]?.id || '',
     temperature: '',
     notes: '',
     atmosphere: 'oxidation' as 'oxidation' | 'reduction' | 'neutral',
@@ -187,7 +202,7 @@ export default function KilnManagement() {
 
   // Load kilns & firings from backend when studio/auth token available
   useEffect(() => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       setKilns([]);
       setFiringSchedules([]);
       return;
@@ -198,10 +213,10 @@ export default function KilnManagement() {
     async function loadKilns() {
       try {
         const res = await fetch(
-          `/api/admin/studios/${currentStudio?.id}/kilns`,
+          `/api/admin/studios/${context.currentStudio?.id}/kilns`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -225,10 +240,10 @@ export default function KilnManagement() {
     async function loadFirings() {
       try {
         const res = await fetch(
-          `/api/admin/studios/${currentStudio?.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -252,10 +267,10 @@ export default function KilnManagement() {
     async function loadStaff() {
       try {
         const res = await fetch(
-          `/api/admin/studios/${currentStudio?.id}/staff`,
+          `/api/admin/studios/${context.currentStudio?.id}/staff`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -283,7 +298,7 @@ export default function KilnManagement() {
     return () => {
       cancelled = true;
     };
-  }, [currentStudio?.id, authToken]);
+  }, [context.currentStudio?.id, context.authToken]);
 
   // Capacity calculation handler
   const handleCalculateCapacity = () => {
@@ -373,17 +388,17 @@ export default function KilnManagement() {
   };
 
   const handleCreateKiln = async () => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       console.error('Cannot create kiln: missing studio or auth token');
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/studios/${currentStudio.id}/kilns`, {
+      const res = await fetch(`/api/admin/studios/${context.currentStudio?.id}/kilns`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
         body: JSON.stringify({
           name: newKiln.name,
@@ -421,10 +436,10 @@ export default function KilnManagement() {
       // Refresh kilns from backend
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kilns`,
+          `/api/admin/studios/${context.currentStudio?.id}/kilns`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -447,7 +462,7 @@ export default function KilnManagement() {
         manufacturer: '',
         model: '',
         serialNumber: '',
-        locationId: currentStudio?.locations?.[0]?.id || '',
+        locationId: context.currentStudio?.locations?.[0]?.id || '',
         capacity: 20,
         maxTemp: 1300,
         shelfCount: 4,
@@ -542,17 +557,17 @@ export default function KilnManagement() {
   };
 
   const handleUpdateKiln = async () => {
-    if (!currentStudio?.id || !authToken || !editingKiln?.id) {
+    if (!context.currentStudio?.id || !context.authToken || !editingKiln?.id) {
       console.error('Cannot update kiln: missing studio, auth token, or kiln ID');
       return;
     }
 
     try {
-      const res = await fetch(`/api/admin/studios/${currentStudio.id}/kilns/${editingKiln.id}`, {
+      const res = await fetch(`/api/admin/studios/${context.currentStudio?.id}/kilns/${editingKiln.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
         body: JSON.stringify({
           name: editingKiln.name,
@@ -590,10 +605,10 @@ export default function KilnManagement() {
       // Refresh kilns from backend
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kilns`,
+          `/api/admin/studios/${context.currentStudio?.id}/kilns`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -671,7 +686,7 @@ export default function KilnManagement() {
     }
   };
 
-  const filteredKilns = kilns.filter((kiln) => {
+  const filteredKilns = context.currentStudio?.kilns?.filter(kiln => {
     const matchesSearch = kiln.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          kiln.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || kiln.status === statusFilter;
@@ -729,7 +744,7 @@ export default function KilnManagement() {
       endTime: schedule.actual_end ? new Date(schedule.actual_end).toTimeString().slice(0, 5) : '',
       firingType: schedule.firing_type || schedule.firingType || '',
       operatorId: schedule.operator_id || schedule.operatorId || '',
-      locationId: currentStudio?.locations?.[0]?.id || '',
+      locationId: context.currentStudio?.locations?.[0]?.id || '',
       temperature: schedule.target_cone || schedule.targetCone || '',
       notes: schedule.notes || '',
       atmosphere: schedule.atmosphere || 'oxidation',
@@ -738,7 +753,7 @@ export default function KilnManagement() {
   };
 
   const handleCancelScheduleFiring = async (schedule: any) => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot cancel firing', {
         description: 'Missing studio or authentication.',
       });
@@ -763,12 +778,12 @@ export default function KilnManagement() {
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${schedule.id}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             status: 'cancelled',
@@ -789,10 +804,10 @@ export default function KilnManagement() {
       // Refresh firings
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -816,7 +831,7 @@ export default function KilnManagement() {
   };
 
   const handleBulkCancelSchedules = async () => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot cancel firings', {
         description: 'Missing studio or authentication.',
       });
@@ -853,12 +868,12 @@ export default function KilnManagement() {
       // Cancel all selected scheduled firings
       const cancelPromises = scheduledFiringsToCancel.map((schedule: any) =>
         fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${schedule.id}`,
           {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
             body: JSON.stringify({
               status: 'cancelled',
@@ -888,10 +903,10 @@ export default function KilnManagement() {
       // Refresh firings
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -911,7 +926,7 @@ export default function KilnManagement() {
   };
 
   const handleBulkDeleteSchedules = async () => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot delete firings', {
         description: 'Missing studio or authentication.',
       });
@@ -948,11 +963,11 @@ export default function KilnManagement() {
       // Delete all selected firings from the database
       const deletePromises = firingsToDelete.map((schedule: any) =>
         fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${schedule.id}`,
           {
             method: 'DELETE',
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         )
@@ -978,10 +993,10 @@ export default function KilnManagement() {
       // Refresh firings
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -1001,7 +1016,7 @@ export default function KilnManagement() {
   };
 
   const handleUpdateSchedule = async () => {
-    if (!currentStudio?.id || !authToken || !selectedSchedule) {
+    if (!context.currentStudio?.id || !context.authToken || !selectedSchedule) {
       toast.error('Cannot update schedule', {
         description: 'Missing required information.',
       });
@@ -1017,12 +1032,12 @@ export default function KilnManagement() {
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings/${selectedSchedule.id}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${selectedSchedule.id}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             name: scheduleForm.name,
@@ -1051,10 +1066,10 @@ export default function KilnManagement() {
       // Refresh firings
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -1076,7 +1091,7 @@ export default function KilnManagement() {
         endTime: '',
         firingType: '',
         operatorId: '',
-        locationId: currentStudio?.locations?.[0]?.id || '',
+        locationId: context.currentStudio?.locations?.[0]?.id || '',
         temperature: '',
         notes: '',
         atmosphere: 'oxidation',
@@ -1126,19 +1141,19 @@ export default function KilnManagement() {
   };
 
   const handleCreateSchedule = async () => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       console.error('Cannot create firing schedule: missing studio or auth token');
       return;
     }
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             name: scheduleForm.name,
@@ -1169,10 +1184,10 @@ export default function KilnManagement() {
       // Refresh firing schedules from backend
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -1195,7 +1210,7 @@ export default function KilnManagement() {
         endTime: '',
         firingType: '',
         operatorId: '',
-        locationId: currentStudio?.locations?.[0]?.id || '',
+        locationId: context.currentStudio?.locations?.[0]?.id || '',
         temperature: '',
         notes: '',
         atmosphere: 'oxidation',
@@ -1297,7 +1312,7 @@ export default function KilnManagement() {
   };
 
   const handleStartScheduledFiring = async (firingId: string) => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot start firing', {
         description: 'Missing studio or authentication.',
       });
@@ -1306,12 +1321,12 @@ export default function KilnManagement() {
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${firingId}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             status: 'loading',
@@ -1333,10 +1348,10 @@ export default function KilnManagement() {
       const refreshFirings = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1352,10 +1367,10 @@ export default function KilnManagement() {
       const refreshKilns = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kilns`,
+            `/api/admin/studios/${context.currentStudio?.id}/kilns`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1382,7 +1397,7 @@ export default function KilnManagement() {
   };
 
   const handleQuickStartFiring = async () => {
-    if (!currentStudio?.id || !authToken || !quickStartKilnId) {
+    if (!context.currentStudio?.id || !context.authToken || !quickStartKilnId) {
       toast.error('Cannot start firing', {
         description: 'Missing required information.',
       });
@@ -1392,12 +1407,12 @@ export default function KilnManagement() {
     try {
       // Create firing with status "loading" to start immediately
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             name: quickStartForm.name || `Quick Start - ${new Date().toLocaleString()}`,
@@ -1427,10 +1442,10 @@ export default function KilnManagement() {
       const refreshFirings = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1446,10 +1461,10 @@ export default function KilnManagement() {
       const refreshKilns = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kilns`,
+            `/api/admin/studios/${context.currentStudio?.id}/kilns`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1488,7 +1503,7 @@ export default function KilnManagement() {
   };
 
   const handleProgressFiring = async (firingId: string, currentStatus: string) => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot progress firing', {
         description: 'Missing studio or authentication.',
       });
@@ -1533,12 +1548,12 @@ export default function KilnManagement() {
       }
 
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${firingId}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify(updateData),
         }
@@ -1557,10 +1572,10 @@ export default function KilnManagement() {
       const refreshFirings = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1576,10 +1591,10 @@ export default function KilnManagement() {
       const refreshKilns = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kilns`,
+            `/api/admin/studios/${context.currentStudio?.id}/kilns`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1604,7 +1619,7 @@ export default function KilnManagement() {
   };
 
   const handleCancelFiring = async (firingId: string, firingName?: string) => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot cancel firing', {
         description: 'Missing studio or authentication.',
       });
@@ -1622,12 +1637,12 @@ export default function KilnManagement() {
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kiln-firings/${firingId}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
           body: JSON.stringify({
             status: 'cancelled',
@@ -1649,10 +1664,10 @@ export default function KilnManagement() {
       const refreshFirings = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            `/api/admin/studios/${context.currentStudio?.id}/kiln-firings`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1668,10 +1683,10 @@ export default function KilnManagement() {
       const refreshKilns = async () => {
         try {
           const res = await fetch(
-            `/api/admin/studios/${currentStudio.id}/kilns`,
+            `/api/admin/studios/${context.currentStudio?.id}/kilns`,
             {
               headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${context.authToken}`,
               },
             }
           );
@@ -1698,7 +1713,7 @@ export default function KilnManagement() {
   };
 
   const handleDeleteKiln = async (kilnId: string, kilnName: string) => {
-    if (!currentStudio?.id || !authToken) {
+    if (!context.currentStudio?.id || !context.authToken) {
       toast.error('Cannot delete kiln', {
         description: 'Missing studio or authentication.',
       });
@@ -1740,11 +1755,11 @@ export default function KilnManagement() {
 
     try {
       const res = await fetch(
-        `/api/admin/studios/${currentStudio.id}/kilns/${kilnId}`,
+        `/api/admin/studios/${context.currentStudio?.id}/kilns/${kilnId}`,
         {
           method: 'DELETE',
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${context.authToken}`,
           },
         }
       );
@@ -1761,10 +1776,10 @@ export default function KilnManagement() {
       // Refresh kilns list
       try {
         const refreshRes = await fetch(
-          `/api/admin/studios/${currentStudio.id}/kilns`,
+          `/api/admin/studios/${context.currentStudio?.id}/kilns`,
           {
             headers: {
-              Authorization: `Bearer ${authToken}`,
+              Authorization: `Bearer ${context.authToken}`,
             },
           }
         );
@@ -1849,12 +1864,12 @@ export default function KilnManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Locations</SelectItem>
-                  {(currentStudio as any)?.locations?.map((location: any) => (
+                  {(context.currentStudio as any)?.locations?.map((location: any) => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name}
                     </SelectItem>
                   ))}
-                  {(!(currentStudio as any)?.locations || (currentStudio as any)?.locations?.length === 0) && (
+                  {(!(context.currentStudio as any)?.locations || (context.currentStudio as any)?.locations?.length === 0) && (
                     <SelectItem value="no-locations" disabled>
                       No locations available
                     </SelectItem>
@@ -1952,7 +1967,7 @@ export default function KilnManagement() {
                             <SelectValue placeholder="Select location" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.locations.map(location => (
+                            {context.currentStudio?.locations.map(location => (
                               <SelectItem key={location.id} value={location.id}>
                                 {location.name}
                               </SelectItem>
@@ -2657,8 +2672,8 @@ export default function KilnManagement() {
                 ? 'in-use'
                 : (kiln.status || 'available');
 
-              // Get location name from currentStudio locations
-              const location = (currentStudio as any)?.locations?.find(
+              // Get location name from context.currentStudio locations
+              const location = (context.currentStudio as any)?.locations?.find(
                 (loc: any) => loc.id === kiln.locationId
               );
               const locationName = location?.name || 'No location';
@@ -2711,7 +2726,7 @@ export default function KilnManagement() {
                             endTime: '',
                             firingType: '',
                             operatorId: '',
-                            locationId: currentStudio?.locations?.[0]?.id || '',
+                            locationId: context.currentStudio?.locations?.[0]?.id || '',
                             temperature: '',
                             notes: '',
                             atmosphere: 'oxidation',
@@ -3100,7 +3115,7 @@ export default function KilnManagement() {
                         <div className="space-y-3">
                           <Label>Glaze Compatibility</Label>
                           <div className="grid grid-cols-3 gap-3">
-                            {currentStudio?.glazes?.slice(0, 9).map((glaze) => (
+                            {context.currentStudio?.glazes?.slice(0, 9).map((glaze) => (
                               <div key={glaze} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={glaze}
@@ -3679,7 +3694,7 @@ export default function KilnManagement() {
                           endTime: '',
                           firingType: '',
                           operatorId: '',
-                          locationId: currentStudio?.locations?.[0]?.id || '',
+                          locationId: context.currentStudio?.locations?.[0]?.id || '',
                           temperature: '',
                           notes: '',
                           atmosphere: 'oxidation',
@@ -4131,7 +4146,7 @@ export default function KilnManagement() {
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
                         <SelectContent>
-                          {currentStudio?.locations.map(location => (
+                          {context.currentStudio?.locations.map(location => (
                             <SelectItem key={location.id} value={location.id}>
                               {location.name}
                             </SelectItem>
@@ -4140,7 +4155,7 @@ export default function KilnManagement() {
                       </Select>
                     ) : (
                       <p className="text-sm py-2">
-                        {currentStudio?.locations.find(l => l.id === editingKiln.locationId)?.name || '—'}
+                        {context.currentStudio?.locations.find(l => l.id === editingKiln.locationId)?.name || '—'}
                       </p>
                     )}
                   </div>
@@ -4895,7 +4910,7 @@ export default function KilnManagement() {
             endTime: '',
             firingType: '',
             operatorId: '',
-            locationId: currentStudio?.locations?.[0]?.id || '',
+            locationId: context.currentStudio?.locations?.[0]?.id || '',
             temperature: '',
             notes: '',
             atmosphere: 'oxidation',
@@ -5051,7 +5066,7 @@ export default function KilnManagement() {
                     endTime: '',
                     firingType: '',
                     operatorId: '',
-                    locationId: currentStudio?.locations?.[0]?.id || '',
+                    locationId: context.currentStudio?.locations?.[0]?.id || '',
                     temperature: '',
                     notes: '',
                     atmosphere: 'oxidation',
@@ -5468,7 +5483,7 @@ export default function KilnManagement() {
             endTime: '',
             firingType: '',
             operatorId: '',
-            locationId: currentStudio?.locations?.[0]?.id || '',
+            locationId: context.currentStudio?.locations?.[0]?.id || '',
             temperature: '',
             notes: '',
             atmosphere: 'oxidation',
@@ -5648,7 +5663,7 @@ export default function KilnManagement() {
                     endTime: '',
                     firingType: '',
                     operatorId: '',
-                    locationId: currentStudio?.locations?.[0]?.id || '',
+                    locationId: context.currentStudio?.locations?.[0]?.id || '',
                     temperature: '',
                     notes: '',
                     atmosphere: 'oxidation',

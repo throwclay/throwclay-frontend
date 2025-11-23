@@ -1,5 +1,5 @@
-// Use the shared context instead
-// import { useAppContext } from '@/utils/subscriptions';
+// Use the shared instead
+// import { useApp} from '@/utils/subscriptions';
 
 import { useState } from "react";
 import {
@@ -1288,7 +1288,7 @@ export function getSubscriptionLimits(
 }
 
 // Global app context
-export interface AppContext {
+export interface App{
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   currentStudio: Studio | null;
@@ -1299,14 +1299,14 @@ export interface AppContext {
   navigateToPage?: (page: string) => void;
 }
 
-// const AppContext = createContext<AppContext | undefined>(undefined);
+// const App= createApp| undefined>(undefined);
 
-// export function useAppContext() {
-//   const context = useContext(AppContext);
-//   if (context === undefined) {
-//     // throw new Error('useAppContext must be used within an AppProvider');
+// export function useApp) {
+//   const = useApp;
+//   if (=== undefined) {
+//     // throw new Error('useAppmust be used within an AppProvider');
 //   }
-//   return context;
+//   return
 // }
 
 function App() {
@@ -1481,7 +1481,7 @@ function App() {
     setCurrentPage("landing");
   };
 
-  const contextValue: AppContext = {
+  const alue: App= {
     currentUser,
     setCurrentUser,
     currentStudio,
@@ -1570,7 +1570,7 @@ function App() {
   };
 
   return (
-    // <AppContext.Provider value={contextValue}>
+    // <AppProvider value={alue}>
     <div className="min-h-screen bg-background">
       {isLoggedIn && currentUser && (
         <Navigation
@@ -1582,7 +1582,7 @@ function App() {
       )}
       <main>{renderPage()}</main>
     </div>
-    // </AppContext.Provider>
+    // </AppProvider>
   );
 }
 

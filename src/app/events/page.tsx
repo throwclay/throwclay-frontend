@@ -16,7 +16,7 @@ import { useAppContext, type Event } from '@/app/context/AppContext';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 export default function EventsManagement() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -111,8 +111,8 @@ export default function EventsManagement() {
     date: '',
     endDate: '',
     location: '',
-    organizer: currentUser?.name || '',
-    organizerId: currentUser?.id || '',
+    organizer: context.currentUser?.name || '',
+    organizerId: context.currentUser?.id || '',
     maxParticipants: 20,
     currentParticipants: [],
     requirements: [],
@@ -173,8 +173,8 @@ export default function EventsManagement() {
       date: '',
       endDate: '',
       location: '',
-      organizer: currentUser?.name || '',
-      organizerId: currentUser?.id || '',
+      organizer: context.currentUser?.name || '',
+      organizerId: context.currentUser?.id || '',
       maxParticipants: 20,
       currentParticipants: [],
       requirements: [],
@@ -194,20 +194,20 @@ export default function EventsManagement() {
   };
 
   const handleJoinEvent = (event: Event) => {
-    if (!currentUser) return;
+    if (!context.currentUser) return;
 
     setEvents(prev => prev.map(e =>
       e.id === event.id
-        ? { ...e, currentParticipants: [...e.currentParticipants, currentUser.id] }
+        ? { ...e, currentParticipants: [...e.currentParticipants, context.currentUser.id] }
         : e
     ));
   };
 
   const isParticipating = (event: Event) => {
-    return currentUser && event.currentParticipants.includes(currentUser.id);
+    return context.currentUser && event.currentParticipants.includes(context.currentUser.id);
   };
 
-  const canManageEvents = currentUser?.type === 'studio_admin' || currentUser?.type === 'instructor';
+  const canManageEvents = context.currentUser?.type === 'studio_admin' || context.currentUser?.type === 'instructor';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -511,7 +511,7 @@ export default function EventsManagement() {
                     <span>Details</span>
                   </Button>
 
-                  {canManageEvents && event.organizerId === currentUser?.id && (
+                  {canManageEvents && event.organizerId === context.currentUser?.id && (
                     <>
                       <Button variant="outline" size="sm" className="flex items-center space-x-1">
                         <Edit className="w-3 h-3" />

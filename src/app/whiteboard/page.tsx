@@ -77,7 +77,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -104,21 +103,14 @@ import {
 import { getSubscriptionLimits } from "@/utils/subscriptions";
 
 export default function WhiteboardEditor() {
-  const {
-    currentUser,
-    currentStudio,
-    currentThrow,
-    setCurrentThrow,
-    updateThrow,
-    navigateToPage,
-  } = useAppContext();
+  const context = useAppContext();
 
   // Redirect to journal if no current throw
   useEffect(() => {
-    if (!currentThrow) {
-      navigateToPage("journal");
+    if (!context.currentThrow) {
+      context.navigateToPage("journal");
     }
-  }, [currentThrow, navigateToPage]);
+  }, [context.currentThrow, context.navigateToPage]);
 
   // Whiteboard states
   const [currentPage, setCurrentPage] = useState(0);
@@ -158,7 +150,7 @@ export default function WhiteboardEditor() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const subscriptionLimits = getSubscriptionLimits(currentUser?.subscription);
+  const subscriptionLimits = getSubscriptionLimits(context.currentUser?.subscription);
 
   // Available options
   const potteryTypes = [
@@ -215,7 +207,7 @@ export default function WhiteboardEditor() {
     "1320°C",
     "Custom",
   ];
-  const availableGlazes = currentStudio?.glazes || [
+  const availableGlazes = context.currentStudio?.glazes || [
     "Clear",
     "Celadon",
     "Iron Red",
@@ -301,7 +293,7 @@ export default function WhiteboardEditor() {
 
   // Available firing schedules from studio
   const availableFirings =
-    currentStudio?.firingSchedule?.map((schedule) => ({
+    context.currentStudio?.firingSchedule?.map((schedule) => ({
       id: schedule.id,
       label: `${schedule.type} - ${schedule.date} (${schedule.temperature})`,
       type: schedule.type,
@@ -311,7 +303,7 @@ export default function WhiteboardEditor() {
       spotsLeft: schedule.capacity - schedule.bookedSlots,
     })) || [];
 
-  if (!currentThrow) {
+  if (!context.currentThrow) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -320,7 +312,7 @@ export default function WhiteboardEditor() {
           <p className="text-muted-foreground mb-4">
             Please select a throw from your journal to edit.
           </p>
-          <Button onClick={() => navigateToPage("journal")}>
+          <Button onClick={() => context.navigateToPage("journal")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Journal
           </Button>
@@ -330,23 +322,23 @@ export default function WhiteboardEditor() {
   }
 
   const handleBackToJournal = () => {
-    if (currentThrow) {
-      updateThrow(currentThrow);
+    if (context.currentThrow) {
+      context.updateThrow(context.currentThrow);
     }
-    setCurrentThrow(null);
-    navigateToPage("journal");
+    context.context.setCurrentThrow(null);
+    context.navigateToPage("journal");
   };
 
   const handleUpdateThrowField = (field: keyof PotteryEntry, value: any) => {
-    if (!currentThrow) return;
+    if (!context.currentThrow) return;
 
     const updatedThrow = {
-      ...currentThrow,
+      ...context.currentThrow,
       [field]: value,
       updatedAt: new Date().toISOString(),
     };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
   };
 
   const handlePhotoUpload = useCallback(
@@ -384,15 +376,15 @@ export default function WhiteboardEditor() {
             annotations: [],
           };
 
-          if (currentThrow && currentThrow.whiteboardPages.length > 0) {
-            const updatedPages = [...currentThrow.whiteboardPages];
+          if (context.currentThrow && context.currentThrow.whiteboardPages.length > 0) {
+            const updatedPages = [...context.currentThrow.whiteboardPages];
             updatedPages[currentPage].elements.photos.push(photoEntry);
             const updatedThrow = {
-              ...currentThrow,
+              ...context.currentThrow,
               whiteboardPages: updatedPages,
             };
-            setCurrentThrow(updatedThrow);
-            updateThrow(updatedThrow);
+            context.context.setCurrentThrow(updatedThrow);
+            context.updateThrow(updatedThrow);
           }
         };
         reader.readAsDataURL(file);
@@ -403,16 +395,16 @@ export default function WhiteboardEditor() {
       }
     },
     [
-      currentThrow,
-      currentPage,
-      subscriptionLimits,
-      setCurrentThrow,
-      updateThrow,
+      context.currentThrow,
+      context.currentPage,
+      context.subscriptionLimits,
+      context.context.setCurrentThrow,
+      context.updateThrow,
     ]
   );
 
   const handleAddStickyNote = () => {
-    if (!currentThrow || currentThrow.whiteboardPages.length === 0) return;
+    if (!context.currentThrow || context.currentThrow.whiteboardPages.length === 0) return;
 
     const stickyNote: StickyNote = {
       id: `sticky${Date.now()}`,
@@ -424,18 +416,18 @@ export default function WhiteboardEditor() {
       color: "yellow",
       fontSize: "medium",
       createdAt: new Date().toISOString(),
-      createdBy: currentUser?.id || "user1",
+      createdBy: context.currentUser?.id || "user1",
     };
 
     const updatedPages = [...currentThrow.whiteboardPages];
     updatedPages[currentPage].elements.stickyNotes.push(stickyNote);
     const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
+    context.context.setCurrentThrow(updatedThrow);
     updateThrow(updatedThrow);
   };
 
   const handleAddProcessNote = (processId: string) => {
-    if (!currentThrow || currentThrow.whiteboardPages.length === 0) return;
+    if (!context.currentThrow || context.currentThrow.whiteboardPages.length === 0) return;
 
     // Handle special pottery tools with enhanced dialogs
     if (processId === "glazing") {
@@ -474,18 +466,18 @@ export default function WhiteboardEditor() {
       color: "blue",
       fontSize: "medium",
       createdAt: new Date().toISOString(),
-      createdBy: currentUser?.id || "user1",
+      createdBy: context.currentUser?.id || "user1",
     };
 
     const updatedPages = [...currentThrow.whiteboardPages];
     updatedPages[currentPage].elements.stickyNotes.push(processNote);
     const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
   };
 
   const handleApplyGlazes = () => {
-    if (!currentThrow) return;
+    if (!context.currentThrow) return;
 
     const glazeList = [...selectedGlazes];
     if (customGlaze.trim()) {
@@ -508,14 +500,14 @@ export default function WhiteboardEditor() {
       color: "green",
       fontSize: "medium",
       createdAt: new Date().toISOString(),
-      createdBy: currentUser?.id || "user1",
+      createdBy: context.currentUser?.id || "user1",
     };
 
-    const updatedPages = [...currentThrow.whiteboardPages];
+    const updatedPages = [...context.currentThrow.whiteboardPages];
     updatedPages[currentPage].elements.stickyNotes.push(glazingNote);
-    const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
+    const updatedThrow = { ...context.currentThrow, whiteboardPages: updatedPages };
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
 
     setShowGlazingDialog(false);
     setSelectedGlazes([]);
@@ -523,7 +515,7 @@ export default function WhiteboardEditor() {
   };
 
   const handleScheduleFiring = () => {
-    if (!currentThrow) return;
+    if (!context.currentThrow) return;
 
     const firingType = selectedFiring || customFiring;
     if (!firingType) return;
@@ -557,14 +549,14 @@ export default function WhiteboardEditor() {
       color: "orange",
       fontSize: "medium",
       createdAt: new Date().toISOString(),
-      createdBy: currentUser?.id || "user1",
+      createdBy: context.currentUser?.id || "user1",
     };
 
-    const updatedPages = [...currentThrow.whiteboardPages];
+    const updatedPages = [...context.currentThrow.whiteboardPages];
     updatedPages[currentPage].elements.stickyNotes.push(firingNote);
-    const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
+    const updatedThrow = { ...context.currentThrow, whiteboardPages: updatedPages };
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
 
     setShowFiringDialog(false);
     setSelectedFiring("");
@@ -579,18 +571,18 @@ export default function WhiteboardEditor() {
       const suggestions = trimmingPatterns
         .filter((pattern) => {
           // Simple logic based on pottery type
-          if (currentThrow?.potteryType === "Bowl") {
+          if (context.currentThrow?.potteryType === "Bowl") {
             return [
               "traditional-foot",
               "carved-foot",
               "beveled-edge",
               "minimal-trim",
             ].includes(pattern.id);
-          } else if (currentThrow?.potteryType === "Vase") {
+          } else if (context.currentThrow?.potteryType === "Vase") {
             return ["stepped-foot", "deep-undercut", "fluted-base"].includes(
               pattern.id
             );
-          } else if (currentThrow?.potteryType === "Mug") {
+          } else if (context.currentThrow?.potteryType === "Mug") {
             return [
               "traditional-foot",
               "minimal-trim",
@@ -607,7 +599,7 @@ export default function WhiteboardEditor() {
   };
 
   const handleApplyTrimmingPattern = (patternId: string) => {
-    if (!currentThrow) return;
+    if (!context.currentThrow) return;
 
     const pattern = trimmingPatterns.find((p) => p.id === patternId);
     if (!pattern) return;
@@ -623,24 +615,24 @@ export default function WhiteboardEditor() {
       color: "purple",
       fontSize: "medium",
       createdAt: new Date().toISOString(),
-      createdBy: currentUser?.id || "user1",
+      createdBy: context.currentUser?.id || "user1",
     };
 
-    const updatedPages = [...currentThrow.whiteboardPages];
+    const updatedPages = [...context.currentThrow.whiteboardPages];
     updatedPages[currentPage].elements.stickyNotes.push(trimmingNote);
-    const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
+    const updatedThrow = { ...context.currentThrow, whiteboardPages: updatedPages };
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
 
     setShowTrimmingDialog(false);
     setSelectedTrimmingPattern("");
   };
 
   const handleAddPage = () => {
-    if (!currentThrow) return;
+    if (!context.currentThrow) return;
 
     const maxPages = subscriptionLimits.maxPagesPerThrow;
-    if (maxPages !== -1 && currentThrow.whiteboardPages.length >= maxPages) {
+    if (maxPages !== -1 && context.currentThrow.whiteboardPages.length >= maxPages) {
       alert(
         `You've reached the maximum number of pages (${maxPages}) for your subscription plan.`
       );
@@ -649,8 +641,8 @@ export default function WhiteboardEditor() {
 
     const newPage: WhiteboardPage = {
       id: `page${Date.now()}`,
-      title: `Page ${currentThrow.whiteboardPages.length + 1}`,
-      order: currentThrow.whiteboardPages.length,
+      title: `Page ${context.currentThrow.whiteboardPages.length + 1}`,
+      order: context.currentThrow.whiteboardPages.length,
       canvasWidth: 1400,
       canvasHeight: 900,
       backgroundColor: "#FFFFFF",
@@ -664,11 +656,11 @@ export default function WhiteboardEditor() {
       updatedAt: new Date().toISOString(),
     };
 
-    const updatedPages = [...currentThrow.whiteboardPages, newPage];
-    const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
-    setCurrentThrow(updatedThrow);
-    updateThrow(updatedThrow);
-    setCurrentPage(updatedPages.length - 1);
+    const updatedPages = [...context.currentThrow.whiteboardPages, newPage];
+    const updatedThrow = { ...context.currentThrow, whiteboardPages: updatedPages };
+    context.context.setCurrentThrow(updatedThrow);
+    context.updateThrow(updatedThrow);
+    context.setCurrentPage(updatedPages.length - 1);
   };
 
   const handleExportToPDF = () => {
@@ -717,12 +709,12 @@ export default function WhiteboardEditor() {
         <Separator orientation="vertical" className="h-6" />
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
-            {getStatusIcon(currentThrow.status)}
-            <h1 className="text-xl font-semibold">{currentThrow.title}</h1>
+            {getStatusIcon(context.currentThrow.status)}
+            <h1 className="text-xl font-semibold">{context.currentThrow.title}</h1>
           </div>
           <Badge variant="outline">
-            {currentThrow.whiteboardPages.length} page
-            {currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
+            {context.currentThrow.whiteboardPages.length} page
+            {context.currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
           </Badge>
         </div>
       </div>
@@ -744,7 +736,7 @@ export default function WhiteboardEditor() {
           <FileDown className="w-4 h-4 mr-1" />
           Export
         </Button>
-        <Button size="sm" onClick={() => updateThrow(currentThrow)}>
+        <Button size="sm" onClick={() => updateThrow(context.currentThrow)}>
           <Save className="w-4 h-4 mr-1" />
           Save
         </Button>
@@ -929,9 +921,9 @@ export default function WhiteboardEditor() {
   );
 
   const renderCanvas = () => {
-    if (!currentThrow || currentThrow.whiteboardPages.length === 0) return null;
+    if (!context.currentThrow || context.currentThrow.whiteboardPages.length === 0) return null;
 
-    const currentPageData = currentThrow.whiteboardPages[currentPage];
+    const currentPageData = context.currentThrow.whiteboardPages[currentPage];
 
     return (
       <div
@@ -1069,7 +1061,7 @@ export default function WhiteboardEditor() {
         </Button>
 
         <div className="flex items-center space-x-1">
-          {currentThrow?.whiteboardPages.map((page, index) => (
+          {context.currentThrow?.whiteboardPages.map((page, index) => (
             <Button
               key={page.id}
               variant={index === currentPage ? "default" : "ghost"}
@@ -1088,13 +1080,13 @@ export default function WhiteboardEditor() {
           onClick={() =>
             setCurrentPage(
               Math.min(
-                (currentThrow?.whiteboardPages.length || 1) - 1,
+                (context.currentThrow?.whiteboardPages.length || 1) - 1,
                 currentPage + 1
               )
             )
           }
           disabled={
-            currentPage >= (currentThrow?.whiteboardPages.length || 1) - 1
+            currentPage >= (context.currentThrow?.whiteboardPages.length || 1) - 1
           }
         >
           <ChevronRight className="w-4 h-4" />
@@ -1103,7 +1095,7 @@ export default function WhiteboardEditor() {
 
       <div className="flex items-center space-x-2">
         <span className="text-sm text-muted-foreground">
-          Page {currentPage + 1} of {currentThrow?.whiteboardPages.length || 0}
+          Page {currentPage + 1} of {context.currentThrow?.whiteboardPages.length || 0}
         </span>
 
         <Button variant="ghost" size="sm" onClick={handleAddPage}>
@@ -1140,7 +1132,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Title</Label>
                   <Input
-                    value={currentThrow.title}
+                    value={context.currentThrow.title}
                     onChange={(e) =>
                       handleUpdateThrowField("title", e.target.value)
                     }
@@ -1151,7 +1143,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Pottery Type</Label>
                   <Select
-                    value={currentThrow.potteryType}
+                    value={context.currentThrow.potteryType}
                     onValueChange={(value) =>
                       handleUpdateThrowField("potteryType", value)
                     }
@@ -1172,7 +1164,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Dimensions</Label>
                   <Input
-                    value={currentThrow.dimensions || ""}
+                    value={context.currentThrow.dimensions || ""}
                     onChange={(e) =>
                       handleUpdateThrowField("dimensions", e.target.value)
                     }
@@ -1183,7 +1175,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Status</Label>
                   <Select
-                    value={currentThrow.status}
+                    value={context.currentThrow.status}
                     onValueChange={(value) =>
                       handleUpdateThrowField("status", value)
                     }
@@ -1214,7 +1206,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Clay Type</Label>
                   <Select
-                    value={currentThrow.clayType}
+                    value={context.currentThrow.clayType}
                     onValueChange={(value) =>
                       handleUpdateThrowField("clayType", value)
                     }
@@ -1239,15 +1231,15 @@ export default function WhiteboardEditor() {
                       <Badge
                         key={technique}
                         variant={
-                          currentThrow.techniques.includes(technique)
+                          context.currentThrow.techniques.includes(technique)
                             ? "default"
                             : "outline"
                         }
                         className="cursor-pointer text-xs"
                         onClick={() => {
                           const newTechniques =
-                            currentThrow.techniques.includes(technique)
-                              ? currentThrow.techniques.filter(
+                            context.currentThrow.techniques.includes(technique)
+                              ? context.currentThrow.techniques.filter(
                                   (t) => t !== technique
                                 )
                               : [...currentThrow.techniques, technique];
@@ -1274,7 +1266,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Firing Type</Label>
                   <Select
-                    value={currentThrow.firingType}
+                    value={context.currentThrow.firingType}
                     onValueChange={(value) =>
                       handleUpdateThrowField("firingType", value)
                     }
@@ -1295,7 +1287,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Temperature</Label>
                   <Select
-                    value={currentThrow.firingTemp}
+                    value={context.currentThrow.firingTemp}
                     onValueChange={(value) =>
                       handleUpdateThrowField("firingTemp", value)
                     }
@@ -1320,15 +1312,15 @@ export default function WhiteboardEditor() {
                       <Badge
                         key={glaze}
                         variant={
-                          currentThrow.glazes.includes(glaze)
+                          context.currentThrow.glazes.includes(glaze)
                             ? "default"
                             : "outline"
                         }
                         className="cursor-pointer text-xs"
                         onClick={() => {
-                          const newGlazes = currentThrow.glazes.includes(glaze)
-                            ? currentThrow.glazes.filter((g) => g !== glaze)
-                            : [...currentThrow.glazes, glaze];
+                          const newGlazes = context.currentThrow.glazes.includes(glaze)
+                            ? context.currentThrow.glazes.filter((g) => g !== glaze)
+                            : [...context.currentThrow.glazes, glaze];
                           handleUpdateThrowField("glazes", newGlazes);
                         }}
                       >
@@ -1353,7 +1345,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Description</Label>
                   <Textarea
-                    value={currentThrow.description || ""}
+                    value={context.currentThrow.description || ""}
                     onChange={(e) =>
                       handleUpdateThrowField("description", e.target.value)
                     }
@@ -1365,7 +1357,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Process Notes</Label>
                   <Textarea
-                    value={currentThrow.notes}
+                    value={context.currentThrow.notes}
                     onChange={(e) =>
                       handleUpdateThrowField("notes", e.target.value)
                     }
@@ -1377,7 +1369,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Challenges</Label>
                   <Textarea
-                    value={currentThrow.challenges}
+                    value={context.currentThrow.challenges}
                     onChange={(e) =>
                       handleUpdateThrowField("challenges", e.target.value)
                     }
@@ -1389,7 +1381,7 @@ export default function WhiteboardEditor() {
                 <div>
                   <Label>Next Steps</Label>
                   <Textarea
-                    value={currentThrow.nextSteps}
+                    value={context.currentThrow.nextSteps}
                     onChange={(e) =>
                       handleUpdateThrowField("nextSteps", e.target.value)
                     }
@@ -1453,19 +1445,19 @@ export default function WhiteboardEditor() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Created:</span>
                   <span>
-                    {new Date(currentThrow.createdAt).toLocaleDateString()}
+                    {new Date(context.currentThrow.createdAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Updated:</span>
                   <span>
-                    {new Date(currentThrow.updatedAt).toLocaleDateString()}
+                    {new Date(context.currentThrow.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Date Made:</span>
                   <span>
-                    {new Date(currentThrow.date).toLocaleDateString()}
+                    {new Date(context.currentThrow.date).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -1526,7 +1518,7 @@ export default function WhiteboardEditor() {
             <div>
               <Label className="text-base font-medium">Studio Glazes</Label>
               <p className="text-sm text-muted-foreground mb-3">
-                Available at {currentStudio?.name}
+                Available at {context.currentStudio?.name}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {availableGlazes.map((glaze) => (
@@ -1641,7 +1633,7 @@ export default function WhiteboardEditor() {
                     Available Firings
                   </Label>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Upcoming firing schedule at {currentStudio?.name}
+                    Upcoming firing schedule at {context.currentStudio?.name}
                   </p>
 
                   {availableFirings.length > 0 ? (
@@ -1787,7 +1779,7 @@ export default function WhiteboardEditor() {
                       </h4>
                       <p className="text-sm text-blue-700 mt-1">
                         Based on your{" "}
-                        {currentThrow?.potteryType?.toLowerCase() || "piece"}{" "}
+                        {context.currentThrow?.potteryType?.toLowerCase() || "piece"}{" "}
                         and uploaded photos, here are the recommended trimming
                         approaches:
                       </p>
@@ -1997,8 +1989,8 @@ export default function WhiteboardEditor() {
               <p>Your PDF will include:</p>
               <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
                 <li>
-                  All {currentThrow.whiteboardPages.length} page
-                  {currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
+                  All {context.currentThrow.whiteboardPages.length} page
+                  {context.currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
                 </li>
                 <li>Photos and annotations</li>
                 <li>Sticky notes and text</li>

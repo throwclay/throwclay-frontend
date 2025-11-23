@@ -590,7 +590,7 @@ export default function Settings() {
       ? currentStudio?.subscription !== "free"
       : currentUser?.subscription !== "free";
 
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">

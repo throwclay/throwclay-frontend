@@ -9,11 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppContext } from '@/app/context/AppContext';
 
 export function StudioDashboard() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [selectedTab, setSelectedTab] = useState('overview');
 
   // Determine if current user is studio owner/admin
-  const isStudioOwner = currentUser?.activeMode === 'studio' 
+  const isStudioOwner = currentUser?.activeMode === 'studio'
   // Mock kilns data since it's not in the Studio interface
   const mockKilns = [
     {
@@ -71,7 +71,7 @@ export function StudioDashboard() {
               <Users className="w-5 h-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Active Members</span>
             </div>
-            <p className="text-3xl font-semibold">{currentStudio?.memberCount || 24}</p>
+            <p className="text-3xl font-semibold">{context.currentStudio?.memberCount || 24}</p>
           </div>
 
           <div className="space-y-2">
@@ -87,7 +87,7 @@ export function StudioDashboard() {
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Classes This Week</span>
             </div>
-            <p className="text-3xl font-semibold">{currentStudio?.classCount || 12}</p>
+            <p className="text-3xl font-semibold">{context.currentStudio?.classCount || 12}</p>
           </div>
 
           <div className="space-y-2">
@@ -121,7 +121,7 @@ export function StudioDashboard() {
               </div>
 
               <div className="space-y-6">
-                {currentStudio?.firingSchedule?.map((firing) => (
+                {context.currentStudio?.firingSchedule?.map((firing) => (
                   <div key={firing.id} className="flex items-center justify-between py-6 border-b">
                     <div className="flex items-center space-x-4">
                       <Thermometer className="w-5 h-5 text-muted-foreground" />
@@ -383,7 +383,7 @@ export function StudioDashboard() {
 
               <div className="space-y-3">
                 <p className="text-muted-foreground">Active Memberships</p>
-                <p className="text-3xl font-semibold">{currentStudio?.memberCount || 24}</p>
+                <p className="text-3xl font-semibold">{context.currentStudio?.memberCount || 24}</p>
                 <p className="text-sm text-muted-foreground">+3 new this month</p>
               </div>
 

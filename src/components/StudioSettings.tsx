@@ -30,15 +30,15 @@ interface StudioSettingsData {
 }
 
 export function StudioSettings() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [showAddLocation, setShowAddLocation] = useState(false);
 
   // Studio general settings state
   const [studioData, setStudioData] = useState<StudioSettingsData>({
-    name: currentStudio?.name || '',
-    description: currentStudio?.description || '',
+    name: context.currentStudio?.name || '',
+    description: context.currentStudio?.description || '',
     website: '',
     memberCapacity: 200,
     usedCapacity: 45,
@@ -49,7 +49,7 @@ export function StudioSettings() {
       electric: 3,
       gas: 2
     },
-    glazesCount: currentStudio?.glazes?.length || 0
+    glazesCount: context.currentStudio?.glazes?.length || 0
   });
 
   // New location form state
@@ -499,7 +499,7 @@ export function StudioSettings() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Existing Locations */}
-          {currentStudio?.locations?.map((location) => (
+          {context.currentStudio?.locations?.map((location) => (
             <div key={location.id} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">

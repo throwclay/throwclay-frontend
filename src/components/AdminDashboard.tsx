@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { useAppContext, type Studio, type FiringSchedule, type User } from '@/app/context/AppContext';
 
 export function AdminDashboard() {
-  const { currentStudio, setCurrentStudio } = useAppContext();
+  const context = useAppContext();
   const [showAddGlazeDialog, setShowAddGlazeDialog] = useState(false);
   const [showAddFiringDialog, setShowAddFiringDialog] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
@@ -65,29 +65,29 @@ export function AdminDashboard() {
   });
 
   const handleAddGlaze = () => {
-    if (!newGlaze.trim() || !currentStudio) return;
+    if (!newGlaze.trim() || !context.currentStudio) return;
 
     const updatedStudio = {
-      ...currentStudio,
-      glazes: [...currentStudio.glazes, newGlaze.trim()]
+      ...context.currentStudio,
+      glazes: [...context.currentStudio.glazes, newGlaze.trim()]
     };
-    setCurrentStudio(updatedStudio);
+    context.setCurrentStudio(updatedStudio);
     setNewGlaze('');
     setShowAddGlazeDialog(false);
   };
 
   const handleRemoveGlaze = (glaze: string) => {
-    if (!currentStudio) return;
+    if (!context.currentStudio) return;
 
     const updatedStudio = {
-      ...currentStudio,
-      glazes: currentStudio.glazes.filter(g => g !== glaze)
+      ...context.currentStudio,
+      glazes: context.currentStudio.glazes.filter(g => g !== glaze)
     };
-    setCurrentStudio(updatedStudio);
+    context.setCurrentStudio(updatedStudio);
   };
 
   const handleAddFiring = () => {
-    if (!currentStudio) return;
+    if (!context.currentStudio) return;
 
     const firing: FiringSchedule = {
       ...newFiring,
@@ -95,10 +95,10 @@ export function AdminDashboard() {
     };
 
     const updatedStudio = {
-      ...currentStudio,
-      firingSchedule: [...currentStudio.firingSchedule, firing]
+      ...context.currentStudio,
+      firingSchedule: [...context.currentStudio.firingSchedule, firing]
     };
-    setCurrentStudio(updatedStudio);
+    context.setCurrentStudio(updatedStudio);
     setNewFiring({
       date: '',
       type: 'Bisque',
@@ -111,13 +111,13 @@ export function AdminDashboard() {
   };
 
   const handleDeleteFiring = (firingId: string) => {
-    if (!currentStudio) return;
+    if (!context.currentStudio) return;
 
     const updatedStudio = {
-      ...currentStudio,
-      firingSchedule: currentStudio.firingSchedule.filter(f => f.id !== firingId)
+      ...context.currentStudio,
+      firingSchedule: context.currentStudio.firingSchedule.filter(f => f.id !== firingId)
     };
-    setCurrentStudio(updatedStudio);
+    context.setCurrentStudio(updatedStudio);
   };
 
   const handleAddMember = () => {
@@ -128,7 +128,7 @@ export function AdminDashboard() {
       name: newMember.name,
       email: newMember.email,
       type: newMember.type,
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       subscription: 'studio'
     };
 
@@ -142,16 +142,16 @@ export function AdminDashboard() {
   };
 
   const handleCommissionChange = (newRate: number) => {
-    if (!currentStudio) return;
+    if (!context.currentStudio) return;
 
     const updatedStudio = {
-      ...currentStudio,
+      ...context.currentStudio,
       commissionRate: newRate
     };
-    setCurrentStudio(updatedStudio);
+    context.setCurrentStudio(updatedStudio);
   };
 
-  if (!currentStudio) {
+  if (!context.currentStudio) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="text-center py-12">
@@ -171,7 +171,7 @@ export function AdminDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1>Studio Administration</h1>
-          <p className="text-muted-foreground">Manage {currentStudio.name}</p>
+          <p className="text-muted-foreground">Manage {context.currentStudio.name}</p>
         </div>
         <Badge className="bg-blue-100 text-blue-800">
           {members.length} Active Members
@@ -355,11 +355,11 @@ export function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Available Glazes ({currentStudio.glazes.length})</CardTitle>
+              <CardTitle>Available Glazes ({context.currentStudio.glazes.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {currentStudio.glazes.map((glaze) => (
+                {context.currentStudio.glazes.map((glaze) => (
                   <div key={glaze} className="flex items-center space-x-2 bg-muted rounded-lg px-3 py-2">
                     <span>{glaze}</span>
                     <Button
@@ -457,7 +457,7 @@ export function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {currentStudio.firingSchedule.map((firing) => (
+            {context.currentStudio.firingSchedule.map((firing) => (
               <Card key={firing.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -533,7 +533,7 @@ export function AdminDashboard() {
                   type="number"
                   min="0"
                   max="50"
-                  value={currentStudio.commissionRate}
+                  value={context.currentStudio.commissionRate}
                   onChange={(e) => handleCommissionChange(parseInt(e.target.value) || 0)}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
@@ -546,17 +546,17 @@ export function AdminDashboard() {
                 <div className="space-y-2 mt-2 text-sm">
                   <div className="flex justify-between">
                     <span>Artist receives:</span>
-                    <span>{100 - currentStudio.commissionRate}%</span>
+                    <span>{100 - context.currentStudio.commissionRate}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Studio commission:</span>
-                    <span>{currentStudio.commissionRate}%</span>
+                    <span>{context.currentStudio.commissionRate}%</span>
                   </div>
                 </div>
                 <div className="mt-3 pt-2 border-t text-sm">
                   <div className="flex justify-between">
                     <span>Example: $100 sale</span>
-                    <span>Artist: ${100 - currentStudio.commissionRate} | Studio: ${currentStudio.commissionRate}</span>
+                    <span>Artist: ${100 - context.currentStudio.commissionRate} | Studio: ${context.currentStudio.commissionRate}</span>
                   </div>
                 </div>
               </div>

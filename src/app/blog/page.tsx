@@ -75,7 +75,7 @@ export interface BlogPost {
 }
 
 export default function BlogManagement() {
-  const { currentUser } = useAppContext();
+  const context = useAppContext();
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
@@ -115,10 +115,10 @@ Before you even touch the clay, it's important to understand the basics of cente
 
 Remember, patience is key. Most beginners struggle with centering, but with practice, it becomes second nature.`,
       excerpt: 'Learn the fundamentals of wheel throwing with our comprehensive beginner\'s guide covering centering, opening, and pulling techniques.',
-      authorId: currentUser?.id || 'user_1',
-      authorName: currentUser?.name || 'Studio Admin',
-      authorHandle: currentUser?.handle || 'studio',
-      authorAvatar: currentUser?.profile?.profileImage,
+      authorId: context.currentUser?.id || 'user_1',
+      authorName: context.currentUser?.name || 'Studio Admin',
+      authorHandle: context.currentUser?.handle || 'studio',
+      authorAvatar: context.currentUser?.profile?.profileImage,
       status: 'published',
       visibility: 'public',
       slug: 'wheel-throwing-beginners-guide',
@@ -163,10 +163,10 @@ The melter - lowers the melting temperature of silica.
 - **Crawling**: Often due to dust or oil on the bisque ware
 - **Pinholing**: Typically caused by thick application or rapid firing`,
       excerpt: 'Dive deep into glaze chemistry and learn how to troubleshoot common glazing problems for perfect ceramic finishes.',
-      authorId: currentUser?.id || 'user_1',
-      authorName: currentUser?.name || 'Studio Admin',
-      authorHandle: currentUser?.handle || 'studio',
-      authorAvatar: currentUser?.profile?.profileImage,
+      authorId: context.currentUser?.id || 'user_1',
+      authorName: context.currentUser?.name || 'Studio Admin',
+      authorHandle: context.currentUser?.handle || 'studio',
+      authorAvatar: context.currentUser?.profile?.profileImage,
       status: 'draft',
       visibility: 'public',
       slug: 'understanding-glaze-chemistry',
@@ -209,10 +209,10 @@ Today, Sarah is working on a series of large platters with intricate carved desi
 
 "Don't give up after the first few sessions," Sarah advises. "Pottery is a practice that rewards patience and persistence. Every 'failure' teaches you something important."`,
       excerpt: 'Meet Sarah Martinez, a dedicated student whose pottery journey from complete beginner to accomplished ceramic artist inspires us all.',
-      authorId: currentUser?.id || 'user_1',
-      authorName: currentUser?.name || 'Studio Admin',
-      authorHandle: currentUser?.handle || 'studio',
-      authorAvatar: currentUser?.profile?.profileImage,
+      authorId: context.currentUser?.id || 'user_1',
+      authorName: context.currentUser?.name || 'Studio Admin',
+      authorHandle: context.currentUser?.handle || 'studio',
+      authorAvatar: context.currentUser?.profile?.profileImage,
       status: 'published',
       visibility: 'public',
       slug: 'student-spotlight-sarah-martinez',
@@ -262,10 +262,10 @@ Today, Sarah is working on a series of large platters with intricate carved desi
       title: newPost.title || 'Untitled Post',
       content: newPost.content || '',
       excerpt: newPost.excerpt || '',
-      authorId: currentUser?.id || 'user_1',
-      authorName: currentUser?.name || 'Author',
-      authorHandle: currentUser?.handle || 'author',
-      authorAvatar: currentUser?.profile?.profileImage,
+      authorId: context.currentUser?.id || 'user_1',
+      authorName: context.currentUser?.name || 'Author',
+      authorHandle: context.currentUser?.handle || 'author',
+      authorAvatar: context.currentUser?.profile?.profileImage,
       status: newPost.status as BlogPost['status'] || 'draft',
       visibility: newPost.visibility as BlogPost['visibility'] || 'public',
       slug: (newPost.title || 'untitled-post').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -360,7 +360,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
 
   const categories = ['Tutorials', 'Technical', 'Community', 'News', 'Tips', 'Student Work', 'Events'];
 
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="p-8 text-center">
         <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />

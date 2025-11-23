@@ -409,7 +409,7 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
   const handleSave = () => {
     if (!context.currentUser) return;
 
-    const updatedUser = {
+    const updatedUser: UserType = {
       ...context.currentUser,
       profile: editedProfile,
     };

@@ -17,12 +17,12 @@ import { supabase } from "@/lib/apis/supabaseClient";
 import type { Studio } from "@/types";
 
 interface StudioInviteFormProps {
-  currentStudio: Studio;
+  context.currentStudio: Studio;
   onInviteCreated?: (invite: any) => void; // you can type this later
 }
 
 export function StudioInviteForm({
-  currentStudio,
+  context.currentStudio,
   onInviteCreated,
 }: StudioInviteFormProps) {
   const [email, setEmail] = useState("");
@@ -50,7 +50,7 @@ export function StudioInviteForm({
         return;
       }
 
-      const res = await fetch(`/api/studios/${currentStudio.id}/invites`, {
+      const res = await fetch(`/api/studios/${context.currentStudio.id}/invites`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
