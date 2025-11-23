@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react";
 import {
   User,
@@ -49,102 +51,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { useAppContext } from "@/app/context/AppContext";
 import { StudioRole, NotificationItem } from "@/types";
+import { AppGridIcon } from "./icons/AppGridIcon";
 
 interface NavigationProps {
     currentPage: string;
     onPageChange: (page: string) => void;
     onLogout: () => void;
 }
-
-// Custom 3x3 grid component
-const AppGridIcon = ({ className }: { className?: string }) => (
-    <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className={className}
-    >
-        {/* Row 1 */}
-        <rect
-            x="1"
-            y="1"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="6.5"
-            y="1"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="12"
-            y="1"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-
-        {/* Row 2 */}
-        <rect
-            x="1"
-            y="6.5"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="6.5"
-            y="6.5"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="12"
-            y="6.5"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-
-        {/* Row 3 */}
-        <rect
-            x="1"
-            y="12"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="6.5"
-            y="12"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-        <rect
-            x="12"
-            y="12"
-            width="3"
-            height="3"
-            rx="0.5"
-            fill="currentColor"
-        />
-    </svg>
-);
 
 export function Navigation({ currentPage, onPageChange, onLogout }: NavigationProps) {
     const context = useAppContext();
@@ -160,24 +73,24 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
     const [showStudioMenu, setShowStudioMenu] = useState(false);
 
     // If somehow rendered without a user, don't blow up
-    if (!context.currentUser) {
-        return null;
-    }
+    // if (!context.currentUser) {
+    //     return null;
+    // }
 
-    const getSelectedLocationNames = () => {
-        if (!context.currentStudio?.locations) return "No Locations";
+    // const getSelectedLocationNames = () => {
+    //     if (!context.currentStudio?.locations) return "No Locations";
 
-        if (selectedLocations.length === 1) {
-            return (
-                context.currentStudio.locations.find((loc) => loc.id === selectedLocations[0])
-                    ?.name || "Location"
-            );
-        } else if (selectedLocations.length === context.currentStudio.locations.length) {
-            return "All Locations";
-        } else {
-            return `${selectedLocations.length} Locations`;
-        }
-    };
+    //     if (selectedLocations.length === 1) {
+    //         return (
+    //             context.currentStudio.locations.find((loc) => loc.id === selectedLocations[0])
+    //                 ?.name || "Location"
+    //         );
+    //     } else if (selectedLocations.length === context.currentStudio.locations.length) {
+    //         return "All Locations";
+    //     } else {
+    //         return `${selectedLocations.length} Locations`;
+    //     }
+    // };
 
   const clearLocationSelection = () => {
     setSelectedLocations([]);
@@ -420,9 +333,9 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
     );
 
     const getMainNavigationItems = (): NavItem[] => {
-        const isArtistMode = context.currentUser.activeMode === "artist";
+        const isArtistMode = context.currentUser?.activeMode === "artist";
         const inStudioMode =
-            context.currentUser.activeMode === "studio" &&
+            context.currentUser?.activeMode === "studio" &&
             !!context.currentStudio &&
             canEnterStudioMode(context.currentUser, context.currentStudio);
 
@@ -463,7 +376,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
 
     // More dropdown items based on user type
     const getMoreItems = () => {
-        if (context.currentUser.activeMode === "studio" && context.currentStudio) {
+        if (context.currentUser?.activeMode === "studio" && context.currentStudio) {
             return [
                 {
                     id: "events",
@@ -522,7 +435,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
 
     const getNotifications = (): NotificationItem[] => {
         const inviteNotifications: NotificationItem[] = context.pendingInvites
-            .filter((i) => i.status === "pending" && i.email === context.currentUser.email)
+            .filter((i) => i.status === "pending" && i.email === context.currentUser?.email)
             .map((invite) => ({
                 id: `invite-${invite.id}`,
                 type: "invite",
@@ -564,7 +477,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                         <Icon className="w-4 h-4 mr-2" />
                         {item.label}
                         {item.id === "staff" &&
-                            context.currentUser.activeMode === "studio" &&
+                            context.currentUser?.activeMode === "studio" &&
                             context.currentStudio && (
                                 <Badge
                                     variant="secondary"
@@ -754,7 +667,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                     {/* Right Section - Studio Menu + User Menu */}
                     <div className="flex items-center space-x-4">
                         {/* Studio Menu for Studio Users (guarded) */}
-                        {context.currentUser.activeMode === "studio" &&
+                        {context.currentUser?.activeMode === "studio" &&
                             context.currentStudio &&
                             canEnterStudioMode(context.currentUser, context.currentStudio) && (
                                 <DropdownMenu
@@ -920,11 +833,11 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                 >
                                     <Avatar className="h-9 w-9">
                                         <AvatarImage
-                                            src={context.currentUser.profile?.profileImage}
-                                            alt={context.currentUser.name}
+                                            src={context.currentUser?.profile?.profileImage}
+                                            alt={context.currentUser?.name}
                                         />
                                         <AvatarFallback>
-                                            {context.currentUser.name
+                                            {context.currentUser?.name
                                                 .split(" ")
                                                 .map((n) => n[0])
                                                 .join("")}
@@ -940,11 +853,11 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                 <div className="flex items-center space-x-3 p-4">
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage
-                                            src={context.currentUser.profile?.profileImage}
-                                            alt={context.currentUser.name}
+                                            src={context.currentUser?.profile?.profileImage}
+                                            alt={context.currentUser?.name}
                                         />
                                         <AvatarFallback>
-                                            {context.currentUser.name
+                                            {context.currentUser?.name
                                                 .split(" ")
                                                 .map((n) => n[0])
                                                 .join("")}
@@ -952,15 +865,15 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                     </Avatar>
                                     <div className="flex flex-col space-y-1 flex-1 min-w-0">
                                         <p className="font-semibold text-sm truncate">
-                                            {context.currentUser.name}
+                                            {context.currentUser?.name}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">
-                                            @{context.currentUser.handle}
+                                            @{context.currentUser?.handle}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">
-                                            {context.currentUser.email}
+                                            {context.currentUser?.email}
                                         </p>
-                                        {context.currentUser.type === "artist" &&
+                                        {context.currentUser?.type === "artist" &&
                                             context.currentStudio && (
                                                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                                     <Building2 className="w-3 h-3" />
@@ -969,18 +882,18 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                                     </span>
                                                 </div>
                                             )}
-                                        {context.currentUser.type === "artist" &&
-                                            context.currentUser.subscription && (
+                                        {context.currentUser?.type === "artist" &&
+                                            context.currentUser?.subscription && (
                                                 <Badge
                                                     variant="secondary"
                                                     className="w-fit text-xs"
                                                 >
-                                                    {context.currentUser.subscription === "free"
+                                                    {context.currentUser?.subscription === "free"
                                                         ? "Free"
-                                                        : context.currentUser.subscription ===
+                                                        : context.currentUser?.subscription ===
                                                             "passion"
                                                           ? "Passion"
-                                                          : context.currentUser.subscription ===
+                                                          : context.currentUser?.subscription ===
                                                               "small-artist"
                                                             ? "Artist"
                                                             : "Studio Pro"}
@@ -1004,7 +917,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                     Settings
                                 </DropdownMenuItem>
 
-                                {context.currentUser.availableModes?.includes("studio") && (
+                                {context.currentUser?.availableModes?.includes("studio") && (
                                     <>
                                         <DropdownMenuSeparator />
 
@@ -1015,7 +928,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
 
                                                 // If switching *into* studio, enforce guard.
                                                 const goingToStudio =
-                                                    context.currentUser.activeMode !== "studio";
+                                                    context.currentUser?.activeMode !== "studio";
                                                 if (goingToStudio) {
                                                     if (
                                                         !context.currentStudio ||
@@ -1040,7 +953,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                                 });
                                             }}
                                         >
-                                            {context.currentUser.activeMode === "studio"
+                                            {context.currentUser?.activeMode === "studio"
                                                 ? "Switch to Artist mode"
                                                 : "Switch to Studio mode"}
                                         </DropdownMenuItem>
@@ -1101,7 +1014,7 @@ export function Navigation({ currentPage, onPageChange, onLogout }: NavigationPr
                                             <Icon className="w-5 h-5" />
                                             <span className="flex-1 text-left">{item.label}</span>
                                             {item.id === "staff" &&
-                                                context.currentUser.activeMode === "studio" &&
+                                                context.currentUser?.activeMode === "studio" &&
                                                 context.currentStudio && (
                                                     <Badge
                                                         variant="secondary"

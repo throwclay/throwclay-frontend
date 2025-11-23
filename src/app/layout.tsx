@@ -3,6 +3,7 @@ import { AppProvider } from "@/app/context/AppContext";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
+import { Navigation } from "@/components/Navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,18 +13,16 @@ export const metadata: Metadata = {
         "A comprehensive pottery studio management platform with soft earth tones and minimalist design."
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AppProvider>
-          {children} <Toaster richColors position="top-center" />
-        </AppProvider>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <html lang="en">
+            <body className={inter.className}>
+                <AppProvider>
+                    <Navigation />
+                    {children}
+                    <Toaster richColors position="top-center" />
+                </AppProvider>
+            </body>
+        </html>
+    );
 }
