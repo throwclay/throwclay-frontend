@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { 
-  Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock, 
+import {
+  Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock,
   Thermometer, Users, Package, Settings, Eye, Bell, Download,
   CheckCircle, AlertTriangle, Info, BarChart3, Camera, MapPin,
   Zap, Fuel, User, CheckSquare, Square, MoreHorizontal, UserCheck,
@@ -9,31 +9,31 @@ import {
   FileText, Copy, Share, Star, TrendingUp, Target, Beaker,
   Layers, BookOpen, PlusCircle, Save, X, Send
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Checkbox } from './ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Slider } from './ui/slider';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Slider } from '@/components/ui/slider';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/app/context/AppContext';
-import type { 
-  Kiln, KilnLoad, KilnLoadItem, KilnShelf, FiringSchedule, 
+import type {
+  Kiln, KilnLoad, KilnLoadItem, KilnShelf, FiringSchedule,
   KilnAssignment, CustomFiringType, KilnCamera, RingIntegration,
   KilnFiringTemplate
 } from '@/app/context/AppContext';
 
-export function KilnManagement() {
+export default function KilnManagement() {
   const { currentStudio } = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
@@ -204,7 +204,7 @@ export function KilnManagement() {
   const handleUpdateTemperatureCurvePhase = (index: number, field: string, value: any) => {
     setNewKilnTemplate(prev => ({
       ...prev,
-      temperatureCurve: prev.temperatureCurve?.map((phase, i) => 
+      temperatureCurve: prev.temperatureCurve?.map((phase, i) =>
         i === index ? { ...phase, [field]: value } : phase
       ) || []
     }));
@@ -339,7 +339,7 @@ export function KilnManagement() {
   };
 
   const handleRackToggle = (rackNumber: string) => {
-    setSelectedRacks(prev => 
+    setSelectedRacks(prev =>
       prev.includes(rackNumber)
         ? prev.filter(r => r !== rackNumber)
         : [...prev, rackNumber]
@@ -347,7 +347,7 @@ export function KilnManagement() {
   };
 
   const handleSelectAllRacks = () => {
-    setSelectedRacks(prev => 
+    setSelectedRacks(prev =>
       prev.length === availableRacks.length ? [] : [...availableRacks]
     );
   };
@@ -434,8 +434,8 @@ export function KilnManagement() {
                     </div>
                     <div className="space-y-2">
                       <Label>Type</Label>
-                      <Select 
-                        value={newKiln.type} 
+                      <Select
+                        value={newKiln.type}
                         onValueChange={(value) => setNewKiln(prev => ({ ...prev, type: value as any }))}
                       >
                         <SelectTrigger>
@@ -499,8 +499,8 @@ export function KilnManagement() {
 
                   <div className="space-y-2">
                     <Label>Location</Label>
-                    <Select 
-                      value={newKiln.locationId} 
+                    <Select
+                      value={newKiln.locationId}
                       onValueChange={(value) => setNewKiln(prev => ({ ...prev, locationId: value }))}
                     >
                       <SelectTrigger>
@@ -680,8 +680,8 @@ export function KilnManagement() {
                     <TabsContent value="basic" className="space-y-6">
                       <div className="space-y-2">
                         <Label>Select Kiln</Label>
-                        <Select 
-                          value={newKilnTemplate.kilnId} 
+                        <Select
+                          value={newKilnTemplate.kilnId}
                           onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, kilnId: value }))}
                         >
                           <SelectTrigger>
@@ -708,8 +708,8 @@ export function KilnManagement() {
                         </div>
                         <div className="space-y-2">
                           <Label>Base Type</Label>
-                          <Select 
-                            value={newKilnTemplate.baseType} 
+                          <Select
+                            value={newKilnTemplate.baseType}
                             onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, baseType: value as any }))}
                           >
                             <SelectTrigger>
@@ -739,8 +739,8 @@ export function KilnManagement() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Atmosphere</Label>
-                          <Select 
-                            value={newKilnTemplate.atmosphere} 
+                          <Select
+                            value={newKilnTemplate.atmosphere}
                             onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, atmosphere: value as any }))}
                           >
                             <SelectTrigger>
@@ -781,8 +781,8 @@ export function KilnManagement() {
                           <div key={index} className="border rounded-lg p-4 space-y-4">
                             <div className="flex items-center justify-between">
                               <h4 className="font-medium">Phase {index + 1}</h4>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveTemperatureCurvePhase(index)}
                               >
@@ -792,8 +792,8 @@ export function KilnManagement() {
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Phase Type</Label>
-                                <Select 
-                                  value={phase.phase} 
+                                <Select
+                                  value={phase.phase}
                                   onValueChange={(value) => handleUpdateTemperatureCurvePhase(index, 'phase', value)}
                                 >
                                   <SelectTrigger>
@@ -852,8 +852,8 @@ export function KilnManagement() {
                           <div className="grid grid-cols-3 gap-3">
                             {['Stoneware', 'Earthenware', 'Porcelain', 'Paper Clay', 'Sculpture Clay'].map((clay) => (
                               <div key={clay} className="flex items-center space-x-2">
-                                <Checkbox 
-                                  id={clay} 
+                                <Checkbox
+                                  id={clay}
                                   checked={newKilnTemplate.clayCompatibility?.includes(clay)}
                                   onCheckedChange={(checked) => {
                                     const current = newKilnTemplate.clayCompatibility || [];
@@ -881,7 +881,7 @@ export function KilnManagement() {
                           <div className="grid grid-cols-3 gap-3">
                             {currentStudio?.glazes?.slice(0, 9).map((glaze) => (
                               <div key={glaze} className="flex items-center space-x-2">
-                                <Checkbox 
+                                <Checkbox
                                   id={glaze}
                                   checked={newKilnTemplate.glazeCompatibility?.includes(glaze)}
                                   onCheckedChange={(checked) => {
@@ -916,7 +916,7 @@ export function KilnManagement() {
                               Set as default for this kiln and firing type
                             </p>
                           </div>
-                          <Switch 
+                          <Switch
                             checked={newKilnTemplate.isDefault}
                             onCheckedChange={(checked) => setNewKilnTemplate(prev => ({ ...prev, isDefault: checked }))}
                           />
@@ -929,7 +929,7 @@ export function KilnManagement() {
                               Allow other studios to use this template
                             </p>
                           </div>
-                          <Switch 
+                          <Switch
                             checked={newKilnTemplate.isShared}
                             onCheckedChange={(checked) => setNewKilnTemplate(prev => ({ ...prev, isShared: checked }))}
                           />
@@ -992,7 +992,7 @@ export function KilnManagement() {
               {filteredTemplates.map((template) => {
                 const kiln = currentStudio?.kilns?.find(k => k.id === template.kilnId);
                 const successRate = template.averageSuccessRate || 0;
-                
+
                 return (
                   <Card key={template.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-4">
@@ -1288,8 +1288,8 @@ export function KilnManagement() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Label>Select Rack Numbers for This Firing</Label>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={handleSelectAllRacks}
                         >
@@ -1319,8 +1319,8 @@ export function KilnManagement() {
                             {selectedRacks.map(rack => (
                               <Badge key={rack} variant="secondary" className="text-xs font-mono">
                                 {rack}
-                                <X 
-                                  className="w-3 h-3 ml-1 cursor-pointer" 
+                                <X
+                                  className="w-3 h-3 ml-1 cursor-pointer"
                                   onClick={() => handleRackToggle(rack)}
                                 />
                               </Badge>
@@ -1388,7 +1388,7 @@ export function KilnManagement() {
                 {filteredSchedules.map((schedule) => {
                   const kiln = currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
                   const operator = operators.find(op => op.id === schedule.assignedEmployeeId);
-                  
+
                   return (
                     <TableRow key={schedule.id}>
                       <TableCell>
@@ -1453,8 +1453,8 @@ export function KilnManagement() {
                         <div className="space-y-1">
                           <div>{schedule.bookedSlots}/{schedule.capacity}</div>
                           <div className="w-full bg-secondary rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
+                            <div
+                              className="bg-primary h-2 rounded-full"
                               style={{ width: `${(schedule.bookedSlots / schedule.capacity) * 100}%` }}
                             />
                           </div>

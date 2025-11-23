@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { User, Building2, Bell, Shield, Palette, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { StudioSettings } from "./StudioSettings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StudioSettings } from "@/components/StudioSettings";
 import { useAppContext } from "@/app/context/AppContext";
 
-export function Settings() {
+export default function Settings() {
   const { currentUser, currentStudio } = useAppContext();
 
   if (!currentUser) {

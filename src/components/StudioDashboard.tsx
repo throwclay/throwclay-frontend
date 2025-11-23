@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Calendar, Clock, Thermometer, Users, Flame, MessageCircle, Camera, MapPin, Activity, TrendingUp, AlertTriangle, CheckCircle, Star, Bell, Eye, MessageSquare, UserCheck, Palette, Droplets, Zap } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppContext } from '@/app/context/AppContext';
 
 export function StudioDashboard() {
@@ -57,7 +57,7 @@ export function StudioDashboard() {
           {isStudioOwner ? 'Studio Dashboard' : 'Dashboard'}
         </h1>
         <p className="text-muted-foreground text-lg">
-          {isStudioOwner 
+          {isStudioOwner
             ? 'Manage your studio operations and monitor key metrics'
             : 'Welcome back to the studio'
           }
@@ -120,7 +120,7 @@ export function StudioDashboard() {
                   {isStudioOwner ? 'Firing Schedule' : 'Upcoming Firings'}
                 </h2>
               </div>
-              
+
               <div className="space-y-6">
                 {currentStudio?.firingSchedule?.map((firing) => (
                   <div key={firing.id} className="flex items-center justify-between py-6 border-b">
@@ -135,8 +135,8 @@ export function StudioDashboard() {
                           <span className="text-sm text-muted-foreground">
                             {firing.bookedSlots}/{firing.capacity} slots filled
                           </span>
-                          <Progress 
-                            value={(firing.bookedSlots / firing.capacity) * 100} 
+                          <Progress
+                            value={(firing.bookedSlots / firing.capacity) * 100}
                             className="w-24 h-2"
                           />
                         </div>
@@ -162,7 +162,7 @@ export function StudioDashboard() {
                 <Activity className="w-6 h-6 text-primary" />
                 <h2 className="text-xl font-semibold">Recent Activity</h2>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="flex items-center space-x-4 py-4">
                   <UserCheck className="w-5 h-5 text-muted-foreground" />
@@ -209,7 +209,7 @@ export function StudioDashboard() {
               <Calendar className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold">Upcoming Classes</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <div className="space-y-4 py-6 border-b">
                 <div className="space-y-2">
@@ -289,7 +289,7 @@ export function StudioDashboard() {
               <Flame className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold">Kiln Status</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {mockKilns.map((kiln) => (
                 <div key={kiln.id} className="space-y-6 py-6 border-b">
@@ -299,7 +299,7 @@ export function StudioDashboard() {
                       {kiln.status}
                     </Badge>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1">
                       <span className="text-muted-foreground">Type</span>
@@ -320,7 +320,7 @@ export function StudioDashboard() {
                       </p>
                     </div>
                   </div>
-                  
+
                   {kiln.notes && (
                     <div className="pt-4 border-t">
                       <p className="text-muted-foreground">{kiln.notes}</p>
@@ -338,7 +338,7 @@ export function StudioDashboard() {
               <Users className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold">Recent Member Activity</h2>
             </div>
-            
+
             <div className="space-y-6">
               {[
                 { name: 'Sarah Wilson', action: 'Joined the studio', time: '2 hours ago', status: 'new' },
@@ -374,7 +374,7 @@ export function StudioDashboard() {
               <TrendingUp className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold">Analytics Overview</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
               <div className="space-y-3">
                 <p className="text-muted-foreground">Total Revenue</p>

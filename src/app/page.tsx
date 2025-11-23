@@ -1,17 +1,51 @@
 import { useState } from 'react';
 import { ArrowRight, CheckCircle, Users, BarChart3, MessageCircle, Calendar, Camera, Shield, Zap, Globe } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { DashboardMockup } from './DashboardMockup';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
 }
 
-export function LandingPage({ onNavigate }: LandingPageProps) {
+// TODO: validate the need for this
+function DashboardMockup() {
+  return (
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-8">Artist Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Recent Projects</h3>
+            <p className="text-muted-foreground">
+              View and manage your pottery projects
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Upcoming Classes</h3>
+            <p className="text-muted-foreground">
+              Your scheduled pottery classes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Community</h3>
+            <p className="text-muted-foreground">
+              Connect with other ceramic artists
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function LandingPage({ onNavigate }: LandingPageProps) {
   const [email, setEmail] = useState('');
 
   const handleWaitlistSubmit = (e: React.FormEvent) => {
@@ -64,8 +98,8 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   🎉 Now Available for Studios & Artists
                 </Badge>
                 <h1 className="text-4xl lg:text-6xl font-bold tracking-tight">
-                  The Complete Platform for 
-                  <span className="text-primary"> Pottery Studios</span> & 
+                  The Complete Platform for
+                  <span className="text-primary"> Pottery Studios</span> &
                   <span className="text-primary"> Ceramic Artists</span>
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-lg">
@@ -130,7 +164,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
             <div className="relative">
               <DashboardMockup />
-              
+
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 bg-background border rounded-xl p-4 shadow-lg">
                 <div className="flex items-center space-x-2">
@@ -138,7 +172,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   <span className="text-sm font-medium">Studio Online</span>
                 </div>
               </div>
-              
+
               <div className="absolute -bottom-4 -left-4 bg-background border rounded-xl p-4 shadow-lg">
                 <div className="flex items-center space-x-2">
                   <Users className="w-4 h-4 text-primary" />
@@ -159,7 +193,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               {/* Artisan Clay Co. */}
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center shadow-sm"
                     style={{ borderRadius: '65% 35% 70% 30% / 60% 40% 60% 40%' }}
                   >
@@ -168,11 +202,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   <span className="font-semibold text-base">Artisan Clay Co.</span>
                 </div>
               </div>
-              
+
               {/* Kiln & Wheel */}
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center shadow-sm"
                     style={{ borderRadius: '50% 50% 70% 30% / 40% 60% 40% 60%' }}
                   >
@@ -181,11 +215,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   <span className="font-semibold text-base">Kiln & Wheel</span>
                 </div>
               </div>
-              
+
               {/* Ceramic Collective */}
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-sm"
                     style={{ borderRadius: '75% 25% 60% 40% / 50% 70% 30% 50%' }}
                   >
@@ -198,11 +232,11 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   <span className="font-semibold text-base">Ceramic Collective</span>
                 </div>
               </div>
-              
+
               {/* Clay Studio Pro */}
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="flex items-center space-x-3">
-                  <div 
+                  <div
                     className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center shadow-sm"
                     style={{ borderRadius: '45% 55% 65% 35% / 70% 30% 70% 30%' }}
                   >
@@ -722,7 +756,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 The complete platform for pottery studios and ceramic artists.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -732,7 +766,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <li><a href="#" className="hover:text-foreground">API</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -742,7 +776,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <li><a href="#" className="hover:text-foreground">Contact</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
@@ -753,7 +787,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
             <p>&copy; 2024 Throw Clay. All rights reserved.</p>
           </div>

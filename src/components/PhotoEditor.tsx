@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Save, Upload, Pencil, Eraser, RotateCcw, X, Edit } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { Slider } from './ui/slider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DrawingCanvas } from './DrawingCanvas';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import type { PhotoEntry } from '@/app/context/AppContext';
 
 interface PhotoEditorProps {
@@ -51,25 +51,25 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
     if (isAnnotating && canvasRef.current && imageRef.current) {
       const canvas = canvasRef.current;
       const image = imageRef.current;
-      
+
       // Create a new canvas to combine image + annotations
       const combinedCanvas = document.createElement('canvas');
       const combinedCtx = combinedCanvas.getContext('2d');
-      
+
       if (combinedCtx) {
         // Set canvas size to match original image dimensions
         combinedCanvas.width = image.naturalWidth;
         combinedCanvas.height = image.naturalHeight;
-        
+
         // Draw the original image
         combinedCtx.drawImage(image, 0, 0);
-        
+
         // Draw the annotations on top, scaling appropriately
         const scaleX = image.naturalWidth / canvas.width;
         const scaleY = image.naturalHeight / canvas.height;
         combinedCtx.scale(scaleX, scaleY);
         combinedCtx.drawImage(canvas, 0, 0);
-        
+
         const dataUrl = combinedCanvas.toDataURL('image/png');
         const updatedPhoto = {
           ...editedPhoto,
@@ -79,7 +79,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
         return;
       }
     }
-    
+
     onSave(editedPhoto);
   };
 
@@ -141,22 +141,22 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
   const setupCanvas = () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
-    
+
     if (!canvas || !image || !imageLoaded) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Get the displayed size of the image
     const imageRect = image.getBoundingClientRect();
-    
+
     // Set canvas size to match displayed image size
     canvas.width = imageRect.width;
     canvas.height = imageRect.height;
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Set drawing properties
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -166,30 +166,30 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
   const clearAnnotations = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-    
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    
+
     return { x, y };
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isAnnotating || !imageLoaded) return;
-    
+
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -259,13 +259,13 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
             <h1>Edit Sketch</h1>
           </div>
         </div>
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Drawing Canvas</CardTitle>
           </CardHeader>
           <CardContent>
-            <DrawingCanvas 
+            <DrawingCanvas
               initialImage={editedPhoto.url}
               onSave={handleSketchSave}
               onCancel={() => setShowSketchEditor(false)}
@@ -291,7 +291,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
             <Upload className="w-4 h-4 mr-2" />
             Replace Image
           </Button>
-          
+
           {isSketch ? (
             <Button variant="outline" onClick={() => setShowSketchEditor(true)}>
               <Edit className="w-4 h-4 mr-2" />
@@ -299,8 +299,8 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
             </Button>
           ) : (
             !isAnnotating ? (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={startAnnotation}
                 disabled={!imageLoaded}
               >
@@ -314,7 +314,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
               </Button>
             )
           )}
-          
+
           <Button onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
             Save Changes
@@ -350,7 +350,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
                 onLoad={handleImageLoad}
                 onError={() => setImageLoaded(false)}
               />
-              
+
               {isAnnotating && !isSketch && imageLoaded && (
                 <canvas
                   ref={canvasRef}
@@ -365,7 +365,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
                   }}
                 />
               )}
-              
+
               {!imageLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
                   <p className="text-muted-foreground">Loading image...</p>
@@ -383,7 +383,7 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
                     Clear Marks
                   </Button>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center space-x-2">
                     <Label>Color:</Label>
@@ -494,9 +494,9 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
                 </Button>
               </div>
             </div>
-            
+
             <div className="text-center text-muted-foreground">or</div>
-            
+
             <div>
               <Label htmlFor="image-url">Image URL</Label>
               <Input

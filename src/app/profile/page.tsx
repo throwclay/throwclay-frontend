@@ -32,15 +32,15 @@ import {
   Mail,
   Navigation,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
@@ -56,24 +56,24 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "./ui/sheet";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+} from "@/components/ui/sheet";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "./ui/tooltip";
-import { AspectRatio } from "./ui/aspect-ratio";
-import { Skeleton } from "./ui/skeleton";
+} from "@/components/ui/tooltip";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { BadgeManagement } from "./BadgeManagement";
+} from "@/components/ui/dropdown-menu";
+import { BadgeManagement } from "@/components/BadgeManagement";
 import type {
   User as UserType,
   ArtistProfile as ArtistProfileType,
@@ -88,7 +88,7 @@ interface ArtistProfileProps {
   onProfileUpdated?: (user: UserType) => void;
 }
 
-export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
+export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
   const { currentUser, currentStudio } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState<string | null>(null);

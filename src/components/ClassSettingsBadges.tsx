@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { 
-  Plus, Edit, Eye, Trash2, Copy, Settings, Trophy, Target, 
-  Users, CheckCircle, XCircle, AlertCircle, Award, Star 
+import {
+  Plus, Edit, Eye, Trash2, Copy, Settings, Trophy, Target,
+  Users, CheckCircle, XCircle, AlertCircle, Award, Star
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Switch } from './ui/switch';
-import { Label } from './ui/label';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Slider } from './ui/slider';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Alert, AlertDescription } from './ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BadgeDesigner } from './BadgeDesigner';
 import { BadgeAwardingService } from './BadgeAwardingService';
 import type { ClassBadge, BadgeDesign, BadgeRequirement, User, StudentBadge } from '@/app/context/AppContext';
@@ -91,7 +91,7 @@ export function ClassSettingsBadges({
       updatedAt: new Date().toISOString()
     };
 
-    const updatedBadges = selectedBadge 
+    const updatedBadges = selectedBadge
       ? classBadges.map(b => b.id === selectedBadge.id ? newBadge : b)
       : [...classBadges, newBadge];
 
@@ -103,7 +103,7 @@ export function ClassSettingsBadges({
   const deleteBadge = (badgeId: string) => {
     // Check if badge has been awarded
     const hasAwardedBadges = studentBadges.some(sb => sb.badgeId === badgeId);
-    
+
     if (hasAwardedBadges) {
       toast.error('Cannot delete badge that has been awarded to students');
       return;
@@ -128,8 +128,8 @@ export function ClassSettingsBadges({
   };
 
   const toggleBadgeEnabled = (badgeId: string) => {
-    const updatedBadges = classBadges.map(badge => 
-      badge.id === badgeId 
+    const updatedBadges = classBadges.map(badge =>
+      badge.id === badgeId
         ? { ...badge, isEnabled: !badge.isEnabled, updatedAt: new Date().toISOString() }
         : badge
     );
@@ -137,8 +137,8 @@ export function ClassSettingsBadges({
   };
 
   const updateBadgeSettings = (badgeId: string, settings: Partial<ClassBadge>) => {
-    const updatedBadges = classBadges.map(badge => 
-      badge.id === badgeId 
+    const updatedBadges = classBadges.map(badge =>
+      badge.id === badgeId
         ? { ...badge, ...settings, updatedAt: new Date().toISOString() }
         : badge
     );
@@ -158,9 +158,9 @@ export function ClassSettingsBadges({
       small: { width: 60, height: 60, iconSize: 24 },
       medium: { width: 80, height: 80, iconSize: 32 }
     };
-    
+
     const dimensions = sizeMap[size];
-    
+
     const gradientStyle = design.gradientEnabled && design.gradientColors ? {
       background: `linear-gradient(${
         design.gradientDirection === 'vertical' ? '180deg' :
@@ -195,8 +195,8 @@ export function ClassSettingsBadges({
           <img
             src={design.customIconUrl}
             alt="Badge icon"
-            style={{ 
-              width: dimensions.iconSize, 
+            style={{
+              width: dimensions.iconSize,
               height: dimensions.iconSize,
               objectFit: 'contain'
             }}
@@ -236,7 +236,7 @@ export function ClassSettingsBadges({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
@@ -250,7 +250,7 @@ export function ClassSettingsBadges({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
@@ -264,7 +264,7 @@ export function ClassSettingsBadges({
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
@@ -306,7 +306,7 @@ export function ClassSettingsBadges({
                 <div className="space-y-4">
                   {classBadges.map((badge) => {
                     const stats = getBadgeStats(badge.id);
-                    
+
                     return (
                       <div key={badge.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-center space-x-4">
@@ -331,7 +331,7 @@ export function ClassSettingsBadges({
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center space-x-2">
                           <Switch
                             checked={badge.isEnabled}
@@ -389,7 +389,7 @@ export function ClassSettingsBadges({
                   Design your badge appearance and visual elements
                 </DialogDescription>
               </DialogHeader>
-              
+
               <BadgeDesigner
                 initialDesign={selectedBadge?.design}
                 onSave={saveBadgeDesign}
@@ -407,7 +407,7 @@ export function ClassSettingsBadges({
                   Configure the requirements and awarding criteria for this badge
                 </DialogDescription>
               </DialogHeader>
-              
+
               {selectedBadge && (
                 <div className="space-y-6">
                   {/* Basic Settings */}
@@ -442,7 +442,7 @@ export function ClassSettingsBadges({
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="badge-description">Description</Label>
                       <Textarea
@@ -510,7 +510,7 @@ export function ClassSettingsBadges({
                         Add Requirement
                       </Button>
                     </div>
-                    
+
                     <div className="space-y-3">
                       {selectedBadge.requirements.map((req, index) => (
                         <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -537,8 +537,8 @@ export function ClassSettingsBadges({
 
                   {/* Actions */}
                   <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setShowRequirementsDialog(false)}
                     >
                       Cancel

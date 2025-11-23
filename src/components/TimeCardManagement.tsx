@@ -1,26 +1,26 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Clock, Calendar, Check, X, AlertTriangle, Download, Upload, Search, Filter,
   ChevronDown, ChevronUp, Edit, Save, MoreHorizontal, FileText, Eye, DollarSign,
   Users, TrendingUp, Activity, CheckCircle, XCircle, AlertCircle, PlayCircle,
   PauseCircle, Plus, Minus, RotateCcw, Send
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Textarea } from './ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Progress } from './ui/progress';
-import { Separator } from './ui/separator';
-import { Label } from './ui/label';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Checkbox } from './ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAppContext, type TimeCard, type TimeCardEntry, type PayPeriod, type User } from '@/app/context/AppContext';
 
 export function TimeCardManagement() {
@@ -292,7 +292,7 @@ export function TimeCardManagement() {
     const matchesSearch = timeCard.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || timeCard.status === statusFilter;
     const matchesPayPeriod = selectedPayPeriod === 'current' || timeCard.payPeriodId === selectedPayPeriod;
-    
+
     return matchesSearch && matchesStatus && matchesPayPeriod;
   });
 
@@ -307,7 +307,7 @@ export function TimeCardManagement() {
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || { label: status, color: 'bg-gray-500' };
-    
+
     return (
       <Badge className={`${config.color} text-white`}>
         {config.label}
@@ -341,7 +341,7 @@ export function TimeCardManagement() {
 
   const handleClockIn = () => {
     if (!clockInTime || !selectedDate) return;
-    
+
     const newEntry: TimeCardEntry = {
       id: `tce${Date.now()}`,
       date: selectedDate,
@@ -353,14 +353,14 @@ export function TimeCardManagement() {
       wasScheduled: false,
       status: 'draft'
     };
-    
+
     console.log('Clock in entry:', newEntry);
     setClockInTime('');
   };
 
   const handleClockOut = () => {
     if (!clockOutTime) return;
-    
+
     console.log('Clock out time:', clockOutTime);
     setClockOutTime('');
   };
@@ -370,14 +370,14 @@ export function TimeCardManagement() {
     const approved = timeCards.filter(tc => tc.status === 'approved').length;
     const totalHours = timeCards.reduce((sum, tc) => sum + tc.totalHours, 0);
     const totalOvertime = timeCards.reduce((sum, tc) => sum + tc.totalOvertimeHours, 0);
-    
+
     return { pending, approved, totalHours, totalOvertime };
   };
 
   const stats = getSummaryStats();
 
-  const canApproveTimeCards = currentUser?.managerProfile?.permissions?.approveTimeCards || 
-                            currentUser?.role === 'owner' || 
+  const canApproveTimeCards = currentUser?.managerProfile?.permissions?.approveTimeCards ||
+                            currentUser?.role === 'owner' ||
                             currentUser?.role === 'admin';
 
   return (
@@ -647,7 +647,7 @@ export function TimeCardManagement() {
                           {canApproveTimeCards && (timeCard.status === 'submitted' || timeCard.status === 'needs-review') && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedTimeCard(timeCard);
                                   setShowApprovalDialog(true);
@@ -687,7 +687,7 @@ export function TimeCardManagement() {
               Review time entries and approve or reject the time card.
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedTimeCard && (
             <div className="space-y-6">
               {/* Summary */}
@@ -815,7 +815,7 @@ export function TimeCardManagement() {
               Approve or reject {selectedTimeCard?.employeeName}'s time card.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>

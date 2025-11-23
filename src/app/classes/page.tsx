@@ -1,22 +1,22 @@
 import { useState } from 'react';
-import { 
+import {
   Calendar, Clock, Users, MapPin, Star, BookOpen, ChevronRight, Filter, Search,
   CreditCard, CheckCircle, AlertCircle, XCircle, Eye, MessageCircle, Download,
   Phone, Mail, DollarSign, GraduationCap, Award, Target
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Progress } from './ui/progress';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 
 interface ClassData {
@@ -85,7 +85,7 @@ interface EnrollmentDetails {
   progressNotes: string;
 }
 
-export function ArtistClasses() {
+export default function ArtistClasses() {
   const [activeClassTab, setActiveClassTab] = useState('available');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [classSearchTerm, setClassSearchTerm] = useState('');
@@ -436,9 +436,9 @@ export function ArtistClasses() {
     return (
       <div className="flex items-center space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
-          <Star 
-            key={star} 
-            className={`w-4 h-4 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+          <Star
+            key={star}
+            className={`w-4 h-4 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
           />
         ))}
         <span className="text-sm text-muted-foreground ml-1">({rating})</span>
@@ -571,7 +571,7 @@ export function ArtistClasses() {
                     {getStatusBadge(classData.status)}
                   </div>
                 </div>
-                
+
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">{classData.name}</CardTitle>
                   <div className="flex items-center space-x-2">
@@ -587,7 +587,7 @@ export function ArtistClasses() {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="pt-0 space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -632,16 +632,16 @@ export function ArtistClasses() {
                   </div>
 
                   <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="flex-1"
                       onClick={() => handleEnrollInClass(classData)}
                       disabled={classData.enrolled >= classData.capacity}
                     >
                       {classData.enrolled >= classData.capacity ? 'Join Waitlist' : 'Enroll Now'}
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => handleViewClassDetails(classData)}
                     >
@@ -697,7 +697,7 @@ export function ArtistClasses() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-3">
@@ -717,7 +717,7 @@ export function ArtistClasses() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <h4 className="font-medium">Progress</h4>
                         <div className="space-y-2">
@@ -731,7 +731,7 @@ export function ArtistClasses() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <h4 className="font-medium">Quick Actions</h4>
                         <div className="flex flex-col space-y-2">
@@ -807,7 +807,7 @@ export function ArtistClasses() {
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
@@ -945,7 +945,7 @@ export function ArtistClasses() {
                   </div>
                   <Badge variant="default">100%</Badge>
                 </div>
-                
+
                 <div className="flex items-center space-x-4 p-4 border rounded-lg">
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                     <Clock className="w-6 h-6 text-blue-600" />
@@ -956,7 +956,7 @@ export function ArtistClasses() {
                   </div>
                   <Badge variant="secondary">75%</Badge>
                 </div>
-                
+
                 <div className="flex items-center space-x-4 p-4 border rounded-lg opacity-50">
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-gray-400" />
@@ -982,7 +982,7 @@ export function ArtistClasses() {
               Complete your enrollment for this class
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedClass && (
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
@@ -1068,7 +1068,7 @@ export function ArtistClasses() {
               Complete class details and information
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedClass && (
             <div className="space-y-6">
               <div className="aspect-video rounded-lg overflow-hidden">
@@ -1085,7 +1085,7 @@ export function ArtistClasses() {
                     <h3 className="font-semibold mb-2">Class Description</h3>
                     <p className="text-muted-foreground">{selectedClass.description}</p>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-semibold mb-2">What You'll Learn</h3>
                     <ul className="space-y-1">

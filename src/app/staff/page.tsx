@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Users, Clock, UserCog } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Badge } from './ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { EmployeeManagement } from './EmployeeManagement';
 import { TimeCardManagement } from './TimeCardManagement';
 import { useAppContext } from '@/app/context/AppContext';
 
-export function StaffManagement() {
+export default function StaffManagement() {
   const { currentUser, currentStudio } = useAppContext();
   const [activeTab, setActiveTab] = useState('employees');
 
@@ -15,8 +15,8 @@ export function StaffManagement() {
   const pendingTimeOffRequests = 2; // Number of time off requests awaiting approval
 
   // Check if user has permission to manage staff
-  const canManageStaff = currentUser?.role === 'owner' || 
-                        currentUser?.role === 'admin' || 
+  const canManageStaff = currentUser?.role === 'owner' ||
+                        currentUser?.role === 'admin' ||
                         currentUser?.managerProfile?.permissions?.approveTimeCards;
 
   return (

@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Star, MessageCircle, Share2, Heart, ChevronLeft, ChevronRight, DollarSign, Percent, Check, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Separator } from './ui/separator';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 
 interface ClassData {
@@ -99,7 +99,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
       isDefault: true
     },
     {
-      id: '3', 
+      id: '3',
       name: 'Premium Package',
       price: 380,
       description: 'Includes extra studio time, advanced glazing options, and take-home tool kit',
@@ -132,13 +132,13 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
   ];
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === mockClassData.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? mockClassData.images.length - 1 : prev - 1
     );
   };
@@ -216,7 +216,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                   className="w-full h-full object-cover"
                 />
               </div>
-              
+
               {mockClassData.images.length > 1 && (
                 <>
                   <Button
@@ -235,7 +235,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
-                  
+
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
                     {mockClassData.images.map((_, index) => (
                       <button
@@ -265,9 +265,9 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                   </span>
                 </div>
               </div>
-              
+
               <h1 className="text-3xl font-bold mb-2">{mockClassData.name}</h1>
-              
+
               <div className="flex items-center space-x-6 text-muted-foreground">
                 <div className="flex items-center space-x-2">
                   <Avatar className="w-8 h-8">
@@ -424,7 +424,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                 <div className="space-y-2">
                   <Label>Discount Code (Optional)</Label>
                   <div className="flex space-x-2">
-                    <Input 
+                    <Input
                       placeholder="Enter code"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value)}
@@ -442,7 +442,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                     <span>{mockClassData.enrolled}/{mockClassData.capacity} enrolled</span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${(mockClassData.enrolled / mockClassData.capacity) * 100}%` }}
                     />
@@ -453,8 +453,8 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                 </div>
 
                 {/* Enroll Button */}
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   size="lg"
                   onClick={handleEnroll}
                   disabled={!selectedPricing}
@@ -514,22 +514,22 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
               </div>
               <p className="text-sm text-muted-foreground">{selectedPrice?.description}</p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="studentName">Full Name</Label>
               <Input id="studentName" placeholder="Enter your full name" />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="studentEmail">Email Address</Label>
               <Input id="studentEmail" type="email" placeholder="Enter your email" />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="studentPhone">Phone Number</Label>
               <Input id="studentPhone" type="tel" placeholder="Enter your phone number" />
             </div>
-            
+
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setShowEnrollDialog(false)}>
                 Cancel
@@ -564,17 +564,17 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                 We'll notify you immediately when a spot becomes available.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="waitlistName">Full Name</Label>
               <Input id="waitlistName" placeholder="Enter your full name" />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="waitlistEmail">Email Address</Label>
               <Input id="waitlistEmail" type="email" placeholder="Enter your email" />
             </div>
-            
+
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setShowWaitlistDialog(false)}>
                 Cancel

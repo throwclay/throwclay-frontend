@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Users, Palette, Calendar, Settings, Plus, Edit, Trash2, DollarSign } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useAppContext, type Studio, type FiringSchedule, type User } from '@/app/context/AppContext';
 
 export function AdminDashboard() {
@@ -20,7 +20,7 @@ export function AdminDashboard() {
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
   const [newGlaze, setNewGlaze] = useState('');
   const [editingFiring, setEditingFiring] = useState<FiringSchedule | null>(null);
-  
+
   // Mock members data
   const [members, setMembers] = useState<User[]>([
     {
@@ -66,7 +66,7 @@ export function AdminDashboard() {
 
   const handleAddGlaze = () => {
     if (!newGlaze.trim() || !currentStudio) return;
-    
+
     const updatedStudio = {
       ...currentStudio,
       glazes: [...currentStudio.glazes, newGlaze.trim()]
@@ -78,7 +78,7 @@ export function AdminDashboard() {
 
   const handleRemoveGlaze = (glaze: string) => {
     if (!currentStudio) return;
-    
+
     const updatedStudio = {
       ...currentStudio,
       glazes: currentStudio.glazes.filter(g => g !== glaze)
@@ -88,12 +88,12 @@ export function AdminDashboard() {
 
   const handleAddFiring = () => {
     if (!currentStudio) return;
-    
+
     const firing: FiringSchedule = {
       ...newFiring,
       id: Date.now().toString()
     };
-    
+
     const updatedStudio = {
       ...currentStudio,
       firingSchedule: [...currentStudio.firingSchedule, firing]
@@ -112,7 +112,7 @@ export function AdminDashboard() {
 
   const handleDeleteFiring = (firingId: string) => {
     if (!currentStudio) return;
-    
+
     const updatedStudio = {
       ...currentStudio,
       firingSchedule: currentStudio.firingSchedule.filter(f => f.id !== firingId)
@@ -122,7 +122,7 @@ export function AdminDashboard() {
 
   const handleAddMember = () => {
     if (!newMember.name.trim() || !newMember.email.trim()) return;
-    
+
     const member: User = {
       id: Date.now().toString(),
       name: newMember.name,
@@ -131,7 +131,7 @@ export function AdminDashboard() {
       studioId: currentStudio?.id,
       subscription: 'studio'
     };
-    
+
     setMembers(prev => [...prev, member]);
     setNewMember({ name: '', email: '', type: 'studio_artist' });
     setShowAddMemberDialog(false);
@@ -143,7 +143,7 @@ export function AdminDashboard() {
 
   const handleCommissionChange = (newRate: number) => {
     if (!currentStudio) return;
-    
+
     const updatedStudio = {
       ...currentStudio,
       commissionRate: newRate
@@ -520,7 +520,7 @@ export function AdminDashboard() {
         {/* Commerce Tab */}
         <TabsContent value="commerce" className="space-y-6">
           <h2>Commerce Settings</h2>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Commission Rate</CardTitle>
@@ -540,7 +540,7 @@ export function AdminDashboard() {
                   Percentage of sales that goes to the studio for hosting the marketplace
                 </p>
               </div>
-              
+
               <div className="p-4 bg-muted rounded-lg">
                 <h4>Commission Breakdown</h4>
                 <div className="space-y-2 mt-2 text-sm">
@@ -575,7 +575,7 @@ export function AdminDashboard() {
                 </div>
                 <Switch defaultChecked />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Require approval</Label>
@@ -583,7 +583,7 @@ export function AdminDashboard() {
                 </div>
                 <Switch />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Studio branding</Label>

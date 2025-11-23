@@ -1,31 +1,31 @@
 import { useState } from 'react';
-import { 
-  Plus, Search, UserPlus, UserCog, Shield, Clock, AlertTriangle, 
-  CheckCircle, Edit, Trash2, MoreHorizontal, Eye, Mail, Key, 
+import {
+  Plus, Search, UserPlus, UserCog, Shield, Clock, AlertTriangle,
+  CheckCircle, Edit, Trash2, MoreHorizontal, Eye, Mail, Key,
   Calendar, MapPin, Flag, Users, Settings as SettingsIcon,
   FileText, Save, X, ExternalLink, Bell, Phone, Camera,
   CalendarDays, CalendarClock, Upload, Image as ImageIcon,
   GraduationCap, Briefcase, Home, Share2, HeartHandshake,
   Plane, Activity, MessageCircle
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Checkbox } from './ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Separator } from './ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Calendar as CalendarComponent } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAppContext, type ManagerProfile, type InstructorProfile, type ManagerResponsibility, type WorkLog, type User, type ScheduleEntry, type TimeOffRequest, type EmployeeCredentials } from '@/app/context/AppContext';
 
 interface EmployeeData extends User {
@@ -394,7 +394,7 @@ export function EmployeeManagement() {
       'sick-leave': 'bg-red-500',
       'vacation': 'bg-orange-500'
     };
-    
+
     return (
       <Badge className={colors[category] || 'bg-gray-500'}>
         {getCategoryIcon(category)}
@@ -407,17 +407,17 @@ export function EmployeeManagement() {
     const now = new Date();
     const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()] as 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
     const currentTime = now.getHours() * 100 + now.getMinutes();
-    
-    const daySchedule = employee.managerProfile?.standardWorkHours[currentDay] || 
+
+    const daySchedule = employee.managerProfile?.standardWorkHours[currentDay] ||
                        employee.instructorProfile?.availability[currentDay];
-    
+
     if (!daySchedule?.isAvailable) {
       return { status: 'unavailable', text: 'Off Today' };
     }
-    
+
     const startTime = parseInt(daySchedule.start.replace(':', ''));
     const endTime = parseInt(daySchedule.end.replace(':', ''));
-    
+
     if (currentTime >= startTime && currentTime <= endTime) {
       return { status: 'available', text: 'Available Now' };
     } else if (currentTime < startTime) {
@@ -529,7 +529,7 @@ export function EmployeeManagement() {
               </div>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button>
@@ -544,7 +544,7 @@ export function EmployeeManagement() {
                   Create a new employee or instructor profile.
                 </DialogDescription>
               </DialogHeader>
-              
+
               <Tabs defaultValue="employee" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="employee">Employee</TabsTrigger>
@@ -576,7 +576,7 @@ export function EmployeeManagement() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Full Name</Label>
@@ -603,7 +603,7 @@ export function EmployeeManagement() {
                         <div className="flex items-center space-x-2">
                           <AlertTriangle className="w-4 h-4 text-orange-600" />
                           <span className="text-sm text-orange-800">
-                            Co-Admin limit reached ({coAdminCount}/{maxCoAdmins}). 
+                            Co-Admin limit reached ({coAdminCount}/{maxCoAdmins}).
                             Consider upgrading your plan for more Co-Admin slots.
                           </span>
                         </div>
@@ -615,7 +615,7 @@ export function EmployeeManagement() {
                     <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleCreateEmployee}
                       disabled={employeeForm.role === 'co-admin' && coAdminCount >= maxCoAdmins}
                     >
@@ -650,7 +650,7 @@ export function EmployeeManagement() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Full Name</Label>
@@ -738,7 +738,7 @@ export function EmployeeManagement() {
             {filteredEmployees.map((employee) => {
               const availability = getAvailabilityStatus(employee);
               const profile = employee.managerProfile;
-              
+
               return (
                 <Card key={employee.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-4">
@@ -834,7 +834,7 @@ export function EmployeeManagement() {
             {filteredInstructors.map((instructor) => {
               const availability = getAvailabilityStatus(instructor);
               const profile = instructor.instructorProfile;
-              
+
               return (
                 <Card key={instructor.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-4">
@@ -908,7 +908,7 @@ export function EmployeeManagement() {
                           <GraduationCap className="w-4 h-4 text-muted-foreground" />
                           <span className="text-sm">{profile.assignedClasses.length} assigned classes</span>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-1 mt-2">
                           {profile.specialties.slice(0, 2).map((specialty) => (
                             <Badge key={specialty} variant="outline" className="text-xs">
@@ -939,20 +939,20 @@ export function EmployeeManagement() {
             <CardContent>
               <div className="space-y-4">
                 {[...employees, ...instructors]
-                  .filter(emp => emp.scheduleEntries.some(entry => 
+                  .filter(emp => emp.scheduleEntries.some(entry =>
                     new Date(entry.date).toDateString() === new Date().toDateString()
                   ))
                   .map((employee) => {
-                    const todayEntries = employee.scheduleEntries.filter(entry => 
+                    const todayEntries = employee.scheduleEntries.filter(entry =>
                       new Date(entry.date).toDateString() === new Date().toDateString()
                     );
-                    
+
                     return todayEntries.map((entry) => (
                       <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
                           <Avatar className="w-10 h-10">
                             <AvatarImage src={
-                              employee.managerProfile?.profileImage || 
+                              employee.managerProfile?.profileImage ||
                               employee.instructorProfile?.profileImage
                             } />
                             <AvatarFallback>
@@ -994,13 +994,13 @@ export function EmployeeManagement() {
                   .filter(emp => emp.timeOffRequests.some(req => req.status === 'pending'))
                   .map((employee) => {
                     const pendingRequests = employee.timeOffRequests.filter(req => req.status === 'pending');
-                    
+
                     return pendingRequests.map((request) => (
                       <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
                           <Avatar className="w-10 h-10">
                             <AvatarImage src={
-                              employee.managerProfile?.profileImage || 
+                              employee.managerProfile?.profileImage ||
                               employee.instructorProfile?.profileImage
                             } />
                             <AvatarFallback>
@@ -1062,9 +1062,9 @@ export function EmployeeManagement() {
               </div>
               <div>
                 <Label htmlFor="scheduleCategory">Category</Label>
-                <Select 
-                  value={scheduleForm.category} 
-                  onValueChange={(value: ScheduleEntry['category']) => 
+                <Select
+                  value={scheduleForm.category}
+                  onValueChange={(value: ScheduleEntry['category']) =>
                     setScheduleForm(prev => ({ ...prev, category: value }))
                   }
                 >

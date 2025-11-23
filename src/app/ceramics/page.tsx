@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { MapPin, Heart, DollarSign, User, Search, Filter, SlidersHorizontal } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Label } from './ui/label';
-import { Slider } from './ui/slider';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 interface CeramicPiece {
   id: string;
@@ -41,7 +41,7 @@ interface CeramicPiece {
   distance?: number;
 }
 
-export function PublicCeramicsMarketplace() {
+export default function PublicCeramicsMarketplace() {
   const [ceramics] = useState<CeramicPiece[]>([
     {
       id: '1',
@@ -170,11 +170,11 @@ export function PublicCeramicsMarketplace() {
                          piece.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          piece.artistName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          piece.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesCategory = categoryFilter === 'all' || piece.category === categoryFilter;
     const matchesLocation = locationFilter === 'all' || piece.state === locationFilter;
     const matchesPrice = piece.price >= priceRange[0] && piece.price <= priceRange[1];
-    
+
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice && piece.isAvailable;
   }).sort((a, b) => {
     switch (sortBy) {
@@ -265,7 +265,7 @@ export function PublicCeramicsMarketplace() {
               />
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-40">
@@ -367,7 +367,7 @@ export function PublicCeramicsMarketplace() {
                 </Badge>
               )}
             </div>
-            
+
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1 min-w-0">
@@ -413,7 +413,7 @@ export function PublicCeramicsMarketplace() {
                     <span>{piece.views} views</span>
                   </div>
                 </div>
-                <Button 
+                <Button
                   size="sm"
                   onClick={() => handleContactArtist(piece)}
                 >

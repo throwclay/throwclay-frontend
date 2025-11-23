@@ -1,24 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { 
-  Plus, Search, Send, Paperclip, Image as ImageIcon, Video, FileText, 
+import {
+  Plus, Search, Send, Paperclip, Image as ImageIcon, Video, FileText,
   Users, Settings, MoreHorizontal, Phone, VideoIcon, Info, Smile,
   X, Edit, UserPlus, UserMinus, Crown, Shield, Trash2, Download,
   MessageCircle, Hash, Lock, Globe, Camera, Mic
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { ScrollArea } from './ui/scroll-area';
-import { Textarea } from './ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
-import { Switch } from './ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Separator } from './ui/separator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { useAppContext, type Message, type ChatGroup, type User } from '@/app/context/AppContext';
 
 interface ChatParticipant extends User {
@@ -44,7 +44,7 @@ interface ExtendedMessage extends Message {
   attachments?: FileAttachment[];
 }
 
-export function MessagingCenter() {
+export default function MessagingCenter() {
   const { currentUser, currentStudio } = useAppContext();
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -158,7 +158,7 @@ export function MessagingCenter() {
   ]);
 
   const activeGroup = chats.find(chat => chat.id === activeChat);
-  const activeChatMessages = messages.filter(msg => 
+  const activeChatMessages = messages.filter(msg =>
     msg.groupId === activeChat || msg.recipientId === activeChat
   );
 
@@ -193,7 +193,7 @@ export function MessagingCenter() {
 
     const newChat: ChatGroup = {
       id: `chat${Date.now()}`,
-      name: chatType === 'direct' 
+      name: chatType === 'direct'
         ? allUsers.find(u => u.id === selectedUsers[0])?.name || 'Direct Message'
         : groupName,
       type: 'general',
@@ -205,7 +205,7 @@ export function MessagingCenter() {
     };
 
     console.log('Creating new chat:', newChat);
-    
+
     setSelectedUsers([]);
     setGroupName('');
     setGroupDescription('');
@@ -216,7 +216,7 @@ export function MessagingCenter() {
 
   const getRoleBadge = (role?: string) => {
     if (!role) return null;
-    
+
     const roleConfig = {
       owner: { label: 'Owner', variant: 'default' },
       admin: { label: 'Admin', variant: 'destructive' },
@@ -263,7 +263,7 @@ export function MessagingCenter() {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const hours = diff / (1000 * 60 * 60);
-    
+
     if (hours < 24) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else {
@@ -304,7 +304,7 @@ export function MessagingCenter() {
                 Create a direct message or group chat with studio members.
               </DialogDescription>
             </DialogHeader>
-            
+
             <Tabs value={chatType} onValueChange={(value) => setChatType(value as 'direct' | 'group')}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="direct">Direct Message</TabsTrigger>
@@ -334,7 +334,7 @@ export function MessagingCenter() {
                       .map(user => (
                         <div key={user.id} className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                              onClick={() => setSelectedUsers([user.id])}>
-                          <Checkbox 
+                          <Checkbox
                             checked={selectedUsers.includes(user.id)}
                             onChange={() => {}}
                           />
@@ -411,13 +411,13 @@ export function MessagingCenter() {
                       .map(user => (
                         <div key={user.id} className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                              onClick={() => {
-                               setSelectedUsers(prev => 
-                                 prev.includes(user.id) 
+                               setSelectedUsers(prev =>
+                                 prev.includes(user.id)
                                    ? prev.filter(id => id !== user.id)
                                    : [...prev, user.id]
                                );
                              }}>
-                          <Checkbox 
+                          <Checkbox
                             checked={selectedUsers.includes(user.id)}
                             onChange={() => {}}
                           />
@@ -448,7 +448,7 @@ export function MessagingCenter() {
               <Button variant="outline" onClick={() => setShowNewChatDialog(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateChat}
                 disabled={
                   (chatType === 'direct' && selectedUsers.length !== 1) ||
@@ -475,10 +475,10 @@ export function MessagingCenter() {
               className="pl-10"
             />
           </div>
-          
+
           <div className="space-y-2">
             {chats
-              .filter(chat => 
+              .filter(chat =>
                 chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 chat.description?.toLowerCase().includes(searchTerm.toLowerCase())
               )
@@ -486,7 +486,7 @@ export function MessagingCenter() {
                 const lastMessage = messages
                   .filter(msg => msg.groupId === chat.id)
                   .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-                
+
                 const unreadCount = messages
                   .filter(msg => msg.groupId === chat.id && !msg.readBy.includes(currentUser?.id || ''))
                   .length;

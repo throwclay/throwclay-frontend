@@ -1,19 +1,19 @@
 import { useState, useRef } from 'react';
-import { 
-  Palette, Upload, Download, RotateCcw, Eye, Save, Sparkles, 
+import {
+  Palette, Upload, Download, RotateCcw, Eye, Save, Sparkles,
   Circle, Square, Shield, Hexagon, Star, Diamond
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Slider } from './ui/slider';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { BadgeDesign } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 
@@ -65,7 +65,7 @@ const COLOR_PRESETS = [
 
 export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = false }: BadgeDesignerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [design, setDesign] = useState<BadgeDesign>(initialDesign || {
     id: '',
     name: 'New Badge',
@@ -113,7 +113,7 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
         toast.error('File size must be less than 5MB');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         toast.error('Please upload an image file');
         return;
@@ -137,13 +137,13 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
       toast.error('Please enter a badge name');
       return;
     }
-    
+
     const finalDesign = {
       ...design,
       id: design.id || `badge_${Date.now()}`,
       name: design.name.trim()
     };
-    
+
     onSave(finalDesign);
     toast.success('Badge design saved successfully');
   };
@@ -190,10 +190,10 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
       medium: { width: 120, height: 120, iconSize: 48, fontSize: 16 },
       large: { width: 200, height: 200, iconSize: 80, fontSize: 24 }
     };
-    
+
     const dimensions = sizeMap[size];
     const ShapeIcon = SHAPE_ICONS[design.shape];
-    
+
     const gradientStyle = design.gradientEnabled && design.gradientColors ? {
       background: `linear-gradient(${
         design.gradientDirection === 'vertical' ? '180deg' :
@@ -216,7 +216,7 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
             height: dimensions.height,
             borderWidth: design.borderWidth,
             borderColor: design.borderColor,
-            borderRadius: design.shape === 'circle' ? '50%' : 
+            borderRadius: design.shape === 'circle' ? '50%' :
                          design.shape === 'square' ? '8px' :
                          design.shape === 'shield' ? '8px 8px 50% 50%' :
                          design.shape === 'hexagon' ? '0' :
@@ -239,8 +239,8 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
               <img
                 src={design.customIconUrl}
                 alt="Custom badge icon"
-                style={{ 
-                  width: dimensions.iconSize, 
+                style={{
+                  width: dimensions.iconSize,
                   height: dimensions.iconSize,
                   objectFit: 'contain'
                 }}
@@ -386,14 +386,14 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
                           id="gradient-color-1"
                           type="color"
                           value={design.gradientColors?.[0] || design.backgroundColor}
-                          onChange={(e) => updateDesign({ 
+                          onChange={(e) => updateDesign({
                             gradientColors: [e.target.value, design.gradientColors?.[1] || design.borderColor]
                           })}
                           className="w-12 h-8"
                         />
                         <Input
                           value={design.gradientColors?.[0] || design.backgroundColor}
-                          onChange={(e) => updateDesign({ 
+                          onChange={(e) => updateDesign({
                             gradientColors: [e.target.value, design.gradientColors?.[1] || design.borderColor]
                           })}
                           className="flex-1"
@@ -407,14 +407,14 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
                           id="gradient-color-2"
                           type="color"
                           value={design.gradientColors?.[1] || design.borderColor}
-                          onChange={(e) => updateDesign({ 
+                          onChange={(e) => updateDesign({
                             gradientColors: [design.gradientColors?.[0] || design.backgroundColor, e.target.value]
                           })}
                           className="w-12 h-8"
                         />
                         <Input
                           value={design.gradientColors?.[1] || design.borderColor}
-                          onChange={(e) => updateDesign({ 
+                          onChange={(e) => updateDesign({
                             gradientColors: [design.gradientColors?.[0] || design.backgroundColor, e.target.value]
                           })}
                           className="flex-1"
@@ -424,8 +424,8 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
                   </div>
                   <div className="space-y-2">
                     <Label>Gradient Direction</Label>
-                    <Select 
-                      value={design.gradientDirection} 
+                    <Select
+                      value={design.gradientDirection}
                       onValueChange={(value: any) => updateDesign({ gradientDirection: value })}
                     >
                       <SelectTrigger>
@@ -635,7 +635,7 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
             </CardHeader>
             <CardContent>
               {renderBadgePreview('large')}
-              
+
               <div className="mt-6 space-y-4">
                 <div className="flex justify-center space-x-4">
                   <div className="text-center">
@@ -702,13 +702,13 @@ export function BadgeDesigner({ initialDesign, onSave, onCancel, previewMode = f
               How your badge will appear to students
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="font-semibold text-lg mb-4">{design.name}</h3>
               {renderBadgePreview('large')}
             </div>
-            
+
             <div className="space-y-4">
               <div className="text-center">
                 <h4 className="font-medium mb-2">Different Sizes</h4>

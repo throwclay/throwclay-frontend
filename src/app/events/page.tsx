@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { Calendar, Plus, Edit, Trash2, Users, MapPin, DollarSign, Eye, Star, Search, ExternalLink } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAppContext, type Event } from '@/app/context/AppContext';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
-export function EventsManagement() {
+export default function EventsManagement() {
   const { currentUser, currentStudio } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -130,9 +130,9 @@ export function EventsManagement() {
                          event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.organizer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesType = typeFilter === 'all' || event.type === typeFilter;
-    
+
     return matchesSearch && matchesType;
   });
 
@@ -159,12 +159,12 @@ export function EventsManagement() {
 
   const handleCreateEvent = () => {
     if (!newEvent.title || !newEvent.date) return;
-    
+
     const eventToCreate: Event = {
       id: Date.now().toString(),
       ...newEvent as Event
     };
-    
+
     setEvents(prev => [eventToCreate, ...prev]);
     setNewEvent({
       title: '',
@@ -195,9 +195,9 @@ export function EventsManagement() {
 
   const handleJoinEvent = (event: Event) => {
     if (!currentUser) return;
-    
-    setEvents(prev => prev.map(e => 
-      e.id === event.id 
+
+    setEvents(prev => prev.map(e =>
+      e.id === event.id
         ? { ...e, currentParticipants: [...e.currentParticipants, currentUser.id] }
         : e
     ));
@@ -221,7 +221,7 @@ export function EventsManagement() {
         </div>
         <div className="flex items-center space-x-4">
           <Badge variant="secondary">{filteredEvents.length} events</Badge>
-          
+
           {canManageEvents && (
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
@@ -320,8 +320,8 @@ export function EventsManagement() {
                         id="participation-fee"
                         type="number"
                         value={newEvent.pricing?.participationFee}
-                        onChange={(e) => setNewEvent(prev => ({ 
-                          ...prev, 
+                        onChange={(e) => setNewEvent(prev => ({
+                          ...prev,
                           pricing: { ...prev.pricing!, participationFee: parseInt(e.target.value) || 0 }
                         }))}
                       />
@@ -365,7 +365,7 @@ export function EventsManagement() {
             className="pl-10"
           />
         </div>
-        
+
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -388,7 +388,7 @@ export function EventsManagement() {
             <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h3>No events found</h3>
             <p className="text-muted-foreground">
-              {events.length === 0 
+              {events.length === 0
                 ? 'No pottery events are currently scheduled.'
                 : 'Try adjusting your search or filters.'
               }
@@ -438,7 +438,7 @@ export function EventsManagement() {
                   )}
                 </div>
               </CardHeader>
-              
+
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-2">
                   {event.description}
@@ -493,19 +493,19 @@ export function EventsManagement() {
                       Registered
                     </Badge>
                   ) : (
-                    <Button 
-                      variant="default" 
+                    <Button
+                      variant="default"
                       size="sm"
                       onClick={() => handleJoinEvent(event)}
                       disabled={event.maxParticipants && event.currentParticipants.length >= event.maxParticipants}
                     >
-                      {event.maxParticipants && event.currentParticipants.length >= event.maxParticipants 
-                        ? 'Full' 
+                      {event.maxParticipants && event.currentParticipants.length >= event.maxParticipants
+                        ? 'Full'
                         : 'Join Event'
                       }
                     </Button>
                   )}
-                  
+
                   <Button variant="outline" size="sm" className="flex items-center space-x-1">
                     <Eye className="w-3 h-3" />
                     <span>Details</span>
@@ -517,7 +517,7 @@ export function EventsManagement() {
                         <Edit className="w-3 h-3" />
                         <span>Edit</span>
                       </Button>
-                      
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm" className="flex items-center space-x-1 text-destructive">

@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Camera, Plus, Pencil, Upload, X, Edit, Trash2, Image } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DrawingCanvas } from './DrawingCanvas';
 import { PhotoEditor } from './PhotoEditor';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import type { PhotoEntry } from '@/app/context/AppContext';
 
 interface PhotoManagerProps {
@@ -150,9 +150,9 @@ export function PhotoManager({ photos, onPhotosChange }: PhotoManagerProps) {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-center text-muted-foreground">or</div>
-                  
+
                   <div>
                     <Label htmlFor="photo-url">Photo URL</Label>
                     <Input
@@ -250,7 +250,7 @@ export function PhotoManager({ photos, onPhotosChange }: PhotoManagerProps) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                
+
                 <div className="absolute top-2 left-2">
                   <Badge variant={photo.type === 'sketch' ? 'default' : 'secondary'} className="text-xs">
                     {photo.type === 'sketch' ? 'Sketch' : 'Photo'}
@@ -272,9 +272,9 @@ export function PhotoManager({ photos, onPhotosChange }: PhotoManagerProps) {
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         className="p-2"
                         onClick={(e) => {
                           e.preventDefault();

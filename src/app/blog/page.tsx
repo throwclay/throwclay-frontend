@@ -1,29 +1,29 @@
 import { useState, useRef } from 'react';
-import { 
-  FileText, Plus, Search, Filter, Edit, Trash2, Eye, Share2, Heart, 
-  MessageCircle, Bookmark, Calendar, User, Clock, Tag, ImageIcon, 
+import {
+  FileText, Plus, Search, Filter, Edit, Trash2, Eye, Share2, Heart,
+  MessageCircle, Bookmark, Calendar, User, Clock, Tag, ImageIcon,
   Video, Link, Bold, Italic, Underline, List, ListOrdered, Quote,
   Save, Send, Archive, RotateCcw, Settings, Globe, Lock, Users,
-  ChevronDown, MoreHorizontal, Copy, ExternalLink, Facebook, Twitter, 
+  ChevronDown, MoreHorizontal, Copy, ExternalLink, Facebook, Twitter,
   Linkedin, Instagram, RefreshCw, TrendingUp, BarChart, Layers
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Label } from './ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Separator } from './ui/separator';
-import { Switch } from './ui/switch';
-import { Progress } from './ui/progress';
-import { AspectRatio } from './ui/aspect-ratio';
-import { ScrollArea } from './ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppContext } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 
@@ -74,7 +74,7 @@ export interface BlogPost {
   isFeatured: boolean;
 }
 
-export function BlogManagement() {
+export default function BlogManagement() {
   const { currentUser } = useAppContext();
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -151,7 +151,7 @@ Glazes are essentially glass that has been formulated to melt at ceramic firing 
 ### Silica (SiO₂)
 The glass former - provides the basic structure of the glaze.
 
-### Alumina (Al₂O₃)  
+### Alumina (Al₂O₃)
 The stabilizer - prevents the glaze from running off the pot.
 
 ### Flux
@@ -304,7 +304,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
   };
 
   const handleUpdatePost = (updatedPost: BlogPost) => {
-    setPosts(prev => prev.map(post => 
+    setPosts(prev => prev.map(post =>
       post.id === updatedPost.id ? { ...updatedPost, updatedAt: new Date().toISOString() } : post
     ));
     setSelectedPost(null);
@@ -323,9 +323,9 @@ Today, Sarah is working on a series of large platters with intricate carved desi
   const handleStatusChange = (postId: string, newStatus: BlogPost['status']) => {
     setPosts(prev => prev.map(post => {
       if (post.id === postId) {
-        const updatedPost = { 
-          ...post, 
-          status: newStatus, 
+        const updatedPost = {
+          ...post,
+          status: newStatus,
           updatedAt: new Date().toISOString()
         };
         if (newStatus === 'published' && !post.publishedAt) {
@@ -398,7 +398,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                     Write and publish your blog content for your community
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-6">
                   {/* Post Title */}
                   <div className="space-y-2">
@@ -435,7 +435,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                         </Button>
                       </div>
                     </div>
-                    
+
                     {editorMode === 'write' ? (
                       <div className="space-y-3">
                         {/* Toolbar */}
@@ -470,7 +470,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                             <Link className="w-4 h-4" />
                           </Button>
                         </div>
-                        
+
                         <Textarea
                           id="content"
                           value={newPost.content}
@@ -656,8 +656,8 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                       {post.featuredImage && (
                         <div className="w-24 h-16 flex-shrink-0">
                           <AspectRatio ratio={3/2}>
-                            <img 
-                              src={post.featuredImage} 
+                            <img
+                              src={post.featuredImage}
                               alt={post.title}
                               className="w-full h-full object-cover rounded"
                             />
@@ -682,10 +682,10 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                               )}
                               <Badge variant="secondary">{post.category}</Badge>
                             </div>
-                            
+
                             <h3 className="text-lg font-semibold mb-2 line-clamp-2">{post.title}</h3>
                             <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{post.excerpt}</p>
-                            
+
                             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                               <div className="flex items-center space-x-1">
                                 <Avatar className="w-4 h-4">
@@ -794,7 +794,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                                   Share
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => handleDeletePost(post.id)}
                                   className="text-destructive focus:text-destructive"
                                 >
@@ -817,7 +817,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
                 <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                 <h3 className="text-xl font-semibold mb-2">No Blog Posts Found</h3>
                 <p className="text-muted-foreground mb-6">
-                  {searchQuery || statusFilter !== 'all' 
+                  {searchQuery || statusFilter !== 'all'
                     ? 'Try adjusting your search or filters.'
                     : 'Create your first blog post to get started.'
                   }
