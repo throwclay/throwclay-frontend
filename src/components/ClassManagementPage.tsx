@@ -17,8 +17,8 @@ import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-import { ClassPreview } from './ClassPreview';
-import { ClassSettingsBadges } from './ClassSettingsBadges';
+import { ClassPreview } from '@/components/ClassPreview';
+import { ClassSettingsBadges } from '@/components/ClassSettingsBadges';
 import type { ClassBadge, BadgeDesign, StudentBadge, User } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 

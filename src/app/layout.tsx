@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { AppProvider } from "./context/AppContext";
+import { AppProvider } from "@/app/context/AppContext";
 import { Inter } from "next/font/google";
-import "../styles/globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import "@/styles/global.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { supabase } from "../lib/apis/supabaseClient";
-import { SignupFlow, type SignupData } from "./SignupFlow";
+import { SignupFlow, type SignupData } from "@/components/SignupFlow";
+import { supabase } from "@/lib/apis/supabaseClient";
 
 interface LoginFormProps {
   onLogin: (userData: { email: string; phone?: string; session: any }) => void;
@@ -20,7 +19,7 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
 
-  
+
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
 
   const [otpRequested, setOtpRequested] = useState(false);

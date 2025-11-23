@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DrawingCanvas } from './DrawingCanvas';
+import { DrawingCanvas } from '@/components/DrawingCanvas';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import type { PhotoEntry } from '@/app/context/AppContext';
 
