@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import {
-  Plus, Trash2, Edit2, Eye, Save, Settings, GripVertical, 
-  Type, Mail, Phone, AlignLeft, List, CheckSquare, 
+  Plus, Trash2, Edit2, Eye, Save, Settings, GripVertical,
+  Type, Mail, Phone, AlignLeft, List, CheckSquare,
   Radio, ArrowUp, ArrowDown, Copy, RefreshCw
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Checkbox } from './ui/checkbox';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAppContext } from '@/app/context/AppContext';
 import type { EnrollmentFormField, StudioEnrollmentForm } from '@/app/context/AppContext';
 
@@ -79,7 +79,7 @@ export function MemberIntakeFormBuilder() {
       order: formFields.length,
       options: ['select', 'checkbox', 'radio'].includes(fieldType) ? ['Option 1', 'Option 2'] : undefined
     };
-    
+
     setFormFields([...formFields, newFieldData]);
   };
 
@@ -138,7 +138,7 @@ export function MemberIntakeFormBuilder() {
       isActive: true,
       updatedAt: new Date().toISOString()
     };
-    
+
     console.log('Saving form:', formData);
   };
 
@@ -243,7 +243,7 @@ export function MemberIntakeFormBuilder() {
                 <h2 className="text-lg font-semibold">Add Fields</h2>
                 <Separator />
               </div>
-              
+
               <div className="space-y-3">
                 {fieldTypes.map((fieldType) => {
                   const Icon = fieldType.icon;
@@ -290,9 +290,9 @@ export function MemberIntakeFormBuilder() {
                     />
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div className="space-y-6">
                   {formFields.length === 0 ? (
                     <div className="text-center py-16 space-y-4">
@@ -387,9 +387,9 @@ export function MemberIntakeFormBuilder() {
               <h2 className="text-2xl font-semibold">{formTitle}</h2>
               <p className="text-muted-foreground">{formDescription}</p>
             </div>
-            
+
             <Separator />
-            
+
             <div className="space-y-6">
               {formFields.map((field) => (
                 <div key={field.id} className="space-y-2">
@@ -401,9 +401,9 @@ export function MemberIntakeFormBuilder() {
                 </div>
               ))}
             </div>
-            
+
             <Separator />
-            
+
             <div className="flex justify-end">
               <Button>Submit Application</Button>
             </div>
@@ -419,7 +419,7 @@ export function MemberIntakeFormBuilder() {
                 <p className="text-muted-foreground">Configure form behavior and notifications</p>
                 <Separator />
               </div>
-              
+
               <div className="space-y-6">
                 <div className="flex items-center justify-between py-3">
                   <div className="space-y-1">
@@ -453,8 +453,8 @@ export function MemberIntakeFormBuilder() {
 
                 <div className="space-y-2">
                   <Label>Notification Email</Label>
-                  <Input 
-                    type="email" 
+                  <Input
+                    type="email"
                     placeholder="admin@yourstudio.com"
                     defaultValue={currentStudio?.locations?.[0]?.email}
                   />
@@ -477,7 +477,7 @@ export function MemberIntakeFormBuilder() {
                 <p className="text-muted-foreground">Manage different versions of your intake form</p>
                 <Separator />
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
@@ -533,8 +533,8 @@ export function MemberIntakeFormBuilder() {
                 </div>
                 <div className="space-y-2">
                   <Label>Field Type</Label>
-                  <Select 
-                    value={editingField.type} 
+                  <Select
+                    value={editingField.type}
                     onValueChange={(value) => setEditingField({ ...editingField, type: value as any })}
                   >
                     <SelectTrigger>
@@ -609,7 +609,7 @@ export function MemberIntakeFormBuilder() {
                     Users must fill out this field to submit the form
                   </p>
                 </div>
-                <Switch 
+                <Switch
                   checked={editingField.required}
                   onCheckedChange={(checked) => setEditingField({ ...editingField, required: checked })}
                 />

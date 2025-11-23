@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { 
-  Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock, 
+  Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock,
   Thermometer, Users, Package, Settings, Eye, Bell, Download,
   CheckCircle, AlertTriangle, Info, BarChart3, Camera, MapPin,
   Zap, Fuel, User, CheckSquare, Square, MoreHorizontal, UserCheck,
@@ -9,26 +8,26 @@ import {
   FileText, Copy, Share, Star, TrendingUp, Target, Beaker,
   Layers, BookOpen, PlusCircle, Save, X, Send, Calculator
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Checkbox } from './ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Slider } from './ui/slider';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Slider } from '@/components/ui/slider';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAppContext } from '@/app/context/AppContext';
-import type { 
-  Kiln, KilnLoad, KilnLoadItem, KilnShelf, 
+import type {
+  Kiln, KilnLoad, KilnLoadItem, KilnShelf, FiringSchedule,
   KilnAssignment, CustomFiringType, KilnCamera, RingIntegration,
   KilnFiringTemplate
 } from '@/types';
@@ -40,8 +39,10 @@ import {
 } from '@/lib/utils/kilnCalculations';
 import { toast } from 'sonner';
 
-export function KilnManagement() {
-  const { currentStudio, authToken } = useAppContext();
+// FIXME: something about an auth-token
+
+export default function KilnManagement() {
+  const { currentStudio } = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
   const [kilns, setKilns] = useState<any[]>([]);
@@ -60,7 +61,7 @@ export function KilnManagement() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedKilnId, setSelectedKilnId] = useState<string>('');
   const [kilnFiringTemplates, setKilnFiringTemplates] = useState<any[]>([]);
-  
+
   // Quick-start firing form state
   const [quickStartForm, setQuickStartForm] = useState({
     name: '',
@@ -112,7 +113,7 @@ export function KilnManagement() {
   const [capacityCalculation, setCapacityCalculation] = useState<CapacityCalculation | null>(null);
   const [showCapacityCalculator, setShowCapacityCalculator] = useState(false);
   const [autoCalculateCapacity, setAutoCalculateCapacity] = useState(true);
-  
+
   // Maintenance schedule state
   const [maintenanceScheduleType, setMaintenanceScheduleType] = useState<'firings' | 'time' | 'both'>('time');
   const [maintenanceInterval, setMaintenanceInterval] = useState<number>(180); // days or firings
@@ -287,10 +288,10 @@ export function KilnManagement() {
   // Capacity calculation handler
   const handleCalculateCapacity = () => {
     try {
-      const pieceSize = selectedPieceSize === 'custom' 
-        ? customPieceSize 
+      const pieceSize = selectedPieceSize === 'custom'
+        ? customPieceSize
         : selectedPieceSize;
-      
+
       const calculation = calculateTotalCapacity(
         newKiln.shelfCount || 4,
         {
@@ -300,7 +301,7 @@ export function KilnManagement() {
         },
         pieceSize as any
       );
-      
+
       setCapacityCalculation(calculation);
       // Auto-update capacity in form
       setNewKiln(prev => ({ ...prev, capacity: calculation.totalCapacity }));
@@ -312,10 +313,10 @@ export function KilnManagement() {
   // Auto-calculate capacity when dimensions change (if auto-calculate is enabled)
   useEffect(() => {
     if (autoCalculateCapacity && newKiln.shelfCount && shelfDimensions.width && shelfDimensions.depth) {
-      const pieceSize = selectedPieceSize === 'custom' 
-        ? customPieceSize 
+      const pieceSize = selectedPieceSize === 'custom'
+        ? customPieceSize
         : selectedPieceSize;
-      
+
       try {
         const calculation = calculateTotalCapacity(
           newKiln.shelfCount,
@@ -326,7 +327,7 @@ export function KilnManagement() {
           },
           pieceSize as any
         );
-        
+
         setCapacityCalculation(calculation);
         setNewKiln(prev => ({ ...prev, capacity: calculation.totalCapacity }));
       } catch (error) {
@@ -348,12 +349,12 @@ export function KilnManagement() {
   // Auto-generate shelf configuration
   const handleAutoGenerateShelves = () => {
     if (!shelfDimensions.totalKilnHeight) return;
-    
+
     const config = calculateOptimalShelfConfig(
       shelfDimensions.totalKilnHeight,
       shelfDimensions.shelfThickness
     );
-    
+
     setNewKiln(prev => ({
       ...prev,
       shelfCount: config.shelfCount,
@@ -363,7 +364,7 @@ export function KilnManagement() {
         capacity: 0, // Will be calculated
       })),
     }));
-    
+
     // Update shelf dimensions height to average
     setShelfDimensions(prev => ({
       ...prev,
@@ -416,7 +417,7 @@ export function KilnManagement() {
 
       const result = await res.json();
       console.log('Created kiln', result);
-      
+
       // Refresh kilns from backend
       try {
         const refreshRes = await fetch(
@@ -434,11 +435,11 @@ export function KilnManagement() {
       } catch (err) {
         console.error('Error refreshing kilns', err);
       }
-      
+
       toast.success('Kiln created successfully', {
         description: `${newKiln.name} has been added to your studio.`,
       });
-      
+
       setShowAddKiln(false);
       setNewKiln({
         name: '',
@@ -603,11 +604,11 @@ export function KilnManagement() {
       } catch (err) {
         console.error('Error refreshing kilns', err);
       }
-      
+
       toast.success('Kiln updated successfully', {
         description: `${editingKiln.name} has been updated.`,
       });
-      
+
       setIsEditingKiln(false);
       setShowKilnDetails(false);
     } catch (err) {
@@ -643,7 +644,7 @@ export function KilnManagement() {
   const handleUpdateTemperatureCurvePhase = (index: number, field: string, value: any) => {
     setNewKilnTemplate(prev => ({
       ...prev,
-      temperatureCurve: prev.temperatureCurve?.map((phase, i) => 
+      temperatureCurve: prev.temperatureCurve?.map((phase, i) =>
         i === index ? { ...phase, [field]: value } : phase
       ) || []
     }));
@@ -828,8 +829,8 @@ export function KilnManagement() {
 
     // Filter to only scheduled firings
     const scheduledFiringsToCancel = firingSchedules.filter(
-      (schedule: any) => 
-        selectedSchedules.includes(schedule.id) && 
+      (schedule: any) =>
+        selectedSchedules.includes(schedule.id) &&
         schedule.status === 'scheduled'
     );
 
@@ -868,9 +869,9 @@ export function KilnManagement() {
       );
 
       const results = await Promise.allSettled(cancelPromises);
-      
+
       const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
-      
+
       if (failed.length > 0) {
         toast.error('Some firings could not be cancelled', {
           description: `${failed.length} of ${scheduledFiringsToCancel.length} firings failed to cancel.`,
@@ -923,8 +924,8 @@ export function KilnManagement() {
 
     // Filter to only scheduled or cancelled firings (only these can be deleted)
     const firingsToDelete = firingSchedules.filter(
-      (schedule: any) => 
-        selectedSchedules.includes(schedule.id) && 
+      (schedule: any) =>
+        selectedSchedules.includes(schedule.id) &&
         (schedule.status === 'scheduled' || schedule.status === 'cancelled')
     );
 
@@ -958,9 +959,9 @@ export function KilnManagement() {
       );
 
       const results = await Promise.allSettled(deletePromises);
-      
+
       const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
-      
+
       if (failed.length > 0) {
         toast.error('Some firings could not be deleted', {
           description: `${failed.length} of ${firingsToDelete.length} firings failed to delete.`,
@@ -1111,7 +1112,7 @@ export function KilnManagement() {
   };
 
   const handleRackToggle = (rackNumber: string) => {
-    setSelectedRacks(prev => 
+    setSelectedRacks(prev =>
       prev.includes(rackNumber)
         ? prev.filter(r => r !== rackNumber)
         : [...prev, rackNumber]
@@ -1119,7 +1120,7 @@ export function KilnManagement() {
   };
 
   const handleSelectAllRacks = () => {
-    setSelectedRacks(prev => 
+    setSelectedRacks(prev =>
       prev.length === availableRacks.length ? [] : [...availableRacks]
     );
   };
@@ -1215,8 +1216,8 @@ export function KilnManagement() {
     // First, check if there's already an active firing for this kiln
     // A kiln can only have one active firing at a time (loading, firing, or cooling)
     const activeFiring = firingSchedules.find(
-      (f: any) => 
-        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+      (f: any) =>
+        (f.kiln_id === kilnId || f.kilnId === kilnId) &&
         ['loading', 'firing', 'cooling'].includes(f.status)
     );
 
@@ -1265,24 +1266,24 @@ export function KilnManagement() {
     const sortedFirings = scheduledFirings.sort((a: any, b: any) => {
       const aStart = a.scheduled_start ? new Date(a.scheduled_start) : null;
       const bStart = b.scheduled_start ? new Date(b.scheduled_start) : null;
-      
+
       // Both have dates
       if (aStart && bStart) {
         const aPastDue = aStart < now;
         const bPastDue = bStart < now;
-        
+
         // Past due firings come first
         if (aPastDue && !bPastDue) return -1;
         if (!aPastDue && bPastDue) return 1;
-        
+
         // Both past due or both future: sort by time
         return aStart.getTime() - bStart.getTime();
       }
-      
+
       // One has date, one doesn't - prioritize the one with date
       if (aStart && !bStart) return -1;
       if (!aStart && bStart) return 1;
-      
+
       // Neither has date - sort by creation time
       const aCreated = a.created_at ? new Date(a.created_at) : new Date(0);
       const bCreated = b.created_at ? new Date(b.created_at) : new Date(0);
@@ -1706,8 +1707,8 @@ export function KilnManagement() {
 
     // Check if there are any active firings for this kiln
     const activeFiring = firingSchedules.find(
-      (f: any) => 
-        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+      (f: any) =>
+        (f.kiln_id === kilnId || f.kilnId === kilnId) &&
         ['loading', 'firing', 'cooling'].includes(f.status)
     );
 
@@ -1720,8 +1721,8 @@ export function KilnManagement() {
 
     // Check for scheduled firings
     const scheduledFirings = firingSchedules.filter(
-      (f: any) => 
-        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+      (f: any) =>
+        (f.kiln_id === kilnId || f.kilnId === kilnId) &&
         f.status === 'scheduled'
     );
 
@@ -1895,9 +1896,9 @@ export function KilnManagement() {
                       />
                     </div>
                     <div className="space-y-2">
-                        <Label>Type *</Label>
-                      <Select 
-                        value={newKiln.type} 
+                      <Label>Type</Label>
+                      <Select
+                        value={newKiln.type}
                         onValueChange={(value) => setNewKiln(prev => ({ ...prev, type: value as any }))}
                       >
                         <SelectTrigger>
@@ -1943,8 +1944,8 @@ export function KilnManagement() {
                     </div>
                     <div className="space-y-2">
                         <Label>Location *</Label>
-                        <Select 
-                          value={newKiln.locationId} 
+                        <Select
+                          value={newKiln.locationId}
                           onValueChange={(value) => setNewKiln(prev => ({ ...prev, locationId: value }))}
                         >
                           <SelectTrigger>
@@ -2091,7 +2092,7 @@ export function KilnManagement() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>Piece Size</Label>
-                    <Select 
+                    <Select
                               value={selectedPieceSize}
                               onValueChange={(value) => setSelectedPieceSize(value as any)}
                     >
@@ -2194,7 +2195,7 @@ export function KilnManagement() {
                   <TabsContent value="specs" className="space-y-6 flex-1 overflow-y-auto mt-4">
                     <div className="space-y-4">
                       <h3 className="font-semibold">Technical Specifications</h3>
-                      
+
                       {/* Interior Dimensions */}
                       <div className="space-y-4">
                         <div>
@@ -2240,7 +2241,7 @@ export function KilnManagement() {
                         </div>
                         <Separator />
                       </div>
-                      
+
                       {/* Electric Kiln Fields */}
                       {newKiln.type === 'electric' && (
                         <div className="space-y-4">
@@ -2504,8 +2505,8 @@ export function KilnManagement() {
 
                           <div className="space-y-2">
                             <Label>
-                              {maintenanceScheduleType === 'firings' 
-                                ? 'Maintenance Interval (number of firings)' 
+                              {maintenanceScheduleType === 'firings'
+                                ? 'Maintenance Interval (number of firings)'
                                 : maintenanceScheduleType === 'time'
                                 ? 'Maintenance Interval (days)'
                                 : 'Time Interval (days)'}
@@ -2516,7 +2517,7 @@ export function KilnManagement() {
                               onChange={(e) => {
                                 const interval = parseInt(e.target.value) || 0;
                                 setMaintenanceInterval(interval);
-                                
+
                                 // Calculate next maintenance date
                                 if (maintenanceScheduleType === 'time' || maintenanceScheduleType === 'both') {
                                   const nextDate = new Date();
@@ -2541,7 +2542,7 @@ export function KilnManagement() {
                             )}
                             {maintenanceScheduleType === 'time' && (
                               <p className="text-sm text-muted-foreground">
-                                Next maintenance: {maintenanceInterval > 0 
+                                Next maintenance: {maintenanceInterval > 0
                                   ? new Date(Date.now() + maintenanceInterval * 24 * 60 * 60 * 1000).toLocaleDateString()
                                   : 'Not set'}
                               </p>
@@ -2645,23 +2646,23 @@ export function KilnManagement() {
             {filteredKilns.map((kiln) => {
               // Determine kiln status - check if there's an active firing
               const activeFiring = firingSchedules.find(
-                (f: any) => 
-                  (f.kiln_id === kiln.id || f.kilnId === kiln.id) && 
+                (f: any) =>
+                  (f.kiln_id === kiln.id || f.kilnId === kiln.id) &&
                   ['loading', 'firing', 'cooling'].includes(f.status)
               );
-              
+
               // If there's an active firing but kiln status isn't in-use, use in-use
               // Otherwise use the kiln's actual status
-              const displayStatus = activeFiring && kiln.status !== 'in-use' 
-                ? 'in-use' 
+              const displayStatus = activeFiring && kiln.status !== 'in-use'
+                ? 'in-use'
                 : (kiln.status || 'available');
-              
+
               // Get location name from currentStudio locations
               const location = (currentStudio as any)?.locations?.find(
                 (loc: any) => loc.id === kiln.locationId
               );
               const locationName = location?.name || 'No location';
-              
+
               return (
               <Card key={kiln.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
@@ -2725,7 +2726,7 @@ export function KilnManagement() {
                           <Wrench className="w-4 h-4 mr-2" />
                           Maintenance
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleDeleteKiln(kiln.id, kiln.name)}
                         >
@@ -2831,8 +2832,8 @@ export function KilnManagement() {
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => handleStartFiring(kiln.id)}
                       disabled={displayStatus === 'in-use' || !!activeFiring}
                     >
@@ -2900,8 +2901,8 @@ export function KilnManagement() {
                     <TabsContent value="basic" className="space-y-6">
                       <div className="space-y-2">
                         <Label>Select Kiln</Label>
-                        <Select 
-                          value={newKilnTemplate.kilnId} 
+                        <Select
+                          value={newKilnTemplate.kilnId}
                           onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, kilnId: value }))}
                         >
                           <SelectTrigger>
@@ -2928,8 +2929,8 @@ export function KilnManagement() {
                         </div>
                         <div className="space-y-2">
                           <Label>Base Type</Label>
-                          <Select 
-                            value={newKilnTemplate.baseType} 
+                          <Select
+                            value={newKilnTemplate.baseType}
                             onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, baseType: value as any }))}
                           >
                             <SelectTrigger>
@@ -2959,8 +2960,8 @@ export function KilnManagement() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Atmosphere</Label>
-                          <Select 
-                            value={newKilnTemplate.atmosphere} 
+                          <Select
+                            value={newKilnTemplate.atmosphere}
                             onValueChange={(value) => setNewKilnTemplate(prev => ({ ...prev, atmosphere: value as any }))}
                           >
                             <SelectTrigger>
@@ -3001,8 +3002,8 @@ export function KilnManagement() {
                           <div key={index} className="border rounded-lg p-4 space-y-4">
                             <div className="flex items-center justify-between">
                               <h4 className="font-medium">Phase {index + 1}</h4>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveTemperatureCurvePhase(index)}
                               >
@@ -3012,8 +3013,8 @@ export function KilnManagement() {
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Phase Type</Label>
-                                <Select 
-                                  value={phase.phase} 
+                                <Select
+                                  value={phase.phase}
                                   onValueChange={(value) => handleUpdateTemperatureCurvePhase(index, 'phase', value)}
                                 >
                                   <SelectTrigger>
@@ -3072,8 +3073,8 @@ export function KilnManagement() {
                           <div className="grid grid-cols-3 gap-3">
                             {['Stoneware', 'Earthenware', 'Porcelain', 'Paper Clay', 'Sculpture Clay'].map((clay) => (
                               <div key={clay} className="flex items-center space-x-2">
-                                <Checkbox 
-                                  id={clay} 
+                                <Checkbox
+                                  id={clay}
                                   checked={newKilnTemplate.clayCompatibility?.includes(clay)}
                                   onCheckedChange={(checked) => {
                                     const current = newKilnTemplate.clayCompatibility || [];
@@ -3101,7 +3102,7 @@ export function KilnManagement() {
                           <div className="grid grid-cols-3 gap-3">
                             {currentStudio?.glazes?.slice(0, 9).map((glaze) => (
                               <div key={glaze} className="flex items-center space-x-2">
-                                <Checkbox 
+                                <Checkbox
                                   id={glaze}
                                   checked={newKilnTemplate.glazeCompatibility?.includes(glaze)}
                                   onCheckedChange={(checked) => {
@@ -3136,7 +3137,7 @@ export function KilnManagement() {
                               Set as default for this kiln and firing type
                             </p>
                           </div>
-                          <Switch 
+                          <Switch
                             checked={newKilnTemplate.isDefault}
                             onCheckedChange={(checked) => setNewKilnTemplate(prev => ({ ...prev, isDefault: checked }))}
                           />
@@ -3149,7 +3150,7 @@ export function KilnManagement() {
                               Allow other studios to use this template
                             </p>
                           </div>
-                          <Switch 
+                          <Switch
                             checked={newKilnTemplate.isShared}
                             onCheckedChange={(checked) => setNewKilnTemplate(prev => ({ ...prev, isShared: checked }))}
                           />
@@ -3212,7 +3213,7 @@ export function KilnManagement() {
               {filteredTemplates.map((template) => {
                 const kiln = kilns.find((k: any) => k.id === template.kilnId);
                 const successRate = template.averageSuccessRate || 0;
-                
+
                 return (
                   <Card key={template.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-4">
@@ -3609,8 +3610,8 @@ export function KilnManagement() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Label>Select Rack Numbers for This Firing</Label>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={handleSelectAllRacks}
                         >
@@ -3640,8 +3641,8 @@ export function KilnManagement() {
                             {selectedRacks.map(rack => (
                               <Badge key={rack} variant="secondary" className="text-xs font-mono">
                                 {rack}
-                                <X 
-                                  className="w-3 h-3 ml-1 cursor-pointer" 
+                                <X
+                                  className="w-3 h-3 ml-1 cursor-pointer"
                                   onClick={() => handleRackToggle(rack)}
                                 />
                               </Badge>
@@ -3756,14 +3757,14 @@ export function KilnManagement() {
                   // Get creator/operator from joined data or fallback to staff lookup
                   const creator = schedule.creator;
                   const operatorProfile = schedule.operator;
-                  
+
                   // Find operator: first try operator from joined data, then fall back to creator
                   const operator = operatorProfile
                     ? staff.find((s) => (s.userId === operatorProfile.id || s.id === operatorProfile.id))
                     : creator
                     ? staff.find((s) => s.userId === creator.id || s.id === creator.id)
                     : staff.find((s) => s.userId === schedule.created_by || s.id === schedule.created_by);
-                  
+
                   const scheduledStart = schedule.scheduled_start
                     ? new Date(schedule.scheduled_start)
                     : schedule.date
@@ -3771,11 +3772,11 @@ export function KilnManagement() {
                     : null;
 
                   // Map firing type: from stored firing_type, template base_type, or derive from kiln type, or fallback
-                  const firingType = schedule.firing_type 
+                  const firingType = schedule.firing_type
                     || schedule.firingType
-                    || template?.base_type 
+                    || template?.base_type
                     || (kiln?.type === 'raku' ? 'raku' : kiln?.type === 'electric' ? 'bisque' : 'glaze')
-                    || schedule.type 
+                    || schedule.type
                     || '—';
 
                   // Map temperature: from target_cone, or from template temperature curve max, or fallback
@@ -3945,7 +3946,7 @@ export function KilnManagement() {
                               Send Notification
                             </DropdownMenuItem>
                             {schedule.status === 'scheduled' && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => handleCancelScheduleFiring(schedule)}
                               >
@@ -4015,7 +4016,7 @@ export function KilnManagement() {
                   {isEditingKiln ? 'Edit Kiln' : 'Kiln Details'}
                 </DialogTitle>
             <DialogDescription>
-                  {isEditingKiln 
+                  {isEditingKiln
                     ? 'Update kiln information and configuration'
                     : 'View detailed information about this kiln'}
             </DialogDescription>
@@ -4059,8 +4060,8 @@ export function KilnManagement() {
                   <div className="space-y-2">
                     <Label>Type *</Label>
                     {isEditingKiln ? (
-                      <Select 
-                        value={editingKiln.type} 
+                      <Select
+                        value={editingKiln.type}
                         onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, type: value as any }) : null)}
                       >
                         <SelectTrigger>
@@ -4122,8 +4123,8 @@ export function KilnManagement() {
                   <div className="space-y-2">
                     <Label>Location *</Label>
                     {isEditingKiln ? (
-                      <Select 
-                        value={editingKiln.locationId || ''} 
+                      <Select
+                        value={editingKiln.locationId || ''}
                         onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, locationId: value }) : null)}
                       >
                         <SelectTrigger>
@@ -4188,8 +4189,8 @@ export function KilnManagement() {
                 <div className="space-y-2">
                   <Label>Status</Label>
                   {isEditingKiln ? (
-                    <Select 
-                      value={editingKiln.status} 
+                    <Select
+                      value={editingKiln.status}
                       onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, status: value as any }) : null)}
                     >
                       <SelectTrigger>
@@ -4205,20 +4206,20 @@ export function KilnManagement() {
                   ) : (
                     (() => {
                       // Check if there's an active firing for this kiln
-                      const activeFiring = editingKiln?.id 
+                      const activeFiring = editingKiln?.id
                         ? firingSchedules.find(
-                            (f: any) => 
-                              (f.kiln_id === editingKiln.id || f.kilnId === editingKiln.id) && 
+                            (f: any) =>
+                              (f.kiln_id === editingKiln.id || f.kilnId === editingKiln.id) &&
                               ['loading', 'firing', 'cooling'].includes(f.status)
                           )
                         : null;
-                      
+
                       // If there's an active firing, show "in-use" status
                       // Otherwise use the kiln's actual status
-                      const displayStatus = activeFiring 
-                        ? 'in-use' 
+                      const displayStatus = activeFiring
+                        ? 'in-use'
                         : (editingKiln.status || 'available');
-                      
+
                       return (
                         <Badge variant={getStatusBadge(displayStatus) as any}>
                           {displayStatus}
@@ -4271,7 +4272,7 @@ export function KilnManagement() {
                       </Button>
                     )}
                   </div>
-                  
+
                   {editingKiln.shelfConfiguration && editingKiln.shelfConfiguration.length > 0 ? (
                     <div className="space-y-3">
                       {editingKiln.shelfConfiguration.map((shelf, index) => (
@@ -4416,7 +4417,7 @@ export function KilnManagement() {
               <TabsContent value="specs" className="space-y-6 flex-1 overflow-y-auto mt-4">
                 <div className="space-y-4">
                   <h3 className="font-semibold">Technical Specifications</h3>
-                  
+
                   {/* Electric Kiln Specifications */}
                   {editingKiln.type === 'electric' && (
                     <div className="space-y-4">
@@ -4661,8 +4662,8 @@ export function KilnManagement() {
                           />
                         ) : (
                           <p className="text-sm py-2">
-                            {editingKiln.warrantyExpiry 
-                              ? new Date(editingKiln.warrantyExpiry).toLocaleDateString() 
+                            {editingKiln.warrantyExpiry
+                              ? new Date(editingKiln.warrantyExpiry).toLocaleDateString()
                               : '—'}
                             {editingKiln.warrantyExpiry && new Date(editingKiln.warrantyExpiry) < new Date() && (
                               <Badge variant="destructive" className="ml-2">Expired</Badge>
@@ -4824,8 +4825,8 @@ export function KilnManagement() {
             <div className="flex justify-end space-x-3 ml-auto">
               {isEditingKiln ? (
                 <>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setIsEditingKiln(false);
                       // Reset to original kiln data
@@ -5038,8 +5039,8 @@ export function KilnManagement() {
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowScheduleFiring(false);
                   setScheduleForm({
@@ -5060,7 +5061,7 @@ export function KilnManagement() {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={async () => {
                   if (!scheduleForm.kilnId || !scheduleForm.date || !scheduleForm.startTime) {
                     toast.error('Missing required fields', {
@@ -5095,12 +5096,12 @@ export function KilnManagement() {
               {scheduledFiringsForKiln.map((firing: any) => {
                 const scheduledStart = firing.scheduled_start ? new Date(firing.scheduled_start) : null;
                 const isPastDue = scheduledStart && scheduledStart < new Date();
-                const timeInfo = scheduledStart 
+                const timeInfo = scheduledStart
                   ? scheduledStart.toLocaleString()
                   : 'No scheduled time';
-                
+
                 return (
-                  <Card 
+                  <Card
                     key={firing.id}
                     className={`cursor-pointer transition-all hover:bg-accent ${
                       isPastDue ? 'border-orange-500 bg-orange-50/50' : ''
@@ -5163,8 +5164,8 @@ export function KilnManagement() {
             </div>
             <Separator />
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowScheduledFiringSelection(false);
                   // Open quick-start modal instead
@@ -5173,8 +5174,8 @@ export function KilnManagement() {
               >
                 Start New Firing Instead
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowScheduledFiringSelection(false)}
               >
                 Cancel
@@ -5634,8 +5635,8 @@ export function KilnManagement() {
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowEditSchedule(false);
                   setSelectedSchedule(null);

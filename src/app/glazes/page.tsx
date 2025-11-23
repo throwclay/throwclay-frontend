@@ -5,22 +5,22 @@ import {
   Tag, Save, X, Copy, BarChart3, TrendingUp, AlertTriangle, MoreHorizontal,
   Palette, CheckSquare, FileSpreadsheet, Settings, ArrowLeft, Camera
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Checkbox } from './ui/checkbox';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Separator } from './ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAppContext, type GlazeExperiment, type PhotoEntry } from '@/app/context/AppContext';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
 interface GlazeEntry {
   id: string;
@@ -46,7 +46,7 @@ interface GlazeEntry {
   photos?: PhotoEntry[];
 }
 
-export function GlazeManagement() {
+export default function GlazeManagement() {
   const { currentUser, currentStudio } = useAppContext();
   const [activeTab, setActiveTab] = useState('all-glazes');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -243,7 +243,7 @@ export function GlazeManagement() {
     const matchesStatus = filterStatus === 'all' || glaze.status === filterStatus;
     const matchesType = filterType === 'all' || glaze.type === filterType;
     const matchesAtmosphere = filterAtmosphere === 'all' || glaze.atmosphere === filterAtmosphere;
-    
+
     return matchesSearch && matchesStatus && matchesType && matchesAtmosphere;
   });
 
@@ -357,7 +357,7 @@ export function GlazeManagement() {
             </div>
             <div className="space-y-2">
               <Label>Type *</Label>
-              <Select 
+              <Select
                 value={glazeForm.type}
                 onValueChange={(value: 'store-bought' | 'experiment') => setGlazeForm(prev => ({ ...prev, type: value }))}
               >
@@ -391,7 +391,7 @@ export function GlazeManagement() {
                 Add Photo
               </Button>
             </div>
-            
+
             {glazeForm.photos.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {glazeForm.photos.map((photo) => (
@@ -648,7 +648,7 @@ export function GlazeManagement() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {experiment.description}
                   </p>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-sm">
                       <Thermometer className="w-4 h-4 text-muted-foreground" />
@@ -710,7 +710,7 @@ export function GlazeManagement() {
         {/* Photos Tab */}
         <TabsContent value="photos" className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {glazes.flatMap(glaze => 
+            {glazes.flatMap(glaze =>
               (glaze.photos || []).map(photo => ({
                 ...photo,
                 glazeName: glaze.name,
@@ -779,7 +779,7 @@ export function GlazeManagement() {
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea 
+              <Textarea
                 placeholder="Describe firing conditions, results, observations..."
                 rows={3}
               />

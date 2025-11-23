@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { 
-  Trophy, Award, Star, Calendar, User, Download, Share2, Eye, 
+import {
+  Trophy, Award, Star, Calendar, User, Download, Share2, Eye,
   Check, X, Clock, Filter, Search, MoreHorizontal, ExternalLink,
   Medal, Crown, Target, Zap, Heart, Sparkles
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Progress } from './ui/progress';
-import { Separator } from './ui/separator';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import type { StudentBadge, BadgeDesign, ClassBadge } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 
@@ -37,13 +37,13 @@ const SHAPE_ICONS = {
   diamond: 'rounded-lg'
 };
 
-export function BadgeManagement({ 
-  badges, 
-  isStudioView = false, 
+export function BadgeManagement({
+  badges,
+  isStudioView = false,
   studentId,
   onAwardBadge,
   onRevokeBadge,
-  onShareBadge 
+  onShareBadge
 }: BadgeManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'revoked'>('all');
@@ -116,15 +116,15 @@ export function BadgeManagement({
     if (!classBadge) return null;
 
     const design = classBadge.design;
-    
+
     const sizeMap = {
       small: { width: 40, height: 40, iconSize: 16 },
       medium: { width: 80, height: 80, iconSize: 32 },
       large: { width: 120, height: 120, iconSize: 48 }
     };
-    
+
     const dimensions = sizeMap[size];
-    
+
     const gradientStyle = design.gradientEnabled && design.gradientColors ? {
       background: `linear-gradient(${
         design.gradientDirection === 'vertical' ? '180deg' :
@@ -164,8 +164,8 @@ export function BadgeManagement({
               <img
                 src={design.customIconUrl}
                 alt="Badge icon"
-                style={{ 
-                  width: dimensions.iconSize, 
+                style={{
+                  width: dimensions.iconSize,
                   height: dimensions.iconSize,
                   objectFit: 'contain'
                 }}
@@ -173,7 +173,7 @@ export function BadgeManagement({
             )}
           </div>
         </div>
-        
+
         {badge.status === 'revoked' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <X className="w-6 h-6 text-red-500" />
@@ -229,7 +229,7 @@ export function BadgeManagement({
             {isStudioView ? 'Student Badges' : 'My Badges'}
           </h2>
           <p className="text-muted-foreground">
-            {isStudioView 
+            {isStudioView
               ? 'Manage and track student badge achievements'
               : 'View your earned badges and achievements'
             }
@@ -256,7 +256,7 @@ export function BadgeManagement({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -275,7 +275,7 @@ export function BadgeManagement({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -289,7 +289,7 @@ export function BadgeManagement({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -336,7 +336,7 @@ export function BadgeManagement({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredBadges.map((badge) => {
           const classBadge = mockClassBadges.find(cb => cb.id === badge.badgeId);
-          
+
           return (
             <Card key={badge.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
@@ -376,7 +376,7 @@ export function BadgeManagement({
                         </DropdownMenuItem>
                       )}
                       {isStudioView && badge.status === 'active' && onRevokeBadge && (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => onRevokeBadge(badge.id)}
                           className="text-red-600"
                         >
@@ -388,12 +388,12 @@ export function BadgeManagement({
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="pt-0 space-y-3">
                 <p className="text-sm text-muted-foreground line-clamp-2">
                   {classBadge?.description || 'No description available'}
                 </p>
-                
+
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     {getBadgeStatusIcon(badge.status)}
@@ -401,7 +401,7 @@ export function BadgeManagement({
                   </div>
                   <span>{new Date(badge.awardedDate).toLocaleDateString()}</span>
                 </div>
-                
+
                 {/* Achievement Stats */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
@@ -409,7 +409,7 @@ export function BadgeManagement({
                     <span>{badge.finalAttendance}%</span>
                   </div>
                   <Progress value={badge.finalAttendance} className="h-1" />
-                  
+
                   {badge.finalGrade && (
                     <>
                       <div className="flex justify-between text-xs">
@@ -420,20 +420,20 @@ export function BadgeManagement({
                     </>
                   )}
                 </div>
-                
+
                 {/* Badge Actions */}
                 <div className="flex space-x-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="flex-1"
                     onClick={() => handleViewBadgeDetails(badge)}
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     View
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={() => handleShareBadge(badge)}
                   >
@@ -451,8 +451,8 @@ export function BadgeManagement({
           <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
           <h3 className="text-lg font-medium mb-2">No badges found</h3>
           <p className="text-muted-foreground">
-            {badges.length === 0 
-              ? (isStudioView ? 'No badges have been awarded yet' : "You haven't earned any badges yet") 
+            {badges.length === 0
+              ? (isStudioView ? 'No badges have been awarded yet' : "You haven't earned any badges yet")
               : 'Try adjusting your search or filter criteria'
             }
           </p>
@@ -468,7 +468,7 @@ export function BadgeManagement({
               Complete information about this badge achievement
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedBadge && (
             <div className="space-y-6">
               {/* Badge Header */}
@@ -531,7 +531,7 @@ export function BadgeManagement({
                       </div>
                       <Progress value={selectedBadge.finalAttendance} className="h-2" />
                     </div>
-                    
+
                     {selectedBadge.finalGrade && (
                       <div>
                         <div className="flex justify-between text-sm mb-1">
@@ -541,7 +541,7 @@ export function BadgeManagement({
                         <Progress value={selectedBadge.finalGrade} className="h-2" />
                       </div>
                     )}
-                    
+
                     <div className="text-sm">
                       <span className="text-muted-foreground">Projects Completed:</span>
                       <span className="ml-2">{selectedBadge.projectsCompleted}</span>
@@ -576,7 +576,7 @@ export function BadgeManagement({
 
               {/* Actions */}
               <div className="flex space-x-2">
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => handleShareBadge(selectedBadge)}
                 >
@@ -584,7 +584,7 @@ export function BadgeManagement({
                   Share Badge
                 </Button>
                 {selectedBadge.certificateUrl && (
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => handleDownloadCertificate(selectedBadge)}
                   >
@@ -592,7 +592,7 @@ export function BadgeManagement({
                     Download Certificate
                   </Button>
                 )}
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     const verifyUrl = `${window.location.origin}/verify-badge/${selectedBadge.verificationCode}`;

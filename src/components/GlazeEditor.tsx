@@ -3,16 +3,16 @@ import {
   ArrowLeft, Save, X, Plus, Upload, Image as ImageIcon,
   Palette, Beaker, Thermometer, Calendar, User
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Checkbox } from './ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/app/context/AppContext';
 
 interface GlazeEntry {
@@ -143,7 +143,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
 
   const handleSave = async () => {
     setIsSaving(true);
-    
+
     const glazeData: GlazeEntry = {
       id: glazeId || `glaze_${Date.now()}`,
       experimenterName: currentUser?.name || '',
@@ -154,10 +154,10 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
     } as GlazeEntry;
 
     console.log('Saving glaze:', glazeData);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     onSave(glazeData);
     setIsSaving(false);
   };
@@ -175,7 +175,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
   const handleUpdateIngredient = (index: number, field: string, value: any) => {
     setGlazeForm(prev => ({
       ...prev,
-      ingredients: prev.ingredients?.map((ing, i) => 
+      ingredients: prev.ingredients?.map((ing, i) =>
         i === index ? { ...ing, [field]: value } : ing
       ) || []
     }));
@@ -191,7 +191,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
   const handleConeToggle = (cone: string) => {
     setGlazeForm(prev => ({
       ...prev,
-      cone: prev.cone?.includes(cone) 
+      cone: prev.cone?.includes(cone)
         ? prev.cone.filter(c => c !== cone)
         : [...(prev.cone || []), cone]
     }));
@@ -200,7 +200,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
   const handleTagToggle = (tag: string) => {
     setGlazeForm(prev => ({
       ...prev,
-      tags: prev.tags?.includes(tag) 
+      tags: prev.tags?.includes(tag)
         ? prev.tags.filter(t => t !== tag)
         : [...(prev.tags || []), tag]
     }));
@@ -265,7 +265,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Type *</Label>
-                  <Select 
+                  <Select
                     value={glazeForm.type || 'experiment'}
                     onValueChange={(value) => setGlazeForm(prev => ({ ...prev, type: value as any }))}
                   >
@@ -283,7 +283,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
               <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label>Status *</Label>
-                  <Select 
+                  <Select
                     value={glazeForm.status || 'available'}
                     onValueChange={(value) => setGlazeForm(prev => ({ ...prev, status: value as any }))}
                   >
@@ -308,7 +308,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Unit</Label>
-                  <Select 
+                  <Select
                     value={glazeForm.quantityUnit || 'grams'}
                     onValueChange={(value) => setGlazeForm(prev => ({ ...prev, quantityUnit: value }))}
                   >
@@ -381,9 +381,9 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 </div>
                 {glazeForm.imageUrl && (
                   <div className="mt-3">
-                    <img 
-                      src={glazeForm.imageUrl} 
-                      alt="Glaze preview" 
+                    <img
+                      src={glazeForm.imageUrl}
+                      alt="Glaze preview"
                       className="w-32 h-32 object-cover rounded border"
                     />
                   </div>
@@ -418,7 +418,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                       <div key={index} className="grid grid-cols-5 gap-4 items-end p-4 border rounded-lg">
                         <div className="col-span-2 space-y-1">
                           <Label className="text-sm">Ingredient</Label>
-                          <Select 
+                          <Select
                             value={ingredient.ingredient}
                             onValueChange={(value) => handleUpdateIngredient(index, 'ingredient', value)}
                           >
@@ -445,7 +445,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                         </div>
                         <div className="space-y-1">
                           <Label className="text-sm">Unit</Label>
-                          <Select 
+                          <Select
                             value={ingredient.unit}
                             onValueChange={(value) => handleUpdateIngredient(index, 'unit', value)}
                           >
@@ -460,8 +460,8 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                             </SelectContent>
                           </Select>
                         </div>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveIngredient(index)}
                         >
@@ -495,7 +495,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                   <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
                     {coneOptions.map(cone => (
                       <div key={cone} className="flex items-center space-x-2">
-                        <Checkbox 
+                        <Checkbox
                           id={`cone-${cone}`}
                           checked={glazeForm.cone?.includes(cone) || false}
                           onCheckedChange={() => handleConeToggle(cone)}
@@ -518,7 +518,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 </div>
                 <div className="space-y-2">
                   <Label>Kiln Atmosphere</Label>
-                  <Select 
+                  <Select
                     value={glazeForm.atmosphere || 'oxidation'}
                     onValueChange={(value) => setGlazeForm(prev => ({ ...prev, atmosphere: value }))}
                   >
@@ -576,7 +576,7 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto border rounded-lg p-4">
                   {predefinedTags.map(tag => (
                     <div key={tag} className="flex items-center space-x-2">
-                      <Checkbox 
+                      <Checkbox
                         id={tag}
                         checked={glazeForm.tags?.includes(tag) || false}
                         onCheckedChange={() => handleTagToggle(tag)}

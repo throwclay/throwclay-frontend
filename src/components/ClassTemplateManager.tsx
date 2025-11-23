@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { ArrowLeft, Plus, Search, Filter, Copy, Edit, Trash2, Eye, BookOpen, Users, Calendar, DollarSign, Star, MoreHorizontal, Save, FileText, History, Tag } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Separator } from './ui/separator';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 
 interface ClassTemplate {
@@ -219,7 +219,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
       toast.error('Please enter a template name');
       return;
     }
-    
+
     toast.success('Template created successfully!');
     setShowCreateDialog(false);
     setNewTemplateName('');
@@ -245,7 +245,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
 
   const handleCreateVersion = () => {
     if (!selectedTemplate) return;
-    
+
     toast.success(`New version created for "${selectedTemplate.name}"`);
     setShowVersionDialog(false);
     setSelectedTemplate(null);
@@ -274,14 +274,14 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
               {mode === 'select' ? 'Select Template' : 'Class Templates'}
             </h1>
             <p className="text-muted-foreground">
-              {mode === 'select' 
-                ? 'Choose a template to create your class' 
+              {mode === 'select'
+                ? 'Choose a template to create your class'
                 : 'Manage your class templates and versions'
               }
             </p>
           </div>
         </div>
-        
+
         {mode === 'manage' && (
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -334,7 +334,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                 {template.isPublic && <Badge variant="outline">Public</Badge>}
               </div>
             </div>
-            
+
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -376,7 +376,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                           <History className="w-4 h-4 mr-2" />
                           Manage Versions
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleDeleteTemplate(template.id, template.name)}
                         >
@@ -389,12 +389,12 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                 </DropdownMenu>
               </div>
             </CardHeader>
-            
+
             <CardContent className="pt-0">
               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                 {template.description}
               </p>
-              
+
               <div className="flex flex-wrap gap-1 mb-4">
                 {template.tags.slice(0, 3).map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
@@ -407,7 +407,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                   </Badge>
                 )}
               </div>
-              
+
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center space-x-4">
                   <span className="flex items-center">
@@ -425,7 +425,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                   <span>{template.usageCount} uses</span>
                 </div>
               </div>
-              
+
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Avatar className="w-6 h-6">
@@ -435,7 +435,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                   </Avatar>
                   <span className="text-sm text-muted-foreground">{template.createdBy}</span>
                 </div>
-                
+
                 {mode === 'select' && (
                   <Button size="sm" onClick={() => handleSelectTemplate(template)}>
                     Use Template
@@ -452,7 +452,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
           <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
           <h3 className="text-lg font-medium mb-2">No templates found</h3>
           <p className="text-muted-foreground">
-            {searchTerm || selectedCategory !== 'all' 
+            {searchTerm || selectedCategory !== 'all'
               ? 'Try adjusting your search or filter criteria'
               : 'Create your first template to get started'
             }
@@ -496,7 +496,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="template-description">Description</Label>
               <Textarea
@@ -507,7 +507,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                 rows={3}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="template-tags">Tags (comma-separated)</Label>
               <Input
@@ -517,7 +517,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                 onChange={(e) => setNewTemplateTags(e.target.value)}
               />
             </div>
-            
+
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                 Cancel
@@ -539,7 +539,7 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
               {selectedTemplate ? `Managing versions for "${selectedTemplate.name}"` : ''}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedTemplate && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -554,9 +554,9 @@ export function ClassTemplateManager({ onBack, onSelectTemplate, mode = 'manage'
                   Create New Version
                 </Button>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-3">
                 {selectedTemplate.versions.map((version) => (
                   <div key={version.id} className="flex items-center justify-between p-3 border rounded-lg">

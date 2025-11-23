@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { Plus, Search, Filter, Calendar, Users, Clock, MoreHorizontal, Trash, Eye, Settings, FileText, Copy } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClassManagementPage } from './ClassManagementPage';
 import { ClassPreview } from './ClassPreview';
 import { ClassTemplateManager } from './ClassTemplateManager';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 
 interface Class {
@@ -95,7 +95,7 @@ export function ClassesManagement() {
   const [activeStatusTab, setActiveStatusTab] = useState('all');
   const [selectedTemplate, setSelectedTemplate] = useState<ClassTemplate | null>(null);
   const [createFormTab, setCreateFormTab] = useState('basic');
-  
+
   // Form state
   const [classForm, setClassForm] = useState({
     name: '',
@@ -287,7 +287,7 @@ export function ClassesManagement() {
     setSelectedTemplate(template);
     setShowTemplateSelector(false);
     setShowCreateDialog(true);
-    
+
     // Pre-populate form with template data
     setClassForm({
       name: template.name,
@@ -302,20 +302,20 @@ export function ClassesManagement() {
       materials: template.materials,
       prerequisites: template.prerequisites
     });
-    
+
     // Set pricing tiers from template
     setPricingTiers(template.pricingTiers.map(tier => ({
       ...tier,
       id: Date.now().toString() + Math.random()
     })));
-    
+
     // Set discount codes from template
     setDiscountCodes(template.discountCodes.map(code => ({
       ...code,
       id: Date.now().toString() + Math.random(),
       usageCount: 0
     })));
-    
+
     setThumbnailImage(template.thumbnail);
     setClassImages(template.images.map((url, index) => ({
       id: `${Date.now()}-${index}`,
@@ -323,7 +323,7 @@ export function ClassesManagement() {
       alt: `Class image ${index + 1}`,
       isMain: index === 0
     })));
-    
+
     toast.success(`Template "${template.name}" loaded`);
   };
 
@@ -369,8 +369,8 @@ export function ClassesManagement() {
   // Navigation handlers
   if (viewMode === 'manage' && selectedClass) {
     return (
-      <ClassManagementPage 
-        classId={selectedClass} 
+      <ClassManagementPage
+        classId={selectedClass}
         onBack={handleBackToList}
       />
     );
@@ -379,8 +379,8 @@ export function ClassesManagement() {
   if (viewMode === 'preview' && selectedClass) {
     const classData = mockClasses.find(c => c.id === selectedClass);
     return (
-      <ClassPreview 
-        classData={classData} 
+      <ClassPreview
+        classData={classData}
         onBack={handleBackToList}
       />
     );
@@ -388,7 +388,7 @@ export function ClassesManagement() {
 
   if (viewMode === 'templates') {
     return (
-      <ClassTemplateManager 
+      <ClassTemplateManager
         onBack={handleBackToList}
         mode="manage"
       />
@@ -397,7 +397,7 @@ export function ClassesManagement() {
 
   if (showTemplateSelector) {
     return (
-      <ClassTemplateManager 
+      <ClassTemplateManager
         onBack={() => setShowTemplateSelector(false)}
         onSelectTemplate={handleSelectTemplate}
         mode="select"
@@ -618,7 +618,7 @@ export function ClassesManagement() {
                           <Copy className="w-4 h-4 mr-2" />
                           Duplicate Class
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleDeleteClass(classItem.id, classItem.name)}
                         >
@@ -639,7 +639,7 @@ export function ClassesManagement() {
             <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="text-lg font-medium mb-2">No classes found</h3>
             <p className="text-muted-foreground">
-              {searchTerm || activeStatusTab !== 'all' 
+              {searchTerm || activeStatusTab !== 'all'
                 ? 'Try adjusting your search or filter criteria'
                 : 'Create your first class to get started'
               }
@@ -656,13 +656,13 @@ export function ClassesManagement() {
               {selectedTemplate ? `Create Class from Template: ${selectedTemplate.name}` : 'Create New Class'}
             </DialogTitle>
             <DialogDescription>
-              {selectedTemplate 
+              {selectedTemplate
                 ? `Using template "${selectedTemplate.name}" as a starting point`
                 : 'Create a new class or workshop for your pottery studio'
               }
             </DialogDescription>
           </DialogHeader>
-          
+
           <Tabs value={createFormTab} onValueChange={setCreateFormTab}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -675,8 +675,8 @@ export function ClassesManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="className">Class Name *</Label>
-                  <Input 
-                    id="className" 
+                  <Input
+                    id="className"
                     placeholder="e.g., Wheel Throwing Basics"
                     value={classForm.name}
                     onChange={(e) => setClassForm(prev => ({ ...prev, name: e.target.value }))}
@@ -727,9 +727,9 @@ export function ClassesManagement() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="capacity">Capacity *</Label>
-                  <Input 
-                    id="capacity" 
-                    type="number" 
+                  <Input
+                    id="capacity"
+                    type="number"
                     placeholder="12"
                     value={classForm.capacity}
                     onChange={(e) => setClassForm(prev => ({ ...prev, capacity: e.target.value }))}
@@ -737,8 +737,8 @@ export function ClassesManagement() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
-                  <Input 
-                    id="location" 
+                  <Input
+                    id="location"
                     placeholder="Studio A"
                     value={classForm.location}
                     onChange={(e) => setClassForm(prev => ({ ...prev, location: e.target.value }))}
@@ -749,8 +749,8 @@ export function ClassesManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date *</Label>
-                  <Input 
-                    id="startDate" 
+                  <Input
+                    id="startDate"
                     type="date"
                     value={classForm.startDate}
                     onChange={(e) => setClassForm(prev => ({ ...prev, startDate: e.target.value }))}
@@ -758,8 +758,8 @@ export function ClassesManagement() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date *</Label>
-                  <Input 
-                    id="endDate" 
+                  <Input
+                    id="endDate"
                     type="date"
                     value={classForm.endDate}
                     onChange={(e) => setClassForm(prev => ({ ...prev, endDate: e.target.value }))}
@@ -769,8 +769,8 @@ export function ClassesManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="schedule">Schedule *</Label>
-                <Input 
-                  id="schedule" 
+                <Input
+                  id="schedule"
                   placeholder="e.g., Tuesdays & Thursdays, 6:00 PM - 8:00 PM"
                   value={classForm.schedule}
                   onChange={(e) => setClassForm(prev => ({ ...prev, schedule: e.target.value }))}
@@ -779,8 +779,8 @@ export function ClassesManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="materials">Materials Included</Label>
-                <Textarea 
-                  id="materials" 
+                <Textarea
+                  id="materials"
                   placeholder="List what materials are included..."
                   rows={2}
                   value={classForm.materials}
@@ -790,8 +790,8 @@ export function ClassesManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="prerequisites">Prerequisites</Label>
-                <Textarea 
-                  id="prerequisites" 
+                <Textarea
+                  id="prerequisites"
                   placeholder="Any prerequisites or requirements..."
                   rows={2}
                   value={classForm.prerequisites}
@@ -806,7 +806,7 @@ export function ClassesManagement() {
                     <span className="font-medium text-blue-900">Using Template: {selectedTemplate.name}</span>
                   </div>
                   <p className="text-sm text-blue-700">
-                    This class is being created from the "{selectedTemplate.name}" template. 
+                    This class is being created from the "{selectedTemplate.name}" template.
                     You can modify any of the pre-filled information above.
                   </p>
                 </div>

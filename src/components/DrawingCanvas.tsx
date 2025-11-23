@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Slider } from './ui/slider';
-import { Badge } from './ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { Eraser, Palette, RotateCcw, Save, X } from 'lucide-react';
 
 interface DrawingCanvasProps {
@@ -69,16 +69,16 @@ export function DrawingCanvas({ onSave, onCancel, initialImage }: DrawingCanvasP
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
-    
+
     return { x, y };
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!imageLoaded) return;
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -159,10 +159,10 @@ export function DrawingCanvas({ onSave, onCancel, initialImage }: DrawingCanvasP
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!imageLoaded) return;
-    
+
     const touch = e.touches[0];
     const { x, y } = getCanvasCoordinates(touch.clientX, touch.clientY);
-    
+
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -180,7 +180,7 @@ export function DrawingCanvas({ onSave, onCancel, initialImage }: DrawingCanvasP
 
     const touch = e.touches[0];
     const { x, y } = getCanvasCoordinates(touch.clientX, touch.clientY);
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -203,7 +203,7 @@ export function DrawingCanvas({ onSave, onCancel, initialImage }: DrawingCanvasP
   const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     setIsDrawing(false);
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 

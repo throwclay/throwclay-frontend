@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { supabase } from "../lib/apis/supabaseClient";
 import { SignupFlow, type SignupData } from "./SignupFlow";
@@ -13,7 +13,7 @@ interface LoginFormProps {
   onBack: () => void;
 }
 
-export function LoginForm({ onLogin, onBack }: LoginFormProps) {
+export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

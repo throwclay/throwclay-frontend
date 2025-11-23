@@ -25,20 +25,63 @@ import {
   Flame,
   Package,
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Badge } from "./ui/badge";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Input } from "./ui/input";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { StudentBadge, ArtistProfile as ArtistProfileType } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BadgeManagement } from "@/components/BadgeManagement";
+import type {
+  User as UserType,
+  ArtistProfile as ArtistProfileType,
+  StudentBadge,
+} from "@/types";
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+
 import { toast } from "sonner";
 import { useAppContext } from "@/app/context/AppContext";
 
-export function ArtistProfile() {
+interface ArtistProfileProps {
+  onProfileUpdated?: (user: UserType) => void;
+}
+
+export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
   const context = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(

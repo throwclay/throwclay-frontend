@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import { ArrowLeft, Users, Calendar, Settings, MessageCircle, Download, Upload, Bell, Plus, Search, Filter, MoreHorizontal, Check, X, Clock, AlertCircle, BookOpen, FileText, Camera, DollarSign, Percent, Star, Image as ImageIcon, Eye, Share2, Heart, ChevronLeft, ChevronRight, Edit, Trash2, Copy, Trophy, Award } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
-import { Progress } from './ui/progress';
-import { Checkbox } from './ui/checkbox';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { ClassPreview } from './ClassPreview';
 import { ClassSettingsBadges } from './ClassSettingsBadges';
 import type { ClassBadge, BadgeDesign, StudentBadge, User } from '@/app/context/AppContext';
@@ -112,7 +112,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
   const [selectedPricingTier, setSelectedPricingTier] = useState<string>('');
   const [selectedDiscountCode, setSelectedDiscountCode] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
+
   // Mock enrollment data with pricing info
   const mockEnrollments: Enrollment[] = [
     {
@@ -205,7 +205,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
       updatedAt: '2025-01-01'
     }
   ]);
-  
+
   const [studentBadges, setStudentBadges] = useState<StudentBadge[]>([
     {
       id: 'sb_1',
@@ -243,20 +243,20 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
       branding: { primaryColor: '#030213' }
     }
   }));
-  
+
   // Mock attendance and grade records for badge system
   const mockAttendanceRecords = {
     '1': { percentage: 90, sessionsAttended: 14, totalSessions: 16 },
     '2': { percentage: 85, sessionsAttended: 13, totalSessions: 16 },
     '3': { percentage: 75, sessionsAttended: 12, totalSessions: 16 }
   };
-  
+
   const mockGradeRecords = {
     '1': { finalGrade: 87, projectsCompleted: 4 },
     '2': { finalGrade: 82, projectsCompleted: 3 },
     '3': { finalGrade: 78, projectsCompleted: 5 }
   };
-  
+
   const mockSkillsRecords = {
     '1': ['centering', 'pulling', 'shaping'],
     '2': ['centering', 'pulling'],
@@ -448,10 +448,10 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
   ];
 
   const handleDownloadRoster = () => {
-    const csvContent = `Student Name,Email,Phone,Emergency Contact,Status,Pricing Tier,Amount Paid\n${mockEnrollments.map(e => 
+    const csvContent = `Student Name,Email,Phone,Emergency Contact,Status,Pricing Tier,Amount Paid\n${mockEnrollments.map(e =>
       `${e.studentName},${e.studentEmail},${e.phone || ''},${e.emergencyContact || ''},${e.status},${e.pricingTier || ''},${e.amountPaid || ''}`
     ).join('\n')}`;
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -459,7 +459,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
     a.download = `${classData.name}_roster.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     toast.success('Roster downloaded successfully');
   };
 
@@ -491,8 +491,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
   };
 
   const updatePricingTier = (id: string, field: keyof PricingTier, value: any) => {
-    setPricingTiers(prev => 
-      prev.map(tier => 
+    setPricingTiers(prev =>
+      prev.map(tier =>
         tier.id === id ? { ...tier, [field]: value } : tier
       )
     );
@@ -519,8 +519,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
   };
 
   const updateDiscountCode = (id: string, field: keyof DiscountCode, value: any) => {
-    setDiscountCodes(prev => 
-      prev.map(code => 
+    setDiscountCodes(prev =>
+      prev.map(code =>
         code.id === id ? { ...code, [field]: value } : code
       )
     );
@@ -564,8 +564,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
   };
 
   const updateReviewVisibility = (id: string, isPublic: boolean) => {
-    setStudentReviews(prev => 
-      prev.map(review => 
+    setStudentReviews(prev =>
+      prev.map(review =>
         review.id === id ? { ...review, isPublic } : review
       )
     );
@@ -611,12 +611,12 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
     navigator.clipboard.writeText(code);
     toast.success('Discount code copied to clipboard');
   };
-  
+
   // Badge system handlers
   const handleUpdateClassBadges = (badges: ClassBadge[]) => {
     setClassBadges(badges);
   };
-  
+
   const handleAwardBadge = (badgeId: string, studentId: string, studentName: string) => {
     const newBadge: StudentBadge = {
       id: `sb_${Date.now()}`,
@@ -637,11 +637,11 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
       instructorNotes: 'Badge awarded for meeting all requirements',
       displayOnProfile: true
     };
-    
+
     setStudentBadges(prev => [...prev, newBadge]);
     toast.success(`Badge awarded to ${studentName}`);
   };
-  
+
   const handleRevokeBadge = (badgeId: string) => {
     setStudentBadges(prev => prev.filter(badge => badge.id !== badgeId));
     toast.success('Badge revoked successfully');
@@ -649,8 +649,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
 
   if (showPreview) {
     return (
-      <ClassPreview 
-        classData={classData} 
+      <ClassPreview
+        classData={classData}
         onBack={() => setShowPreview(false)}
       />
     );
@@ -832,7 +832,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedStudents.length === mockEnrollments.length}
                       onCheckedChange={(checked) => {
                         if (checked) {
@@ -855,7 +855,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                 {mockEnrollments.map((enrollment) => (
                   <TableRow key={enrollment.id}>
                     <TableCell>
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedStudents.includes(enrollment.id)}
                         onCheckedChange={(checked) => {
                           if (checked) {
@@ -1091,7 +1091,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Tier Name</Label>
-                          <Input 
+                          <Input
                             value={tier.name}
                             onChange={(e) => updatePricingTier(tier.id, 'name', e.target.value)}
                           />
@@ -1100,7 +1100,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                           <Label>Price</Label>
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input 
+                            <Input
                               type="number"
                               className="pl-10"
                               value={tier.price}
@@ -1111,7 +1111,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                       </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
-                        <Textarea 
+                        <Textarea
                           value={tier.description}
                           onChange={(e) => updatePricingTier(tier.id, 'description', e.target.value)}
                           rows={2}
@@ -1120,11 +1120,11 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center space-x-2">
-                            <Switch 
+                            <Switch
                               checked={tier.isDefault}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  setPricingTiers(prev => 
+                                  setPricingTiers(prev =>
                                     prev.map(t => ({ ...t, isDefault: t.id === tier.id }))
                                   );
                                 }
@@ -1133,7 +1133,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                             <Label>Default pricing</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Switch 
+                            <Switch
                               checked={tier.isActive}
                               onCheckedChange={(checked) => updatePricingTier(tier.id, 'isActive', checked)}
                             />
@@ -1145,8 +1145,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => deletePricingTier(tier.id)}
                       className="ml-4"
@@ -1183,7 +1183,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                         <div className="space-y-2">
                           <Label>Discount Code</Label>
                           <div className="flex space-x-2">
-                            <Input 
+                            <Input
                               value={code.code}
                               onChange={(e) => updateDiscountCode(code.id, 'code', e.target.value.toUpperCase())}
                             />
@@ -1212,7 +1212,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                             ) : (
                               <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             )}
-                            <Input 
+                            <Input
                               type="number"
                               className="pl-10"
                               value={code.value}
@@ -1224,7 +1224,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Expiry Date</Label>
-                          <Input 
+                          <Input
                             type="date"
                             value={code.expiryDate}
                             onChange={(e) => updateDiscountCode(code.id, 'expiryDate', e.target.value)}
@@ -1232,7 +1232,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                         </div>
                         <div className="space-y-2">
                           <Label>Usage Limit</Label>
-                          <Input 
+                          <Input
                             type="number"
                             placeholder="0 = unlimited"
                             value={code.usageLimit}
@@ -1242,14 +1242,14 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                       </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
-                        <Input 
+                        <Input
                           value={code.description}
                           onChange={(e) => updateDiscountCode(code.id, 'description', e.target.value)}
                         />
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Switch 
+                          <Switch
                             checked={code.isActive}
                             onCheckedChange={(checked) => updateDiscountCode(code.id, 'isActive', checked)}
                           />
@@ -1260,8 +1260,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => deleteDiscountCode(code.id)}
                       className="ml-4"
@@ -1444,8 +1444,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-class-name">Class Name *</Label>
-                  <Input 
-                    id="edit-class-name" 
+                  <Input
+                    id="edit-class-name"
                     defaultValue={classData.name}
                     placeholder="e.g., Wheel Throwing Fundamentals"
                   />
@@ -1502,7 +1502,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
             <div className="space-y-2">
               <Label>Recipients</Label>
               <p className="text-sm text-muted-foreground">
-                {selectedStudents.length > 0 
+                {selectedStudents.length > 0
                   ? `${selectedStudents.length} selected students`
                   : 'All enrolled students'
                 }

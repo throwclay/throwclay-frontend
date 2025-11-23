@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { ShoppingBag, Search, Filter, DollarSign, Eye, Heart, User, Star, Palette, Building2 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext, type PotteryEntry } from '@/app/context/AppContext';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
-export function CommerceMarketplace() {
+export default function CommerceMarketplace() {
   const { currentUser, currentStudio } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -140,12 +140,12 @@ export function CommerceMarketplace() {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.artistName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPrice = priceFilter === 'all' || 
+
+    const matchesPrice = priceFilter === 'all' ||
                         (priceFilter === 'under50' && (item.price || 0) < 50) ||
                         (priceFilter === '50to100' && (item.price || 0) >= 50 && (item.price || 0) <= 100) ||
                         (priceFilter === 'over100' && (item.price || 0) > 100);
-    
+
     return matchesSearch && matchesPrice;
   });
 
@@ -174,7 +174,7 @@ export function CommerceMarketplace() {
   const getCommissionInfo = (price: number) => {
     const commission = (price * mockCommissionRate) / 100;
     const artistReceives = price - commission;
-    
+
     return { commission, artistReceives };
   };
 
@@ -212,7 +212,7 @@ export function CommerceMarketplace() {
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex gap-4">
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-40">
@@ -225,7 +225,7 @@ export function CommerceMarketplace() {
               <SelectItem value="price-high">Price: High to Low</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={priceFilter} onValueChange={setPriceFilter}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -247,7 +247,7 @@ export function CommerceMarketplace() {
             <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h3>No items found</h3>
             <p className="text-muted-foreground">
-              {marketplaceItems.length === 0 
+              {marketplaceItems.length === 0
                 ? 'No pottery is currently available for sale.'
                 : 'Try adjusting your search or filters.'
               }
@@ -334,7 +334,7 @@ export function CommerceMarketplace() {
                 )}
 
                 {/* Purchase Button */}
-                <Button 
+                <Button
                   onClick={() => handlePurchase(item)}
                   className="w-full flex items-center space-x-2"
                 >
@@ -358,7 +358,7 @@ export function CommerceMarketplace() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              All pottery featured in this marketplace is created by talented artists at {currentStudio.name}. 
+              All pottery featured in this marketplace is created by talented artists at {currentStudio.name}.
               Each piece is handmade with care and attention to detail.
             </p>
             <div className="flex flex-wrap gap-4 text-sm">

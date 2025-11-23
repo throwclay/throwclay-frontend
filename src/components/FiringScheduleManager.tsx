@@ -4,19 +4,19 @@ import {
   Bell, User, Package, Thermometer, CheckSquare, MoreHorizontal,
   Save, X, FileText, Send, AlertCircle, CheckCircle, Users, Settings, BarChart3
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Checkbox } from './ui/checkbox';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAppContext } from '@/app/context/AppContext';
 import type { FiringSchedule, KilnFiringTemplate, CustomFiringType } from '@/app/context/AppContext';
 
@@ -357,7 +357,7 @@ export function FiringScheduleManager() {
                     </div>
                     <div className="space-y-2">
                       <Label>Kiln</Label>
-                      <Select 
+                      <Select
                         value={scheduleForm.kilnId}
                         onValueChange={(value) => setScheduleForm(prev => ({ ...prev, kilnId: value }))}
                       >
@@ -405,12 +405,12 @@ export function FiringScheduleManager() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Operator</Label>
-                      <Select 
+                      <Select
                         value={scheduleForm.operatorId}
                         onValueChange={(value) => {
                           const operator = operators.find(op => op.id === value);
-                          setScheduleForm(prev => ({ 
-                            ...prev, 
+                          setScheduleForm(prev => ({
+                            ...prev,
                             operatorId: value,
                             operatorName: operator?.name || ''
                           }));
@@ -430,7 +430,7 @@ export function FiringScheduleManager() {
                     </div>
                     <div className="space-y-2">
                       <Label>Location</Label>
-                      <Select 
+                      <Select
                         value={scheduleForm.locationId}
                         onValueChange={(value) => setScheduleForm(prev => ({ ...prev, locationId: value }))}
                       >
@@ -467,13 +467,13 @@ export function FiringScheduleManager() {
                         {currentStudio?.kilnFiringTemplates?.length || 0} templates available
                       </Badge>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 gap-3 max-h-48 overflow-y-auto border rounded-lg p-3">
-                      {currentStudio?.kilnFiringTemplates?.filter(t => 
+                      {currentStudio?.kilnFiringTemplates?.filter(t =>
                         !scheduleForm.kilnId || t.kilnId === scheduleForm.kilnId
                       ).map(template => (
-                        <div 
-                          key={template.id} 
+                        <div
+                          key={template.id}
                           className={`p-3 border rounded cursor-pointer transition-colors ${
                             scheduleForm.templateId === template.id ? 'border-primary bg-primary/5' : 'hover:bg-accent'
                           }`}
@@ -500,7 +500,7 @@ export function FiringScheduleManager() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Firing Type</Label>
-                      <Select 
+                      <Select
                         value={scheduleForm.firingType}
                         onValueChange={(value) => setScheduleForm(prev => ({ ...prev, firingType: value }))}
                       >
@@ -518,7 +518,7 @@ export function FiringScheduleManager() {
                     </div>
                     <div className="space-y-2">
                       <Label>Atmosphere</Label>
-                      <Select 
+                      <Select
                         value={scheduleForm.atmosphere}
                         onValueChange={(value) => setScheduleForm(prev => ({ ...prev, atmosphere: value }))}
                       >
@@ -576,8 +576,8 @@ export function FiringScheduleManager() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label>Select Rack Numbers for This Firing</Label>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={handleSelectAllRacks}
                       >
@@ -619,7 +619,7 @@ export function FiringScheduleManager() {
                   <div className="space-y-6">
                     <div className="space-y-4">
                       <Label>Notification Settings</Label>
-                      
+
                       <div className="space-y-3">
                         <div className="flex items-center justify-between py-2">
                           <div className="space-y-1">
@@ -630,7 +630,7 @@ export function FiringScheduleManager() {
                           </div>
                           <Checkbox
                             checked={scheduleForm.notificationSettings.sendStartReminder}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setScheduleForm(prev => ({
                                 ...prev,
                                 notificationSettings: {
@@ -651,7 +651,7 @@ export function FiringScheduleManager() {
                           </div>
                           <Checkbox
                             checked={scheduleForm.notificationSettings.sendCompletionAlert}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setScheduleForm(prev => ({
                                 ...prev,
                                 notificationSettings: {
@@ -672,7 +672,7 @@ export function FiringScheduleManager() {
                           </div>
                           <Checkbox
                             checked={scheduleForm.notificationSettings.notifyOperator}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setScheduleForm(prev => ({
                                 ...prev,
                                 notificationSettings: {
@@ -688,9 +688,9 @@ export function FiringScheduleManager() {
                       {scheduleForm.notificationSettings.sendStartReminder && (
                         <div className="space-y-2">
                           <Label>Reminder Time (hours before start)</Label>
-                          <Select 
+                          <Select
                             value={scheduleForm.notificationSettings.reminderHoursBefore.toString()}
-                            onValueChange={(value) => 
+                            onValueChange={(value) =>
                               setScheduleForm(prev => ({
                                 ...prev,
                                 notificationSettings: {
@@ -802,7 +802,7 @@ export function FiringScheduleManager() {
                 {filteredSchedules.map((schedule) => {
                   const kiln = currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
                   const operator = operators.find(op => op.id === schedule.assignedEmployeeId);
-                  
+
                   return (
                     <TableRow key={schedule.id}>
                       <TableCell>
@@ -847,8 +847,8 @@ export function FiringScheduleManager() {
                         <div className="space-y-1">
                           <div>{schedule.bookedSlots}/{schedule.capacity}</div>
                           <div className="w-full bg-secondary rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
+                            <div
+                              className="bg-primary h-2 rounded-full"
                               style={{ width: `${(schedule.bookedSlots / schedule.capacity) * 100}%` }}
                             />
                           </div>

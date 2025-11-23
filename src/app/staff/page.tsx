@@ -1,21 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Users, UserCog, Users2, Mail, MapPin } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from './ui/table';
-import { EmployeeManagement } from './EmployeeManagement';
 import { useAppContext } from '@/app/context/AppContext';
+import { EmployeeManagement } from '@/components/EmployeeManagement';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { StudioInvite } from '@/types';
+import { Mail, MapPin, UserCog, Users, Users2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-export function StaffManagement() {
+export default function StaffManagement() {
   const context = useAppContext();
   const [activeTab, setActiveTab] = useState('employees');
 
@@ -146,6 +146,11 @@ export function StaffManagement() {
         );
     }
   };
+
+  // Check if user has permission to manage staff
+  const canManageStaff = context.currentUser?.role === 'owner' ||
+                        context.currentUser?.role === 'admin' ||
+                        context.currentUser?.managerProfile?.permissions?.approveTimeCards;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

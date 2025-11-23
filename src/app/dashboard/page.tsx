@@ -1,9 +1,9 @@
 import { Users, Calendar, Flame, BarChart3, Clock, CheckCircle, AlertCircle, TrendingUp, MapPin } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-export function DashboardMockup() {
+export default function DashboardMockup() {
   return (
     <div className="bg-gray-100 p-2 rounded-lg shadow-2xl max-w-4xl mx-auto">
       {/* Browser chrome */}
@@ -15,7 +15,7 @@ export function DashboardMockup() {
           <span className="text-xs text-gray-600">throwclay.com/dashboard</span>
         </div>
       </div>
-      
+
       {/* Dashboard content */}
       <div className="bg-white rounded-b-lg p-4 min-h-[320px]">
         {/* Header */}
@@ -98,7 +98,7 @@ export function DashboardMockup() {
                 </div>
                 <Badge variant="secondary" className="text-xs">12/20</Badge>
               </div>
-              
+
               <div className="flex items-center justify-between p-2 bg-blue-50 rounded">
                 <div>
                   <p className="text-sm font-medium text-gray-900">Glaze Firing</p>
@@ -153,21 +153,21 @@ export function DashboardMockup() {
               <p className="text-xs font-medium">Members</p>
             </CardContent>
           </Card>
-          
+
           <Card className="border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
             <CardContent className="p-3 text-center">
               <Calendar className="h-4 w-4 mx-auto mb-1 text-purple-600" />
               <p className="text-xs font-medium">Classes</p>
             </CardContent>
           </Card>
-          
+
           <Card className="border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
             <CardContent className="p-3 text-center">
               <Flame className="h-4 w-4 mx-auto mb-1 text-orange-600" />
               <p className="text-xs font-medium">Firings</p>
             </CardContent>
           </Card>
-          
+
           <Card className="border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
             <CardContent className="p-3 text-center">
               <BarChart3 className="h-4 w-4 mx-auto mb-1 text-green-600" />

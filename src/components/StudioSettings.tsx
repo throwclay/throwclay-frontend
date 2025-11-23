@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Building2, MapPin, Clock, Users, Phone, Globe, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Separator } from './ui/separator';
-import { Badge } from './ui/badge';
-import { Switch } from './ui/switch';
-import { Progress } from './ui/progress';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { useAppContext } from '@/app/context/AppContext';
 import type { StudioLocation } from '@/app/context/AppContext';
 
@@ -233,7 +233,7 @@ export function StudioSettings() {
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Studio Description</Label>
             {isEditing ? (
@@ -276,7 +276,7 @@ export function StudioSettings() {
               <p className="text-sm text-muted-foreground">Available</p>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Usage</span>
@@ -568,7 +568,7 @@ export function StudioSettings() {
                           <div className="w-24 text-sm capitalize">{day}</div>
                           <Switch
                             checked={hours.isOpen}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setLocationHours(prev => ({
                                 ...prev,
                                 [day]: { ...hours, isOpen: checked }
@@ -580,7 +580,7 @@ export function StudioSettings() {
                               <Input
                                 type="time"
                                 value={hours.open}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   setLocationHours(prev => ({
                                     ...prev,
                                     [day]: { ...hours, open: e.target.value }
@@ -592,7 +592,7 @@ export function StudioSettings() {
                               <Input
                                 type="time"
                                 value={hours.close}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   setLocationHours(prev => ({
                                     ...prev,
                                     [day]: { ...hours, close: e.target.value }
@@ -616,7 +616,7 @@ export function StudioSettings() {
                           <div className="w-24 text-sm capitalize">{day}</div>
                           <Switch
                             checked={hours.isOpen}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               setMemberHours(prev => ({
                                 ...prev,
                                 [day]: { ...hours, isOpen: checked }
@@ -628,7 +628,7 @@ export function StudioSettings() {
                               <Input
                                 type="time"
                                 value={hours.open}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   setMemberHours(prev => ({
                                     ...prev,
                                     [day]: { ...hours, open: e.target.value }
@@ -640,7 +640,7 @@ export function StudioSettings() {
                               <Input
                                 type="time"
                                 value={hours.close}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   setMemberHours(prev => ({
                                     ...prev,
                                     [day]: { ...hours, close: e.target.value }

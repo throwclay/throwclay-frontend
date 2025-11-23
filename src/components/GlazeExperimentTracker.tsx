@@ -5,14 +5,14 @@ import {
   Tag, Save, X, Copy, BarChart3, TrendingUp, AlertTriangle, MoreHorizontal,
   Palette, CheckSquare, FileSpreadsheet, Settings
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Checkbox } from './ui/checkbox';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAppContext } from '@/app/context/AppContext';
 
 interface GlazeEntry {
@@ -126,7 +126,7 @@ export function GlazeExperimentTracker({ onNavigateToEditor }: GlazeExperimentTr
     const matchesStatus = filterStatus === 'all' || glaze.status === filterStatus;
     const matchesType = filterType === 'all' || glaze.type === filterType;
     const matchesAtmosphere = filterAtmosphere === 'all' || glaze.atmosphere === filterAtmosphere;
-    
+
     return matchesSearch && matchesStatus && matchesType && matchesAtmosphere;
   });
 
@@ -270,22 +270,22 @@ export function GlazeExperimentTracker({ onNavigateToEditor }: GlazeExperimentTr
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Change Status</label>
                     <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start"
                         onClick={() => handleBulkStatusChange('available')}
                       >
                         Set to Available
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start"
                         onClick={() => handleBulkStatusChange('experiment')}
                       >
                         Set to Experiment
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start"
                         onClick={() => handleBulkStatusChange('not-available')}
                       >

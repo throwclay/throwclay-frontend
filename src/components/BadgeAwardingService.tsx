@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Check, X, Clock, Trophy, AlertCircle, Users, Award, Target } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { Alert, AlertDescription } from './ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Separator } from './ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { StudentBadge, ClassBadge, BadgeRequirement, User } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 
@@ -69,8 +69,8 @@ export function BadgeAwardingService({
       if (!badge.isEnabled) return;
 
       students.forEach(student => {
-        const existingBadge = studentBadges.find(sb => 
-          sb.badgeId === badge.id && 
+        const existingBadge = studentBadges.find(sb =>
+          sb.badgeId === badge.id &&
           sb.studentId === student.id &&
           sb.status === 'active'
         );
@@ -101,7 +101,7 @@ export function BadgeAwardingService({
             case 'skill':
               const studentSkills = skillsRecords[student.id] || [];
               const requiredSkills = req.criteria.skillsRequired || [];
-              const acquiredSkills = requiredSkills.filter(skill => 
+              const acquiredSkills = requiredSkills.filter(skill =>
                 studentSkills.includes(skill)
               );
               currentValue = acquiredSkills.length;
@@ -133,11 +133,11 @@ export function BadgeAwardingService({
 
         const requiredRequirements = requirements.filter(r => r.isRequired);
         const metRequiredRequirements = requiredRequirements.filter(r => r.isMet);
-        const isEligible = requiredRequirements.length > 0 ? 
+        const isEligible = requiredRequirements.length > 0 ?
           metRequiredRequirements.length === requiredRequirements.length :
           requirements.some(r => r.isMet);
 
-        const overallProgress = requirements.length > 0 ? 
+        const overallProgress = requirements.length > 0 ?
           (requirements.filter(r => r.isMet).length / requirements.length) * 100 : 0;
 
         eligibility.push({
@@ -161,7 +161,7 @@ export function BadgeAwardingService({
 
   // Auto-award badges for eligible students
   const performAutoAward = () => {
-    const eligibleForAward = eligibilityData.filter(e => 
+    const eligibleForAward = eligibilityData.filter(e =>
       e.isEligible && !e.hasExistingBadge
     );
 
@@ -191,7 +191,7 @@ export function BadgeAwardingService({
     const totalEligible = eligibilityData.filter(e => e.isEligible && !e.hasExistingBadge).length;
     const totalAwarded = eligibilityData.filter(e => e.hasExistingBadge).length;
     const totalPending = eligibilityData.filter(e => !e.isEligible && !e.hasExistingBadge).length;
-    
+
     return { totalEligible, totalAwarded, totalPending };
   };
 
@@ -222,8 +222,8 @@ export function BadgeAwardingService({
   };
 
   const selectedBadgeData = classBadges.find(b => b.id === selectedBadge);
-  const filteredEligibility = selectedBadge && selectedBadge !== 'all' ? 
-    eligibilityData.filter(e => e.badgeId === selectedBadge) : 
+  const filteredEligibility = selectedBadge && selectedBadge !== 'all' ?
+    eligibilityData.filter(e => e.badgeId === selectedBadge) :
     eligibilityData;
 
   return (
@@ -266,7 +266,7 @@ export function BadgeAwardingService({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -278,7 +278,7 @@ export function BadgeAwardingService({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -290,7 +290,7 @@ export function BadgeAwardingService({
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -324,7 +324,7 @@ export function BadgeAwardingService({
                 ))}
               </SelectContent>
             </Select>
-            
+
             {selectedBadgeData && selectedBadge !== 'all' && (
               <div className="flex items-center space-x-4 p-4 bg-muted rounded-lg">
                 <div className="flex items-center space-x-2">
@@ -362,9 +362,9 @@ export function BadgeAwardingService({
             {filteredEligibility.map((eligibility) => {
               const badge = classBadges.find(b => b.id === eligibility.badgeId);
               const status = getEligibilityStatus(eligibility);
-              
+
               return (
-                <div 
+                <div
                   key={`${eligibility.badgeId}-${eligibility.studentId}`}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
@@ -381,7 +381,7 @@ export function BadgeAwardingService({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
                       <div className={`flex items-center space-x-1 ${getStatusColor(status)}`}>
@@ -390,7 +390,7 @@ export function BadgeAwardingService({
                       </div>
                       <Progress value={eligibility.overallProgress} className="w-24 h-2 mt-1" />
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
@@ -402,7 +402,7 @@ export function BadgeAwardingService({
                       >
                         <AlertCircle className="w-4 h-4" />
                       </Button>
-                      
+
                       {status === 'eligible' && (
                         <Button
                           size="sm"
@@ -416,14 +416,14 @@ export function BadgeAwardingService({
                           Award
                         </Button>
                       )}
-                      
+
                       {status === 'awarded' && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const existingBadge = studentBadges.find(sb => 
-                              sb.badgeId === eligibility.badgeId && 
+                            const existingBadge = studentBadges.find(sb =>
+                              sb.badgeId === eligibility.badgeId &&
                               sb.studentId === eligibility.studentId
                             );
                             if (existingBadge) {
@@ -453,7 +453,7 @@ export function BadgeAwardingService({
               Detailed breakdown of badge requirements and student progress
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedEligibility && (
             <div className="space-y-6">
               {/* Student & Badge Info */}
@@ -500,15 +500,15 @@ export function BadgeAwardingService({
                         </div>
                       </div>
                     </div>
-                    
+
                     {req.currentValue !== undefined && req.targetValue !== undefined && (
                       <div className="text-right">
                         <div className="text-sm font-medium">
                           {req.currentValue} / {req.targetValue}
                         </div>
-                        <Progress 
-                          value={(req.currentValue / req.targetValue) * 100} 
-                          className="w-20 h-2 mt-1" 
+                        <Progress
+                          value={(req.currentValue / req.targetValue) * 100}
+                          className="w-20 h-2 mt-1"
                         />
                       </div>
                     )}

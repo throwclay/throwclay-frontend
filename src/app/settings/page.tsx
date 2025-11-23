@@ -1,67 +1,61 @@
-import { useState } from "react";
-import {
-  User,
-  Building2,
-  Bell,
-  Shield,
-  Lock,
-  Eye,
-  EyeOff,
-  CreditCard,
-  Globe,
-  Users,
-  Mail,
-  MessageSquare,
-  FileText,
-  Share2,
-  Check,
-  X,
-  ChevronRight,
-  Crown,
-  Zap,
-  ExternalLink,
-  Plus,
-  Trash2,
-  Edit2,
-  AlertCircle,
-  CheckCircle2,
-  Palette,
-  Upload,
-  Image as ImageIcon,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Button } from "./ui/button";
-import { Switch } from "./ui/switch";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { Textarea } from "./ui/textarea";
-import { Checkbox } from "./ui/checkbox";
 import { useAppContext } from "@/app/context/AppContext";
-import { StudioSettings } from "./StudioSettings";
-import { InvoicePreview } from "./InvoicePreview";
+import { InvoicePreview } from "@/components/InvoicePreview";
+import { StudioSettings } from "@/components/StudioSettings";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    AlertCircle,
+    Bell,
+    Building2,
+    Check,
+    CheckCircle2,
+    ChevronRight,
+    CreditCard,
+    Crown,
+    Edit2,
+    ExternalLink,
+    Eye,
+    FileText,
+    Globe,
+    Image as ImageIcon,
+    Lock,
+    Palette,
+    Plus,
+    Shield,
+    Trash2,
+    User,
+    Users,
+    X
+} from "lucide-react";
+import { useState } from "react";
 
 interface Role {
   id: string;
@@ -91,7 +85,7 @@ interface CustomDomain {
   addedDate: string;
 }
 
-export function Settings() {
+export default function Settings() {
   const { currentUser, currentStudio } = useAppContext();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [showDomainDialog, setShowDomainDialog] = useState(false);

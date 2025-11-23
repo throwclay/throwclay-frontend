@@ -5,244 +5,58 @@ import { ArrowRight, CheckCircle, Users, BarChart3, MessageCircle, Calendar, Cam
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DashboardMockup } from './DashboardMockup';
 
-import type {
-  User as UserType,
-  Studio,
-  StudioLocation,
-  StudioMembership,
-} from "@/types";
+interface LandingPageProps {
+  onNavigate: (page: string) => void;
+}
 
-import { useAppContext } from "./context/AppContext";
-import { supabase } from "@/lib/apis/supabaseClient";
+// TODO: validate the need for this
+function DashboardMockup() {
+  return (
+    <div className="p-8">
+      <h1 className="text-3xl font-bold mb-8">Artist Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Recent Projects</h3>
+            <p className="text-muted-foreground">
+              View and manage your pottery projects
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Upcoming Classes</h3>
+            <p className="text-muted-foreground">
+              Your scheduled pottery classes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4">Community</h3>
+            <p className="text-muted-foreground">
+              Connect with other ceramic artists
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
-export default function Home() {
-  const context = useAppContext();
+export default function LandingPage({ onNavigate }: LandingPageProps) {
+  const [email, setEmail] = useState('');
 
-  const [currentPage, setCurrentPage] = useState("landing");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const fetchLocationsForStudio = async (
-    studioId: string,
-    token: string
-  ): Promise<StudioLocation[]> => {
-    console.log(`Fetching Locations | Studio ID: ${studioId}`);
-
-    try {
-      const res = await fetch(`/api/studios/${studioId}/locations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error("Error fetching studio locations", body);
-        return [];
-      }
-
-      const body = await res.json();
-      const data = (body.locations || []) as StudioLocation[];
-
-      console.log(`Studio Locations: ${data.length}`);
-      return data;
-    } catch (err) {
-      console.error("Error fetching studio locations", err);
-      return [];
-    }
+  const handleWaitlistSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle waitlist signup
+    alert(`Thank you! We'll notify ${email} when we launch.`);
+    setEmail('');
   };
 
-  const handleLogin = async (userData: {
-    email: string;
-    phone?: string;
-    session: any;
-  }) => {
-    const { session } = userData;
-
-    if (!session || !session.user) {
-      console.error("handleLogin: missing session or user");
-      return;
-    }
-
-    const user = session.user;
-    const accessToken = session.access_token;
-
-    // 1) Store access token in AppContext for API routes
-    context.setAuthToken(accessToken);
-
-    // 2) Parallel fetch: profile, active subscription, memberships
-    const [
-      { data: profileRow, error: profileError },
-      { data: profileSub, error: subError },
-      { data: memberships, error: membershipError },
-    ] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("owner_type", "profile")
-        .eq("owner_id", user.id)
-        .eq("status", "active")
-        .maybeSingle(),
-      supabase
-        .from("studio_memberships")
-        .select(
-          `
-        id,
-        user_id,
-        studio_id,
-        role,
-        status,
-        location_id,
-        membership_type,
-        created_at,
-        studios:studio_id (
-          id,
-          name,
-          handle,
-          email,
-          description,
-          is_active,
-          plan,
-          created_at
-        )
-      `
-        )
-        .eq("user_id", user.id)
-        .eq("status", "active"),
-    ]);
-
-    console.log(`Prof name: ${profileRow?.name}`);
-
-    if (profileError) {
-      console.error("handleLogin: error fetching profile", profileError);
-    }
-    if (membershipError) {
-      console.error("handleLogin: error fetching memberships", membershipError);
-    }
-    if (subError) {
-      console.error("handleLogin: error fetching subscription", subError);
-    }
-
-    const email = user.email ?? userData.email;
-    const phone = (user as any).phone ?? userData.phone;
-    const fallbackName = email?.split("@")[0] ?? "Unnamed";
-
-    const name =
-      (profileRow as any)?.name ??
-      (user.user_metadata as any)?.full_name ??
-      fallbackName;
-
-    const handle =
-      (profileRow as any)?.handle ??
-      fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
-
-    const artistPlan = (profileRow as any)?.artist_plan ?? "artist-free";
-
-    // 3) Build front-end User object
-    const appUser: UserType = {
-      id: user.id,
-      name,
-      handle,
-      email,
-      phone,
-      type: "artist",
-      subscription: profileSub?.plan_code ?? null,
-      artistPlan,
-      subscriptionLimits: undefined,
-      usageStats: undefined,
-      profile: {
-        bio: (profileRow as any)?.bio ?? "",
-        socialMedia: (profileRow as any)?.social_media ?? {},
-        branding: {
-          primaryColor:
-            (profileRow as any)?.branding?.primaryColor ?? "#030213",
-          secondaryColor: (profileRow as any)?.branding?.secondaryColor,
-          logoUrl: (profileRow as any)?.branding?.logoUrl,
-        },
-      },
-      createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(),
-      lastLogin:
-        (profileRow as any)?.last_login ?? user.last_sign_in_at ?? undefined,
-      isActive: (profileRow as any)?.is_active ?? true,
-    };
-
-    console.log(`User ${appUser.name} last logged in ${appUser.lastLogin}`);
-    // 4) Build studio (if any memberships)
-    let studioForState: Studio | null = null;
-    let studioRoleForCurrentUser: string | null = null;
-    let membershipForState: StudioMembership | null = null;
-
-    if (memberships && memberships.length > 0) {
-      const membership = memberships[0] as any;
-      const s = membership.studios;
-
-      if (s) {
-        studioRoleForCurrentUser = membership.role; // "owner" | "admin" | etc.
-
-        const studioLocations = await fetchLocationsForStudio(
-          s.id,
-          session.access_token
-        );
-
-        studioForState = {
-          id: s.id,
-          name: s.name,
-          handle: s.handle,
-          email: s.email ?? "",
-          website: (s as any).website ?? "",
-          description: s.description ?? "",
-          locations: studioLocations,
-          isActive: s.is_active ?? true,
-          plan: (s.plan as Studio["plan"]) ?? "studio-free",
-          createdAt: s.created_at,
-          memberCount: 0,
-          classCount: 0,
-          glazes: [],
-          firingSchedule: [],
-          roleForCurrentUser: studioRoleForCurrentUser as any,
-        };
-
-        membershipForState = {
-          id: membership.id,
-          userId: membership.user_id,
-          studioId: membership.studio_id,
-          locationId: membership.location_id,
-          membershipType: membership.membership_type,
-          status: membership.status,
-          startDate: membership.created_at,
-          lastActivity: profileRow?.last_login ?? null,
-          createdAt: membership.created_at,
-          updatedAt: membership.updated_at ?? membership.created_at,
-          shelfNumber: null,
-          monthlyRate: null,
-          passionProjectsUpgrade: null,
-        };
-      }
-    }
-
-    // 5) Derive modes
-    const hasStudioRole = (memberships ?? []).some((m: any) =>
-      ["owner", "admin"].includes(m.role)
-    );
-
-    appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
-    appUser.activeMode = hasStudioRole ? "studio" : "artist";
-
-    // Did they have *any* studio membership (any role)?
-    (appUser as any).hasStudioMemberships = (memberships ?? []).length > 0;
-
-    // 6) Push into context + app state
-    context.setCurrentStudio(studioForState);
-    context.setCurrentUser(appUser);
-    context.setCurrentMembership(membershipForState);
-    setIsLoggedIn(true);
-    setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
-
-    // 7) Fetch user-level invites with the *fresh* token
-    await context.refreshInvites({
-      status: "pending",
-      tokenOverride: accessToken,
-    });
+  const handleGetStarted = () => {
+    onNavigate('login');
   };
 
   const handleLogin = () => {

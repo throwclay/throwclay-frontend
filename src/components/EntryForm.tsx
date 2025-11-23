@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { PhotoManager } from './PhotoManager';
 import type { PotteryEntry, PhotoEntry } from '@/app/context/AppContext';
 
@@ -25,7 +25,7 @@ const clayTypes = [
 ];
 
 const techniques = [
-  'Wheel throwing', 'Hand building', 'Coil technique', 'Slab construction', 
+  'Wheel throwing', 'Hand building', 'Coil technique', 'Slab construction',
   'Pinch technique', 'Press molding', 'Slip casting', 'Trimming', 'Carving', 'Texturing'
 ];
 
@@ -164,7 +164,7 @@ export function EntryForm({ entry, onSave, onCancel }: EntryFormProps) {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="title">Project Title</Label>
               <Input
@@ -227,7 +227,7 @@ export function EntryForm({ entry, onSave, onCancel }: EntryFormProps) {
                 </Badge>
               ))}
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
               {techniques.filter(t => !formData.techniques.includes(t)).map(technique => (
                 <Button
@@ -304,7 +304,7 @@ export function EntryForm({ entry, onSave, onCancel }: EntryFormProps) {
                   </Badge>
                 ))}
               </div>
-              
+
               <div className="flex flex-wrap gap-2 mt-2">
                 {glazeOptions.filter(g => !formData.glazes.includes(g)).map(glaze => (
                   <Button

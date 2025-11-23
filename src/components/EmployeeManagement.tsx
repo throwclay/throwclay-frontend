@@ -1,109 +1,70 @@
-import { useState, useEffect } from "react";
-import {
-  Plus,
-  Search,
-  UserPlus,
-  UserCog,
-  Shield,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  Eye,
-  Mail,
-  Key,
-  Calendar,
-  MapPin,
-  Flag,
-  Users,
-  Settings as SettingsIcon,
-  FileText,
-  Save,
-  X,
-  ExternalLink,
-  Bell,
-  Phone,
-  Camera,
-  CalendarDays,
-  CalendarClock,
-  Upload,
-  Image as ImageIcon,
-  GraduationCap,
-  Briefcase,
-  Home,
-  Share2,
-  HeartHandshake,
-  Plane,
-  Activity,
-  MessageCircle,
-} from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
-import { Checkbox } from "./ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Switch } from "./ui/switch";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "./ui/alert-dialog";
-import { Separator } from "./ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Calendar as CalendarComponent } from "./ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import {
-  type ManagerProfile,
-  type InstructorProfile,
-  type ManagerResponsibility,
-  type WorkLog,
-  type User,
-  type ScheduleEntry,
-  type TimeOffRequest,
-  type EmployeeCredentials,
-} from "@/types";
 import { useAppContext } from "@/app/context/AppContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    type EmployeeCredentials,
+    type InstructorProfile,
+    type ManagerProfile,
+    type ManagerResponsibility,
+    type ScheduleEntry,
+    type TimeOffRequest,
+    type User,
+    type WorkLog,
+} from "@/types";
+import {
+    Activity,
+    AlertTriangle,
+    Briefcase,
+    Calendar,
+    CalendarDays,
+    Camera,
+    CheckCircle,
+    Clock,
+    Edit,
+    FileText,
+    GraduationCap,
+    HeartHandshake,
+    Key,
+    MoreHorizontal,
+    Phone,
+    Plane,
+    Save,
+    Search,
+    Share2,
+    Trash2,
+    Upload,
+    UserPlus,
+    X
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface EmployeeData extends User {
   staffMembershipId: string;
