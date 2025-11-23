@@ -8,8 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DrawingCanvas } from './DrawingCanvas';
-import { PhotoEditor } from './PhotoEditor';
+import { DrawingCanvas } from '@/components/DrawingCanvas';
+import { PhotoEditor } from '@/components/PhotoEditor';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import type { PhotoEntry } from '@/app/context/AppContext';
 

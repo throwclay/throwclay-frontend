@@ -11,9 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClassManagementPage } from './ClassManagementPage';
-import { ClassPreview } from './ClassPreview';
-import { ClassTemplateManager } from './ClassTemplateManager';
+import { ClassManagementPage } from '@/components/ClassManagementPage';
+import { ClassPreview } from '@/components/ClassPreview';
+import { ClassTemplateManager } from '@/components/ClassTemplateManager';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { toast } from 'sonner';
 

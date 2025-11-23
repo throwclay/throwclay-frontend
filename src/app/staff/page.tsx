@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Users, Clock, UserCog } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { EmployeeManagement } from './EmployeeManagement';
-import { TimeCardManagement } from './TimeCardManagement';
+import { EmployeeManagement } from '@/components/EmployeeManagement';
+import { TimeCardManagement } from '@/components/TimeCardManagement';
 import { useAppContext } from '@/app/context/AppContext';
 
 export default function StaffManagement() {

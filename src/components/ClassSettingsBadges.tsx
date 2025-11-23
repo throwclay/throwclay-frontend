@@ -16,8 +16,8 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BadgeDesigner } from './BadgeDesigner';
-import { BadgeAwardingService } from './BadgeAwardingService';
+import { BadgeDesigner } from '@/components/BadgeDesigner';
+import { BadgeAwardingService } from '@/components/BadgeAwardingService';
 import type { ClassBadge, BadgeDesign, BadgeRequirement, User, StudentBadge } from '@/app/context/AppContext';
 import { toast } from 'sonner';
 
