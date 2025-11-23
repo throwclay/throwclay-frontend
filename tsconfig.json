@@ -28,7 +28,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "lib/apis/supabaseClient.jsx"
+    "lib/apis/supabaseClient.jsx",
+    ".scripts"
   ],
   "exclude": ["node_modules"]
 }
