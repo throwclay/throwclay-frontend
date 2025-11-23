@@ -7,7 +7,7 @@ import { TimeCardManagement } from './TimeCardManagement';
 import { useAppContext } from '@/app/context/AppContext';
 
 export default function StaffManagement() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('employees');
 
   // Mock data for pending counts - in real app this would come from your backend
@@ -15,9 +15,9 @@ export default function StaffManagement() {
   const pendingTimeOffRequests = 2; // Number of time off requests awaiting approval
 
   // Check if user has permission to manage staff
-  const canManageStaff = currentUser?.role === 'owner' ||
-                        currentUser?.role === 'admin' ||
-                        currentUser?.managerProfile?.permissions?.approveTimeCards;
+  const canManageStaff = context.currentUser?.role === 'owner' ||
+                        context.currentUser?.role === 'admin' ||
+                        context.currentUser?.managerProfile?.permissions?.approveTimeCards;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

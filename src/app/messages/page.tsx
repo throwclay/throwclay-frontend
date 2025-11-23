@@ -45,7 +45,7 @@ interface ExtendedMessage extends Message {
 }
 
 export default function MessagingCenter() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [messageText, setMessageText] = useState('');
@@ -129,7 +129,7 @@ export default function MessagingCenter() {
       handle: 'emmadavis',
       type: 'artist',
       role: 'instructor',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       isOnline: true,
       lastSeen: '2025-06-14T11:30:00Z'
     },
@@ -140,7 +140,7 @@ export default function MessagingCenter() {
       handle: 'sarahwilson',
       type: 'artist',
       role: 'admin',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       isOnline: true,
       lastSeen: '2025-06-14T11:25:00Z'
     },
@@ -151,7 +151,7 @@ export default function MessagingCenter() {
       handle: 'alexj',
       type: 'artist',
       role: 'student',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       isOnline: false,
       lastSeen: '2025-06-14T10:00:00Z'
     }
@@ -162,7 +162,7 @@ export default function MessagingCenter() {
     msg.groupId === activeChat || msg.recipientId === activeChat
   );
 
-  const isGroupAdmin = activeGroup && activeGroup.adminIds.includes(currentUser?.id || '');
+  const isGroupAdmin = activeGroup && activeGroup.adminIds.includes(context.currentUser?.id || '');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -173,14 +173,14 @@ export default function MessagingCenter() {
 
     const newMessage: ExtendedMessage = {
       id: `msg${Date.now()}`,
-      senderId: currentUser?.id || '',
-      senderName: currentUser?.name || '',
-      senderHandle: currentUser?.handle || '',
+      senderId: context.currentUser?.id || '',
+      senderName: context.currentUser?.name || '',
+      senderHandle: context.currentUser?.handle || '',
       groupId: activeChat,
       content: messageText,
       type: 'text',
       timestamp: new Date().toISOString(),
-      readBy: [currentUser?.id || '']
+      readBy: [context.currentUser?.id || '']
     };
 
     setMessages(prev => [...prev, newMessage]);
@@ -197,8 +197,8 @@ export default function MessagingCenter() {
         ? allUsers.find(u => u.id === selectedUsers[0])?.name || 'Direct Message'
         : groupName,
       type: 'general',
-      members: [...selectedUsers, currentUser?.id || ''],
-      adminIds: [currentUser?.id || ''],
+      members: [...selectedUsers, context.currentUser?.id || ''],
+      adminIds: [context.currentUser?.id || ''],
       description: groupDescription,
       isPrivate: isPrivateGroup,
       createdAt: new Date().toISOString()
@@ -330,7 +330,7 @@ export default function MessagingCenter() {
                   </div>
                   <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-4">
                     {getFilteredUsers()
-                      .filter(user => user.id !== currentUser?.id)
+                      .filter(user => user.id !== context.currentUser?.id)
                       .map(user => (
                         <div key={user.id} className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                              onClick={() => setSelectedUsers([user.id])}>
@@ -407,7 +407,7 @@ export default function MessagingCenter() {
                   </div>
                   <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-4">
                     {getFilteredUsers()
-                      .filter(user => user.id !== currentUser?.id)
+                      .filter(user => user.id !== context.currentUser?.id)
                       .map(user => (
                         <div key={user.id} className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                              onClick={() => {
@@ -488,7 +488,7 @@ export default function MessagingCenter() {
                   .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
 
                 const unreadCount = messages
-                  .filter(msg => msg.groupId === chat.id && !msg.readBy.includes(currentUser?.id || ''))
+                  .filter(msg => msg.groupId === chat.id && !msg.readBy.includes(context.currentUser?.id || ''))
                   .length;
 
                 return (

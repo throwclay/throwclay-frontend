@@ -44,7 +44,7 @@ interface EmployeeData extends User {
 }
 
 export function EmployeeManagement() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('employees');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -61,7 +61,7 @@ export function EmployeeManagement() {
       email: 'sarah.wilson@clayandfire.com',
       handle: 'sarahwilson',
       type: 'artist',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       role: 'manager',
       phone: '(503) 555-0100',
       createdAt: '2024-03-15T00:00:00Z',
@@ -69,7 +69,7 @@ export function EmployeeManagement() {
       managerProfile: {
         id: 'profile1',
         userId: 'mgr1',
-        studioId: currentStudio?.id || '',
+        studioId: context.currentStudio?.id || '',
         role: 'co-admin',
         responsibilities: ['resp1', 'resp2', 'resp3'],
         standardWorkHours: {
@@ -144,7 +144,7 @@ export function EmployeeManagement() {
       email: 'mike.chen@clayandfire.com',
       handle: 'mikechen',
       type: 'artist',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       role: 'manager',
       phone: '(503) 555-0101',
       createdAt: '2024-05-20T00:00:00Z',
@@ -152,7 +152,7 @@ export function EmployeeManagement() {
       managerProfile: {
         id: 'profile2',
         userId: 'mgr2',
-        studioId: currentStudio?.id || '',
+        studioId: context.currentStudio?.id || '',
         role: 'manager',
         responsibilities: ['resp3'],
         standardWorkHours: {
@@ -218,7 +218,7 @@ export function EmployeeManagement() {
       email: 'emma.davis@clayandfire.com',
       handle: 'emmadavis',
       type: 'artist',
-      studioId: currentStudio?.id,
+      studioId: context.currentStudio?.id,
       role: 'instructor',
       phone: '(503) 555-0102',
       createdAt: '2024-01-15T00:00:00Z',
@@ -226,7 +226,7 @@ export function EmployeeManagement() {
       instructorProfile: {
         id: 'inst_profile1',
         userId: 'inst1',
-        studioId: currentStudio?.id || '',
+        studioId: context.currentStudio?.id || '',
         bio: 'Professional ceramics instructor with 10+ years of experience in wheel throwing and glazing techniques.',
         specialties: ['Wheel Throwing', 'Glazing', 'Hand Building', 'Raku'],
         certifications: ['Certified Pottery Instructor', 'Kiln Safety Certification'],
@@ -466,7 +466,7 @@ export function EmployeeManagement() {
   };
 
   const coAdminCount = employees.filter(emp => emp.managerProfile?.role === 'co-admin').length;
-  // Fixed: Use a fallback value since currentStudio doesn't have settings.maxCoAdmins
+  // Fixed: Use a fallback value since context.currentStudio doesn't have settings.maxCoAdmins
   const maxCoAdmins = 2; // Default max co-admins limit
 
   return (
@@ -968,7 +968,7 @@ export function EmployeeManagement() {
                           <div className="text-right">
                             <p className="text-sm font-medium">{entry.startTime} - {entry.endTime}</p>
                             <p className="text-xs text-muted-foreground">
-                              {currentStudio?.locations.find(loc => loc.id === entry.locationId)?.name || 'Main Studio'}
+                              {context.currentStudio?.locations.find(loc => loc.id === entry.locationId)?.name || 'Main Studio'}
                             </p>
                           </div>
                           {getCategoryBadge(entry.category)}

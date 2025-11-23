@@ -70,7 +70,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAppContext } from "@/app/context/AppContext";
 
 export function MyStudios() {
-  // const { navigateToPage } = useAppContext();
+  // const context = useAppContext();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedStudioId, setSelectedStudioId] = useState("studio1");
   const [isStudioInfoOpen, setIsStudioInfoOpen] = useState(false);

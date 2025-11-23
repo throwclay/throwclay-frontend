@@ -20,17 +20,17 @@ import { useAppContext } from '@/app/context/AppContext';
 import type { EnrollmentFormField, StudioEnrollmentForm } from '@/app/context/AppContext';
 
 export function MemberIntakeFormBuilder() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [selectedTab, setSelectedTab] = useState('builder');
   const [showFieldEditor, setShowFieldEditor] = useState(false);
   const [editingField, setEditingField] = useState<EnrollmentFormField | null>(null);
   const [editingFieldIndex, setEditingFieldIndex] = useState<number>(-1);
 
   // Form state
-  const [formTitle, setFormTitle] = useState(currentStudio?.enrollmentForm?.title || 'Membership Application');
-  const [formDescription, setFormDescription] = useState(currentStudio?.enrollmentForm?.description || 'Please fill out this form to apply for studio membership.');
+  const [formTitle, setFormTitle] = useState(context.currentStudio?.enrollmentForm?.title || 'Membership Application');
+  const [formDescription, setFormDescription] = useState(context.currentStudio?.enrollmentForm?.description || 'Please fill out this form to apply for studio membership.');
   const [formFields, setFormFields] = useState<EnrollmentFormField[]>(
-    currentStudio?.enrollmentForm?.fields || [
+    context.currentStudio?.enrollmentForm?.fields || [
       {
         id: 'name',
         type: 'text',
@@ -456,7 +456,7 @@ export function MemberIntakeFormBuilder() {
                   <Input
                     type="email"
                     placeholder="admin@yourstudio.com"
-                    defaultValue={currentStudio?.locations?.[0]?.email}
+                    defaultValue={context.currentStudio?.locations?.[0]?.email}
                   />
                 </div>
 

@@ -8,21 +8,14 @@ import { toast } from "sonner";
 import type { StudioInvite } from "@/types";
 
 export function InvitesPanel() {
-  const {
-    authToken,
-    currentUser,
-    setCurrentUser,
-    currentStudio,
-    setCurrentStudio,
-    refreshInvites,
-  } = useAppContext();
+  const context = useAppContext();
 
   const [invites, setInvites] = useState<StudioInvite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchInvites = async () => {
-    if (!authToken) {
+    if (!context.authToken) {
       setError("You must be logged in to view invites.");
       setInvites([]);
       return;
@@ -34,7 +27,7 @@ export function InvitesPanel() {
 
       const res = await fetch("/api/invites", {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
       });
 
@@ -60,14 +53,14 @@ export function InvitesPanel() {
   useEffect(() => {
     fetchInvites();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authToken]);
+  }, [context.authToken]);
 
   const handleAccept = async (inviteId: string) => {
-    if (!authToken) {
+    if (!context.authToken) {
       toast.error("You must be logged in to accept invites.");
       return;
     }
-    if (!currentUser) {
+    if (!context.currentUser) {
       toast.error("No current user in context.");
       return;
     }
@@ -83,7 +76,7 @@ export function InvitesPanel() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
         body: JSON.stringify({ inviteId }),
       });
@@ -101,12 +94,12 @@ export function InvitesPanel() {
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
 
       // 2) Re-sync user-level pending invites for the bell badge
-      await refreshInvites({ status: "pending" });
+      await context.refreshInvites({ status: "pending" });
 
       // 3) Update the user so:
       //    - My Studios appears (hasStudioMemberships = true)
       //    - Studio mode becomes available if role is owner/admin
-      setCurrentUser((prev) => {
+      context.setCurrentUser((prev) => {
         if (!prev) return prev;
         const updated: any = { ...prev };
 
@@ -140,10 +133,10 @@ export function InvitesPanel() {
         return updated;
       });
 
-      // 4) If they didn't have a studio yet, seed currentStudio so the
+      // 4) If they didn't have a studio yet, seed context.currentStudio so the
       //    "Switch to Studio mode" guard can pass for owner/admin.
-      if (!currentStudio && invite.studios) {
-        setCurrentStudio((prev) => {
+      if (!context.currentStudio && invite.studios) {
+        context.setCurrentStudio((prev) => {
           if (prev) return prev; // if someone else already set it, don't stomp
 
           return {
@@ -171,7 +164,7 @@ export function InvitesPanel() {
     }
   };
 
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center">
         <h1 className="text-2xl font-semibold mb-2">Invites</h1>

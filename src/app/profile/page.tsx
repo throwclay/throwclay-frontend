@@ -89,11 +89,11 @@ interface ArtistProfileProps {
 }
 
 export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
   const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(
-    currentUser?.profile || {
+    context.currentUser?.profile || {
       bio: "",
       socialMedia: {},
       branding: {
@@ -108,8 +108,8 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
       id: "badge_1",
       badgeId: "badge_wheel_mastery",
       classId: "class_1",
-      studentId: currentUser?.id || "student_1",
-      studentName: currentUser?.name || "Student",
+      studentId: context.currentUser?.id || "student_1",
+      studentName: context.currentUser?.name || "Student",
       awardedDate: "2025-01-15T10:00:00Z",
       awardedBy: "Sarah Martinez",
       awardMethod: "automatic",
@@ -128,8 +128,8 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
       id: "badge_2",
       badgeId: "badge_glazing_expert",
       classId: "class_2",
-      studentId: currentUser?.id || "student_1",
-      studentName: currentUser?.name || "Student",
+      studentId: context.currentUser?.id || "student_1",
+      studentName: context.currentUser?.name || "Student",
       awardedDate: "2025-01-10T14:30:00Z",
       awardedBy: "Michael Chen",
       awardMethod: "manual",
@@ -357,10 +357,10 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
   };
 
   const handleSave = () => {
-    if (!currentUser) return;
+    if (!context.currentUser) return;
 
     const updatedUser: UserType = {
-      ...currentUser,
+      ...context.currentUser,
       profile: editedProfile,
     };
 
@@ -373,7 +373,7 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
 
   const handleCancel = () => {
     setEditedProfile(
-      currentUser?.profile || {
+      context.currentUser?.profile || {
         bio: "",
         socialMedia: {},
         branding: { primaryColor: "#030213" },
@@ -423,7 +423,7 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
     toast.success("Badge URL copied to clipboard");
   };
 
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center py-16">
         <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -437,7 +437,7 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
     );
   }
 
-  const isStudio = currentUser.activeMode === "studio" && currentStudio;
+  const isStudio = context.currentUser.activeMode === "studio" && context.currentStudio;
 
   return (
     <TooltipProvider>
@@ -456,7 +456,7 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
                       className="object-cover"
                     />
                     <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/20 to-secondary/20">
-                      {getInitials(currentUser.name)}
+                      {getInitials(context.currentUser.name)}
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
@@ -473,10 +473,10 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                   <div className="space-y-1">
                     <h1 className="text-2xl md:text-3xl font-light tracking-tight">
-                      {currentUser.name}
+                      {context.currentUser.name}
                     </h1>
                     <p className="text-muted-foreground">
-                      @{currentUser.handle}
+                      @{context.currentUser.handle}
                     </p>
                   </div>
 
@@ -605,13 +605,13 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
                     <Badge variant="outline" className="text-xs">
                       {isStudio ? "Pottery Studio" : "Artist"}
                     </Badge>
-                    {currentUser.subscription && (
+                    {context.currentUser.subscription && (
                       <Badge variant="secondary" className="text-xs capitalize">
-                        {currentUser.subscription === "free"
+                        {context.currentUser.subscription === "free"
                           ? "Free"
-                          : currentUser.subscription === "passion"
+                          : context.currentUser.subscription === "passion"
                           ? "Passion"
-                          : currentUser.subscription === "small-artist"
+                          : context.currentUser.subscription === "small-artist"
                           ? "Artist"
                           : "Studio Pro"}
                       </Badge>
@@ -808,10 +808,10 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
                               <Avatar className="w-8 h-8">
                                 <AvatarImage src={editedProfile.profileImage} />
                                 <AvatarFallback className="text-xs">
-                                  {getInitials(currentUser.name)}
+                                  {getInitials(context.currentUser.name)}
                                 </AvatarFallback>
                               </Avatar>
-                              <span>{currentUser.name}</span>
+                              <span>{context.currentUser.name}</span>
                             </DialogTitle>
                           </DialogHeader>
                           <div className="flex-1 mt-4 space-y-2">

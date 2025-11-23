@@ -272,14 +272,14 @@ export default function PublicStudiosDirectory({
   };
 
   const isMemberOfLocation = (locationId: string) => {
-    const { currentUser, currentStudio, currentMembership } = context;
+    const { context.currentUser, context.currentStudio, context.currentMembership } = context;
 
-    if (!currentUser || !currentStudio || !currentMembership) return false;
+    if (!context.currentUser || !context.currentStudio || !context.currentMembership) return false;
 
     // must match same studio AND same location
-    if (currentMembership.studioId !== currentStudio.id) return false;
+    if (context.currentMembership.studioId !== context.currentStudio.id) return false;
 
-    return currentMembership.locationId === locationId;
+    return context.currentMembership.locationId === locationId;
   };
 
   return (

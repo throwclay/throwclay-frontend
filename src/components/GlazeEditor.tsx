@@ -66,7 +66,7 @@ const getDefaultGlazeForm = (): Partial<GlazeEntry> => ({
 });
 
 export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
-  const { currentUser } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState('basic');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -110,8 +110,8 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
         name: 'Celadon Green',
         type: 'experiment',
         status: 'available',
-        experimenterName: currentUser?.name || '',
-        experimentedBy: currentUser?.id || '',
+        experimenterName: context.currentUser?.name || '',
+        experimentedBy: context.currentUser?.id || '',
         testDate: '2025-06-01',
         firedDate: '2025-06-03',
         imageUrl: '',
@@ -135,19 +135,19 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
       // Reset to defaults for new glaze
       setGlazeForm({
         ...getDefaultGlazeForm(),
-        experimenterName: currentUser?.name || '',
-        experimentedBy: currentUser?.id || ''
+        experimenterName: context.currentUser?.name || '',
+        experimentedBy: context.currentUser?.id || ''
       });
     }
-  }, [glazeId, currentUser]);
+  }, [glazeId, context.currentUser]);
 
   const handleSave = async () => {
     setIsSaving(true);
 
     const glazeData: GlazeEntry = {
       id: glazeId || `glaze_${Date.now()}`,
-      experimenterName: currentUser?.name || '',
-      experimentedBy: currentUser?.id || '',
+      experimenterName: context.currentUser?.name || '',
+      experimentedBy: context.currentUser?.id || '',
       createdAt: glazeId ? glazeForm.createdAt || new Date().toISOString() : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...glazeForm
@@ -598,12 +598,12 @@ export function GlazeEditor({ glazeId, onBack, onSave }: GlazeEditorProps) {
                 )}
               </div>
 
-              {currentUser && (
+              {context.currentUser && (
                 <div className="pt-4 border-t">
                   <div className="grid grid-cols-2 gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-2">
                       <User className="w-4 h-4" />
-                      <span>Experimenter: {currentUser.name}</span>
+                      <span>Experimenter: {context.currentUser.name}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4" />

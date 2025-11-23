@@ -86,34 +86,34 @@ export function Navigation({
   onPageChange,
   onLogout,
 }: NavigationProps) {
-  const { currentUser, setCurrentUser, currentStudio, pendingInvites } =
-    useAppContext();
-  const pendingInvitesCount = pendingInvites.filter(
+  const context = useAppContext();
+
+  const _pendingInvites = context.pendingInvites.filter(
     (i) => i.status === "pending"
   ).length;
 
-  console.log(`Pending invites: ${pendingInvitesCount}`);
+  console.log(`Pending invites: ${_pendingInvites}`);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([
-    currentStudio?.locations?.[0]?.id || "",
+    context.currentStudio?.locations?.[0]?.id || "",
   ]);
   const [showStudioMenu, setShowStudioMenu] = useState(false);
 
   // If somehow rendered without a user, don't blow up
-  if (!currentUser) {
+  if (!context.currentUser) {
     return null;
   }
 
   const getSelectedLocationNames = () => {
-    if (!currentStudio?.locations) return "No Locations";
+    if (!context.currentStudio?.locations) return "No Locations";
 
     if (selectedLocations.length === 1) {
       return (
-        currentStudio.locations.find((loc) => loc.id === selectedLocations[0])
+        context.currentStudio.locations.find((loc) => loc.id === selectedLocations[0])
           ?.name || "Location"
       );
-    } else if (selectedLocations.length === currentStudio.locations.length) {
+    } else if (selectedLocations.length === context.currentStudio.locations.length) {
       return "All Locations";
     } else {
       return `${selectedLocations.length} Locations`;
@@ -129,8 +129,8 @@ export function Navigation({
   };
 
   const selectAllLocations = () => {
-    if (currentStudio?.locations) {
-      setSelectedLocations(currentStudio.locations.map((loc) => loc.id));
+    if (context.currentStudio?.locations) {
+      setSelectedLocations(context.currentStudio.locations.map((loc) => loc.id));
     }
   };
 
@@ -157,22 +157,22 @@ export function Navigation({
   type NavItem = { id: string; label: string; icon: any; description?: string };
 
   console.log(
-    `User is active membership: ${hasAnyStudioMemberships(currentUser)}`
+    `User is active membership: ${hasAnyStudioMemberships(context.currentUser)}`
   );
 
   console.log(
     `User can enter studio mode: ${canEnterStudioMode(
-      currentUser,
-      currentStudio
+      context.currentUser,
+      context.currentStudio
     )}`
   );
 
   const getMainNavigationItems = (): NavItem[] => {
-    const isArtistMode = currentUser.activeMode === "artist";
+    const isArtistMode = context.currentUser.activeMode === "artist";
     const inStudioMode =
-      currentUser.activeMode === "studio" &&
-      !!currentStudio &&
-      canEnterStudioMode(currentUser, currentStudio);
+      context.currentUser.activeMode === "studio" &&
+      !!context.currentStudio &&
+      canEnterStudioMode(context.currentUser, context.currentStudio);
 
     const base: NavItem[] = [
       { id: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -186,7 +186,7 @@ export function Navigation({
       base[0],
 
       // My Studios → artist mode only
-      ...(isArtistMode && hasAnyStudioMemberships(currentUser)
+      ...(isArtistMode && hasAnyStudioMemberships(context.currentUser)
         ? [
             {
               id: "mystudios",
@@ -211,7 +211,7 @@ export function Navigation({
 
   // More dropdown items based on user type
   const getMoreItems = () => {
-    if (currentUser.activeMode === "studio" && currentStudio) {
+    if (context.currentUser.activeMode === "studio" && context.currentStudio) {
       return [
         {
           id: "events",
@@ -269,8 +269,8 @@ export function Navigation({
   };
 
   const getNotifications = (): NotificationItem[] => {
-    const inviteNotifications: NotificationItem[] = pendingInvites
-      .filter((i) => i.status === "pending" && i.email === currentUser.email)
+    const inviteNotifications: NotificationItem[] = context.pendingInvites
+      .filter((i) => i.status === "pending" && i.email === context.currentUser.email)
       .map((invite) => ({
         id: `invite-${invite.id}`,
         type: "invite",
@@ -292,7 +292,7 @@ export function Navigation({
   const baseUnread = notifications.filter(
     (n) => !n.isRead && n.type !== "invite"
   ).length;
-  const unreadCount = baseUnread + pendingInvitesCount;
+  const unreadCount = baseUnread + _pendingInvites;
 
   const NavigationContent = () => (
     <div className="flex items-center space-x-2">
@@ -314,8 +314,8 @@ export function Navigation({
             <Icon className="w-4 h-4 mr-2" />
             {item.label}
             {item.id === "staff" &&
-              currentUser.activeMode === "studio" &&
-              currentStudio && (
+              context.currentUser.activeMode === "studio" &&
+              context.currentStudio && (
                 <Badge
                   variant="secondary"
                   className="ml-2 text-xs px-1.5 py-0.5"
@@ -491,9 +491,9 @@ export function Navigation({
           {/* Right Section - Studio Menu + User Menu */}
           <div className="flex items-center space-x-4">
             {/* Studio Menu for Studio Users (guarded) */}
-            {currentUser.activeMode === "studio" &&
-              currentStudio &&
-              canEnterStudioMode(currentUser, currentStudio) && (
+            {context.currentUser.activeMode === "studio" &&
+              context.currentStudio &&
+              canEnterStudioMode(context.currentUser, context.currentStudio) && (
                 <DropdownMenu
                   open={showStudioMenu}
                   onOpenChange={setShowStudioMenu}
@@ -505,7 +505,7 @@ export function Navigation({
                     >
                       <Building2 className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium">
-                        @{currentStudio.handle}
+                        @{context.currentStudio.handle}
                       </span>
                       <ChevronDown className="w-3 h-3 text-muted-foreground" />
                     </Button>
@@ -520,14 +520,14 @@ export function Navigation({
                       <Building2 className="w-8 h-8 text-muted-foreground" />
                       <div className="flex flex-col space-y-1 flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">
-                          {currentStudio.name}
+                          {context.currentStudio.name}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          @{currentStudio.handle}
+                          @{context.currentStudio.handle}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {currentStudio.locations?.length || 0} location
-                          {(currentStudio.locations?.length || 0) !== 1
+                          {context.currentStudio.locations?.length || 0} location
+                          {(context.currentStudio.locations?.length || 0) !== 1
                             ? "s"
                             : ""}
                         </p>
@@ -537,15 +537,15 @@ export function Navigation({
                     <DropdownMenuSeparator />
 
                     {/* Location Selection */}
-                    {currentStudio.locations &&
-                      currentStudio.locations.length > 0 && (
+                    {context.currentStudio.locations &&
+                      context.currentStudio.locations.length > 0 && (
                         <>
                           <div className="p-4">
                             <div className="flex items-center justify-between mb-3">
                               <h4 className="font-medium text-sm">
                                 Select Locations
                               </h4>
-                              {currentStudio.locations.length > 1 && (
+                              {context.currentStudio.locations.length > 1 && (
                                 <div className="flex space-x-2">
                                   <Button
                                     variant="ghost"
@@ -565,12 +565,12 @@ export function Navigation({
                               )}
                             </div>
                             <div className="space-y-3">
-                              {currentStudio.locations.map((location) => (
+                              {context.currentStudio.locations.map((location) => (
                                 <div
                                   key={location.id}
                                   className="flex items-center space-x-3 p-2 rounded-md hover:bg-accent"
                                 >
-                                  {currentStudio.locations.length > 1 ? (
+                                  {context.currentStudio.locations.length > 1 ? (
                                     <Checkbox
                                       checked={selectedLocations.includes(
                                         location.id
@@ -593,7 +593,7 @@ export function Navigation({
                                       {location.city}, {location.state}
                                     </p>
                                   </div>
-                                  {currentStudio.locations.length > 1 &&
+                                  {context.currentStudio.locations.length > 1 &&
                                     selectedLocations.includes(location.id) && (
                                       <Check className="w-4 h-4 text-primary" />
                                     )}
@@ -641,11 +641,11 @@ export function Navigation({
                 >
                   <Avatar className="h-9 w-9">
                     <AvatarImage
-                      src={currentUser.profile?.profileImage}
-                      alt={currentUser.name}
+                      src={context.currentUser.profile?.profileImage}
+                      alt={context.currentUser.name}
                     />
                     <AvatarFallback>
-                      {currentUser.name
+                      {context.currentUser.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -657,11 +657,11 @@ export function Navigation({
                 <div className="flex items-center space-x-3 p-4">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src={currentUser.profile?.profileImage}
-                      alt={currentUser.name}
+                      src={context.currentUser.profile?.profileImage}
+                      alt={context.currentUser.name}
                     />
                     <AvatarFallback>
-                      {currentUser.name
+                      {context.currentUser.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
@@ -669,30 +669,30 @@ export function Navigation({
                   </Avatar>
                   <div className="flex flex-col space-y-1 flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">
-                      {currentUser.name}
+                      {context.currentUser.name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      @{currentUser.handle}
+                      @{context.currentUser.handle}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {currentUser.email}
+                      {context.currentUser.email}
                     </p>
-                    {currentUser.type === "artist" && currentStudio && (
+                    {context.currentUser.type === "artist" && context.currentStudio && (
                       <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                         <Building2 className="w-3 h-3" />
                         <span className="truncate">
-                          Member of {currentStudio.name}
+                          Member of {context.currentStudio.name}
                         </span>
                       </div>
                     )}
-                    {currentUser.type === "artist" &&
-                      currentUser.subscription && (
+                    {context.currentUser.type === "artist" &&
+                      context.currentUser.subscription && (
                         <Badge variant="secondary" className="w-fit text-xs">
-                          {currentUser.subscription === "free"
+                          {context.currentUser.subscription === "free"
                             ? "Free"
-                            : currentUser.subscription === "passion"
+                            : context.currentUser.subscription === "passion"
                             ? "Passion"
-                            : currentUser.subscription === "small-artist"
+                            : context.currentUser.subscription === "small-artist"
                             ? "Artist"
                             : "Studio Pro"}
                         </Badge>
@@ -715,22 +715,22 @@ export function Navigation({
                   Settings
                 </DropdownMenuItem>
 
-                {currentUser.availableModes?.includes("studio") && (
+                {context.currentUser.availableModes?.includes("studio") && (
                   <>
                     <DropdownMenuSeparator />
 
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => {
-                        if (!currentUser) return;
+                        if (!context.currentUser) return;
 
                         // If switching *into* studio, enforce guard.
                         const goingToStudio =
-                          currentUser.activeMode !== "studio";
+                          context.currentUser.activeMode !== "studio";
                         if (goingToStudio) {
                           if (
-                            !currentStudio ||
-                            !canEnterStudioMode(currentUser, currentStudio)
+                            !context.currentStudio ||
+                            !canEnterStudioMode(context.currentUser, context.currentStudio)
                           ) {
                             // Gentle refusal: I'm routing them to dashboard for now
                             // TODO: (replace alert with toast)
@@ -742,13 +742,13 @@ export function Navigation({
                           }
                         }
                         onPageChange("dashboard");
-                        setCurrentUser({
-                          ...currentUser,
+                        context.setCurrentUser({
+                          ...context.currentUser,
                           activeMode: goingToStudio ? "studio" : "artist",
                         });
                       }}
                     >
-                      {currentUser.activeMode === "studio"
+                      {context.currentUser.activeMode === "studio"
                         ? "Switch to Artist mode"
                         : "Switch to Studio mode"}
                     </DropdownMenuItem>
@@ -809,8 +809,8 @@ export function Navigation({
                       <Icon className="w-5 h-5" />
                       <span className="flex-1 text-left">{item.label}</span>
                       {item.id === "staff" &&
-                        currentUser.activeMode === "studio" &&
-                        currentStudio && (
+                        context.currentUser.activeMode === "studio" &&
+                        context.currentStudio && (
                           <Badge
                             variant="secondary"
                             className="text-xs px-1.5 py-0.5"
@@ -818,12 +818,12 @@ export function Navigation({
                             5
                           </Badge>
                         )}
-                      {isInvites && pendingInvitesCount > 0 && (
+                      {isInvites && _pendingInvites > 0 && (
                         <Badge
                           variant="secondary"
                           className="text-xs px-1.5 py-0.5"
                         >
-                          {pendingInvitesCount}
+                          {_pendingInvites}
                         </Badge>
                       )}
                     </button>

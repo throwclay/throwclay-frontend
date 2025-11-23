@@ -6,9 +6,9 @@ import { StudioSettings } from "@/components/StudioSettings";
 import { useAppContext } from "@/app/context/AppContext";
 
 export default function Settings() {
-  const { currentUser, currentStudio } = useAppContext();
+  const context = useAppContext();
 
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
@@ -27,7 +27,7 @@ export default function Settings() {
         <h1>Settings</h1>
         <p className="text-muted-foreground">
           Manage your{" "}
-          {currentUser.activeMode === "studio" && currentStudio
+          {context.currentUser.activeMode === "studio" && context.currentStudio
             ? "studio"
             : "account"}{" "}
           settings and preferences
@@ -36,14 +36,14 @@ export default function Settings() {
 
       <Tabs
         defaultValue={
-          currentUser.activeMode === "studio" && currentStudio
+          context.currentUser.activeMode === "studio" && context.currentStudio
             ? "studio"
             : "profile"
         }
         className="space-y-6"
       >
         <TabsList className="grid w-full grid-cols-4">
-          {currentUser.activeMode === "studio" && currentStudio && (
+          {context.currentUser.activeMode === "studio" && context.currentStudio && (
             <TabsTrigger value="studio" className="flex items-center space-x-2">
               <Building2 className="w-4 h-4" />
               <span>Studio</span>
@@ -67,7 +67,7 @@ export default function Settings() {
         </TabsList>
 
         {/* Studio Settings Tab */}
-        {currentUser.activeMode === "studio" && currentStudio && (
+        {context.currentUser.activeMode === "studio" && context.currentStudio && (
           <TabsContent value="studio">
             <StudioSettings />
           </TabsContent>
@@ -84,32 +84,32 @@ export default function Settings() {
                 <div>
                   <label className="text-sm font-medium">Full Name</label>
                   <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1">
-                    {currentUser.name}
+                    {context.currentUser.name}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Email</label>
                   <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1">
-                    {currentUser.email}
+                    {context.currentUser.email}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Handle</label>
                   <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1">
-                    @{currentUser.handle}
+                    @{context.currentUser.handle}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Account Type</label>
                   <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1 capitalize">
-                    {currentUser.type}
+                    {context.currentUser.type}
                   </p>
                 </div>
-                {currentUser.subscription && (
+                {context.currentUser.subscription && (
                   <div>
                     <label className="text-sm font-medium">Subscription</label>
                     <p className="text-sm text-muted-foreground bg-accent/50 p-2 rounded mt-1 capitalize">
-                      {currentUser.subscription.replace("-", " ")}
+                      {context.currentUser.subscription.replace("-", " ")}
                     </p>
                   </div>
                 )}

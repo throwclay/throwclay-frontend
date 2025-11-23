@@ -34,7 +34,7 @@ import type {
 } from '@/app/context/AppContext';
 
 export default function KilnManagement() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
@@ -55,7 +55,7 @@ export default function KilnManagement() {
     type: 'electric',
     manufacturer: '',
     model: '',
-    locationId: currentStudio?.locations?.[0]?.id || '',
+    locationId: context.currentStudio?.locations?.[0]?.id || '',
     capacity: 20,
     maxTemp: 1300,
     shelfCount: 4,
@@ -115,7 +115,7 @@ export default function KilnManagement() {
   const handleCreateKiln = () => {
     const kiln: Kiln = {
       id: `kiln_${Date.now()}`,
-      studioId: currentStudio?.id || '',
+      studioId: context.currentStudio?.id || '',
       ...newKiln
     } as Kiln;
 
@@ -127,7 +127,7 @@ export default function KilnManagement() {
       type: 'electric',
       manufacturer: '',
       model: '',
-      locationId: currentStudio?.locations?.[0]?.id || '',
+      locationId: context.currentStudio?.locations?.[0]?.id || '',
       capacity: 20,
       maxTemp: 1300,
       shelfCount: 4,
@@ -229,14 +229,14 @@ export default function KilnManagement() {
     }
   };
 
-  const filteredKilns = currentStudio?.kilns?.filter(kiln => {
+  const filteredKilns = context.currentStudio?.kilns?.filter(kiln => {
     const matchesSearch = kiln.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          kiln.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || kiln.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
 
-  const filteredTemplates = currentStudio?.kilnFiringTemplates?.filter(template => {
+  const filteredTemplates = context.currentStudio?.kilnFiringTemplates?.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
                          template.description?.toLowerCase().includes(templateSearchTerm.toLowerCase());
     const matchesType = templateTypeFilter === 'all' || template.baseType === templateTypeFilter;
@@ -507,7 +507,7 @@ export default function KilnManagement() {
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent>
-                        {currentStudio?.locations.map(location => (
+                        {context.currentStudio?.locations.map(location => (
                           <SelectItem key={location.id} value={location.id}>
                             {location.name}
                           </SelectItem>
@@ -688,7 +688,7 @@ export default function KilnManagement() {
                             <SelectValue placeholder="Choose kiln" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.kilns?.map((kiln) => (
+                            {context.currentStudio?.kilns?.map((kiln) => (
                               <SelectItem key={kiln.id} value={kiln.id}>
                                 {kiln.name} ({kiln.type})
                               </SelectItem>
@@ -879,7 +879,7 @@ export default function KilnManagement() {
                         <div className="space-y-3">
                           <Label>Glaze Compatibility</Label>
                           <div className="grid grid-cols-3 gap-3">
-                            {currentStudio?.glazes?.slice(0, 9).map((glaze) => (
+                            {context.currentStudio?.glazes?.slice(0, 9).map((glaze) => (
                               <div key={glaze} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={glaze}
@@ -990,7 +990,7 @@ export default function KilnManagement() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemplates.map((template) => {
-                const kiln = currentStudio?.kilns?.find(k => k.id === template.kilnId);
+                const kiln = context.currentStudio?.kilns?.find(k => k.id === template.kilnId);
                 const successRate = template.averageSuccessRate || 0;
 
                 return (
@@ -1227,7 +1227,7 @@ export default function KilnManagement() {
                             <SelectValue placeholder="Select kiln" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.kilns?.map(kiln => (
+                            {context.currentStudio?.kilns?.map(kiln => (
                               <SelectItem key={kiln.id} value={kiln.id}>
                                 {kiln.name} ({kiln.type})
                               </SelectItem>
@@ -1386,7 +1386,7 @@ export default function KilnManagement() {
               </TableHeader>
               <TableBody>
                 {filteredSchedules.map((schedule) => {
-                  const kiln = currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
+                  const kiln = context.currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
                   const operator = operators.find(op => op.id === schedule.assignedEmployeeId);
 
                   return (
