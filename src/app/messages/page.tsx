@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from 'react';
 import {
   Plus, Search, Send, Paperclip, Image as ImageIcon, Video, FileText,

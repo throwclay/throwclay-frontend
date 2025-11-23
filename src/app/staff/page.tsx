@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import { Users, Clock, UserCog } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

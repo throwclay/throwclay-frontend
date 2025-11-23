@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import {
   Plus, Search, Filter, Eye, Edit2, Trash2, Star, Upload, Download,

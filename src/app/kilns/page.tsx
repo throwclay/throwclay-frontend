@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import {
   Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock,

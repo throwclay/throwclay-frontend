@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef } from 'react';
 import {
   FileText, Plus, Search, Filter, Edit, Trash2, Eye, Share2, Heart,
