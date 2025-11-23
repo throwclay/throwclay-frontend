@@ -28,41 +28,31 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAppContext } from "@/app/context/AppContext";
 
@@ -431,6 +421,21 @@ export function MyStudios() {
       ...chatMessages,
       { role: "user", message: currentMessage },
     ]);
+    const [currentMessage, setCurrentMessage] = useState("");
+    const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+    const [selectedKilnId, setSelectedKilnId] = useState<string | null>(null);
+    const [selectedShelves, setSelectedShelves] = useState<string[]>([]);
+    const [showShelfDialog, setShowShelfDialog] = useState(false);
+    const [showBulkRequestDialog, setShowBulkRequestDialog] = useState(false);
+    const [showAvailableClassesDialog, setShowAvailableClassesDialog] = useState(false);
+    const [showLinkThrowsDialog, setShowLinkThrowsDialog] = useState(false);
+    const [selectedThrows, setSelectedThrows] = useState<string[]>([]);
+    const [currentShelfForLinking, setCurrentShelfForLinking] = useState<string | null>(null);
+    const [shelfThrowLinks, setShelfThrowLinks] = useState<Record<string, string[]>>({
+        "B-3": ["throw1", "throw2"],
+        "A-5": ["throw3"],
+        "C-2": ["throw4", "throw5", "throw6"]
+    });
 
     // Simulate AI response
     setTimeout(() => {
@@ -449,8 +454,8 @@ export function MyStudios() {
       ]);
     }, 1000);
 
-    setCurrentMessage("");
-  };
+    const selectedStudio = myStudios.find((s) => s.id === selectedStudioId) || myStudios[0];
+    const isActiveMember = selectedStudio.status === "Active";
 
   const getKilnStatusBadge = (status: string) => {
     switch (status) {
@@ -462,31 +467,67 @@ export function MyStudios() {
         return (
           <Badge className="bg-orange-500 hover:bg-orange-600">Firing</Badge>
         );
-      case "cooling":
-        return (
-          <Badge className="bg-purple-500 hover:bg-purple-600">Cooling</Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
+    };
 
-  const getEmployeeStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return (
-          <Badge className="bg-green-500 hover:bg-green-600">Available</Badge>
+    const handleViewStudioProfile = () => {
+        alert(`Navigate to studio profile: @${selectedStudio.handle}`);
+    };
+
+    const handleMarkShelves = (kilnId: string) => {
+        setSelectedKilnId(kilnId);
+        setSelectedShelves([]);
+        setShowShelfDialog(true);
+    };
+
+    const handleSubmitShelves = () => {
+        alert(`Marked shelves ${selectedShelves.join(", ")} for kiln ${selectedKilnId}`);
+        setShowShelfDialog(false);
+        setSelectedShelves([]);
+    };
+
+    const handleDownloadReceipt = (paymentId: string) => {
+        alert(`Downloading receipt for payment ${paymentId}`);
+    };
+
+    const handleDownloadAllReceipts = () => {
+        alert("Downloading all receipts as ZIP file");
+    };
+
+    // const handleManageEnrollment = (classId: string) => {
+    //   // Navigate to Classes page
+    //   if (navigateToPage) {
+    //     navigateToPage('artistClasses');
+    //   }
+    // };
+
+    const handleReapplyMembership = () => {
+        alert(`Redirecting to membership application for ${selectedStudio.name}`);
+    };
+
+    const handleLinkThrowsToShelf = (kilnId: string, shelf: string) => {
+        setSelectedKilnId(kilnId);
+        setCurrentShelfForLinking(shelf);
+        setSelectedThrows(shelfThrowLinks[shelf] || []);
+        setShowLinkThrowsDialog(true);
+    };
+
+    const toggleThrowSelection = (throwId: string) => {
+        setSelectedThrows((prev) =>
+            prev.includes(throwId) ? prev.filter((t) => t !== throwId) : [...prev, throwId]
         );
-      case "in-class":
-        return (
-          <Badge className="bg-yellow-500 hover:bg-yellow-600">In Class</Badge>
-        );
-      case "busy":
-        return <Badge variant="secondary">Busy</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+    };
+
+    const handleSubmitThrowLinks = () => {
+        if (currentShelfForLinking) {
+            setShelfThrowLinks((prev) => ({
+                ...prev,
+                [currentShelfForLinking]: selectedThrows
+            }));
+        }
+        setShowLinkThrowsDialog(false);
+        setSelectedThrows([]);
+        setCurrentShelfForLinking(null);
+    };
 
   // Cart functions
   const addToCart = (productId: string) => {

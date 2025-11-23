@@ -120,8 +120,9 @@ export function InvitesPanel() {
           }
         }
 
-        return updated;
-      });
+        try {
+            setIsLoading(true);
+            setError(null);
 
       // 4) Seed context.currentStudio if they don't have one yet
       if (!context.currentStudio && invite.studios) {

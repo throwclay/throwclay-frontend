@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import {
@@ -37,36 +37,31 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger
 } from "@/components/ui/sheet";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { BadgeManagement } from "@/components/BadgeManagement";
 import type {
@@ -80,7 +75,7 @@ import { toast } from "sonner";
 import { useAppContext } from "@/app/context/AppContext";
 
 interface ArtistProfileProps {
-  onProfileUpdated?: (user: UserType) => void;
+    onProfileUpdated?: (user: UserType) => void;
 }
 
 export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
@@ -420,16 +415,8 @@ export default function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) 
     toast.success("Profile updated successfully");
   };
 
-  const handleCancel = () => {
-    setEditedProfile(
-      context.currentUser?.profile || {
-        bio: "",
-        socialMedia: {},
-        branding: { primaryColor: "#030213" },
-      }
-    );
-    setIsEditing(false);
-  };
+        // bubble up to parent (Home) so it can store this in state
+        onProfileUpdated?.(updatedUser);
 
   if (!context.currentUser) {
     return (

@@ -590,18 +590,18 @@ export default function Settings() {
       ? currentStudio?.subscription !== "free"
       : currentUser?.subscription !== "free";
 
-  if (!context.currentUser) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center">
-          <h1>Settings</h1>
-          <p className="text-muted-foreground">
-            Please log in to access settings
-          </p>
-        </div>
-      </div>
-    );
-  }
+        <div className="max-w-6xl mx-auto p-6">
+            <div className="mb-8">
+                <h1>Settings</h1>
+                <p className="text-muted-foreground">
+                    Manage your{" "}
+                    {context.currentUser.activeMode === "studio" && context.currentStudio
+                        ? "studio"
+                        : "account"}{" "}
+                    settings and preferences
+                </p>
+            </div>
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
