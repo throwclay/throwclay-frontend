@@ -1,111 +1,23 @@
-"use client";
+"use client"
 
-import { useState } from 'react';
-import { ArrowRight, CheckCircle, Users, BarChart3, MessageCircle, Calendar, Camera, Shield, Zap, Globe } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardMockup from "@/visuals/DashboardMockup";
+import {
+    ArrowRight,
+    BarChart3,
+    CheckCircle,
+    Globe,
+    MessageCircle,
+    Shield,
+    Users
+} from "lucide-react";
+import Link from "next/link";
 
-interface LandingPageProps {
-    onNavigate: (page: string) => void;
-}
-
-// TODO: validate the need for this
-function DashboardMockup() {
-    return (
-        <div className="p-8">
-            <h1 className="text-3xl font-bold mb-8">Artist Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card>
-                    <CardContent className="p-6">
-                        <h3 className="font-semibold mb-4">Recent Projects</h3>
-                        <p className="text-muted-foreground">
-                            View and manage your pottery projects
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-6">
-                        <h3 className="font-semibold mb-4">Upcoming Classes</h3>
-                        <p className="text-muted-foreground">Your scheduled pottery classes</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-6">
-                        <h3 className="font-semibold mb-4">Community</h3>
-                        <p className="text-muted-foreground">Connect with other ceramic artists</p>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
-}
-
-export default function LandingPage({ onNavigate }: LandingPageProps) {
-    const [email, setEmail] = useState("");
-
-    const handleWaitlistSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Handle waitlist signup
-        alert(`Thank you! We'll notify ${email} when we launch.`);
-        setEmail("");
-    };
-
-    const handleGetStarted = () => {
-        onNavigate("login");
-    };
-
-    const handleLogin = () => {
-        onNavigate("login");
-    };
-
+export default function LandingPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-            {/* Navigation */}
-            <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                        <div className="flex items-center space-x-3">
-                            <div
-                                className="w-8 h-8 bg-primary flex items-center justify-center"
-                                style={{ borderRadius: "68% 32% 62% 38% / 55% 48% 52% 45%" }}
-                            ></div>
-                            <span className="text-xl font-bold">Throw Clay</span>
-                        </div>
-                        <div className="hidden md:flex items-center space-x-8">
-                            <Button
-                                variant="ghost"
-                                onClick={() => onNavigate("studios")}
-                            >
-                                Find Studios
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => onNavigate("ceramics")}
-                            >
-                                Ceramics Marketplace
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={handleLogin}
-                            >
-                                Sign In
-                            </Button>
-                            <Button onClick={handleGetStarted}>Get Started</Button>
-                        </div>
-                        {/* Mobile menu button */}
-                        <div className="md:hidden">
-                            <Button
-                                variant="outline"
-                                onClick={handleLogin}
-                            >
-                                Sign In
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
             {/* Hero Section */}
             <section className="relative py-20 lg:py-32">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -130,21 +42,23 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <Button
-                                    size="lg"
-                                    onClick={handleGetStarted}
-                                    className="text-lg px-8"
-                                >
-                                    Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    onClick={() => onNavigate("studios")}
-                                    className="text-lg px-8"
-                                >
-                                    Explore Studios
-                                </Button>
+                                <Link href="login">
+                                    <Button
+                                        size="lg"
+                                        className="text-lg px-8"
+                                    >
+                                        Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
+                                    </Button>
+                                </Link>
+                                <Link href="studios">
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        className="text-lg px-8"
+                                    >
+                                        Explore Studios
+                                    </Button>
+                                </Link>
                             </div>
 
                             {/* Mobile App Download Buttons */}
@@ -572,13 +486,14 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                                         <span>Community access</span>
                                     </li>
                                 </ul>
-                                <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    onClick={handleGetStarted}
-                                >
-                                    Get Started Free
-                                </Button>
+                                <Link href="login">
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                    >
+                                        Get Started Free
+                                    </Button>
+                                </Link>
                             </CardContent>
                         </Card>
 
@@ -626,12 +541,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                                         <span>PDF exports</span>
                                     </li>
                                 </ul>
-                                <Button
-                                    className="w-full"
-                                    onClick={handleGetStarted}
-                                >
-                                    Start Free Trial
-                                </Button>
+                                <Link href="login">
+                                    <Button className="w-full">Start Free Trial</Button>
+                                </Link>
                             </CardContent>
                         </Card>
 
@@ -674,12 +586,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                                         <span>Priority support</span>
                                     </li>
                                 </ul>
-                                <Button
-                                    className="w-full"
-                                    onClick={handleGetStarted}
-                                >
-                                    Start Free Trial
-                                </Button>
+                                <Link href="login">
+                                    <Button className="w-full">Start Free Trial</Button>
+                                </Link>
                             </CardContent>
                         </Card>
 
@@ -722,12 +631,9 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                                         <span>White-label branding</span>
                                     </li>
                                 </ul>
-                                <Button
-                                    className="w-full"
-                                    onClick={handleGetStarted}
-                                >
-                                    Start Free Trial
-                                </Button>
+                                <Link href="login">
+                                    <Button className="w-full">Start Free Trial</Button>
+                                </Link>
                             </CardContent>
                         </Card>
                     </div>
@@ -841,21 +747,23 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                             to manage their pottery practice and grow their business.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button
-                                size="lg"
-                                onClick={handleGetStarted}
-                                className="text-lg px-8"
-                            >
-                                Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={() => onNavigate("studios")}
-                                className="text-lg px-8"
-                            >
-                                Explore Studios
-                            </Button>
+                            <Link href="login">
+                                <Button
+                                    size="lg"
+                                    className="text-lg px-8"
+                                >
+                                    Start Free Trial <ArrowRight className="ml-2 w-5 h-5" />
+                                </Button>
+                            </Link>
+                            <Link href="studios">
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    className="text-lg px-8"
+                                >
+                                    Explore Studios
+                                </Button>
+                            </Link>
                         </div>
                         <p className="text-sm text-muted-foreground">
                             14-day free trial • No credit card required • Cancel anytime
@@ -885,22 +793,24 @@ export default function LandingPage({ onNavigate }: LandingPageProps) {
                             <h4 className="font-semibold mb-4">Product</h4>
                             <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <Button
-                                        variant="link"
-                                        className="p-0 h-auto"
-                                        onClick={() => onNavigate("studios")}
-                                    >
-                                        Find Studios
-                                    </Button>
+                                    <Link href="studios">
+                                        <Button
+                                            variant="link"
+                                            className="p-0 h-auto"
+                                        >
+                                            Find Studios
+                                        </Button>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <Button
-                                        variant="link"
-                                        className="p-0 h-auto"
-                                        onClick={() => onNavigate("ceramics")}
-                                    >
-                                        Ceramics Marketplace
-                                    </Button>
+                                    <Link href="ceramics">
+                                        <Button
+                                            variant="link"
+                                            className="p-0 h-auto"
+                                        >
+                                            Ceramics Marketplace
+                                        </Button>
+                                    </Link>
                                 </li>
                                 <li>
                                     <a
