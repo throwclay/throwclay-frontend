@@ -1,3 +1,5 @@
+"use client"
+
 import { useAppContext } from '@/app/context/AppContext';
 import { EmployeeManagement } from '@/components/EmployeeManagement';
 import { Badge } from '@/components/ui/badge';

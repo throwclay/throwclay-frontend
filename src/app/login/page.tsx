@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,8 +10,8 @@ import { SignupFlow, type SignupData } from "@/components/SignupFlow";
 import { supabase } from "@/lib/apis/supabaseClient";
 
 interface LoginFormProps {
-  onLogin: (userData: { email: string; phone?: string; session: any }) => void;
-  onBack: () => void;
+    onLogin: (userData: { email: string; phone?: string; session: any }) => void;
+    onBack: () => void;
 }
 
 export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
@@ -437,15 +439,11 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
               </Button>
             </div>
 
-            {/* Status / error messages */}
-            {error && (
-              <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
-            )}
-            {message && !error && (
-              <p className="mt-4 text-sm text-emerald-600 text-center">
-                {message}
-              </p>
-            )}
+                if (!data.session) {
+                    // If email confirmations are enabled and user hasn't confirmed yet
+                    setMessage("Check your email to verify your account before signing in.");
+                    return;
+                }
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               {authMode === "login" ? (
@@ -478,9 +476,6 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
                 </>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+        </div>
+    );
 }

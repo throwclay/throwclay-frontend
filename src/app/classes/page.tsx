@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from 'react';
 import {
   Calendar, Clock, Users, MapPin, Star, BookOpen, ChevronRight, Filter, Search,

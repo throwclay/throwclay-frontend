@@ -1,3 +1,5 @@
+"use client"
+
 import { Users, Calendar, Flame, BarChart3, Clock, CheckCircle, AlertCircle, TrendingUp, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

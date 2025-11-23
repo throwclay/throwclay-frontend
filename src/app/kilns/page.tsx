@@ -1,3 +1,5 @@
+"use client"
+
 import { useAppContext } from '@/app/context/AppContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
