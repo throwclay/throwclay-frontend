@@ -27,24 +27,35 @@ export async function POST(
   }
 
   // Check they are owner/admin of this studio
-  const { data: membership, error: membershipError } = await supabaseAdmin
+  const { data: memberships, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
     .eq("studio_id", studioId)
     .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+    .eq("status", "active");
 
-  if (membershipError || !membership) {
+  if (membershipError) {
+    console.error("Membership lookup error", membershipError);
     return NextResponse.json(
       { error: "Not authorized to manage applications for this studio" },
       { status: 403 }
     );
   }
 
-  if (!INVITER_ROLES.includes(membership.role as string)) {
+  if (!memberships || memberships.length === 0) {
     return NextResponse.json(
-      { error: "Insufficient permissions" },
+      { error: "Not authorized to manage applications for this studio" },
+      { status: 403 }
+    );
+  }
+
+  const hasInvitePermission = memberships.some((m) =>
+    INVITER_ROLES.includes((m.role as string) ?? "")
+  );
+
+  if (!hasInvitePermission) {
+    return NextResponse.json(
+      { error: "Insufficient permissions to manage applications" },
       { status: 403 }
     );
   }
@@ -84,6 +95,7 @@ export async function POST(
   }
 
   // If approving, create/activate member
+  // updated to handle invites per location
   if (decision === "approve") {
     const { error: membershipUpsertError } = await supabaseAdmin
       .from("studio_memberships")
@@ -91,13 +103,13 @@ export async function POST(
         {
           studio_id: studioId,
           user_id: application.profile_id,
-          role: "member", // this is where "members" vs "staff" separation happens
+          role: "member",
           status: "active",
           location_id: application.location_id ?? null,
           membership_type: application.requested_membership_type ?? null,
         } as any,
         {
-          onConflict: "studio_id,user_id",
+          onConflict: "studio_id,user_id,location_id",
         }
       );
 

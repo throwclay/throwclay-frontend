@@ -1,28 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/app/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 
-import type { StudioInvite } from "@/types";
+import type { StudioInvite, User } from "@/types";
 
 export function InvitesPanel() {
-  const {
-    authToken,
-    currentUser,
-    setCurrentUser,
-    currentStudio,
-    setCurrentStudio,
-    refreshInvites,
-  } = useAppContext();
-
+  const context = useAppContext();
   const [invites, setInvites] = useState<StudioInvite[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchInvites = async () => {
-    if (!authToken) {
+  const fetchInvites = useCallback(async () => {
+    if (!context.authToken) {
       setError("You must be logged in to view invites.");
       setInvites([]);
       return;
@@ -34,7 +32,7 @@ export function InvitesPanel() {
 
       const res = await fetch("/api/invites", {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
       });
 
@@ -54,20 +52,18 @@ export function InvitesPanel() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [context.authToken]);
 
-  // 🔁 Load invites on mount
   useEffect(() => {
     fetchInvites();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authToken]);
+  }, [fetchInvites]);
 
   const handleAccept = async (inviteId: string) => {
-    if (!authToken) {
+    if (!context.authToken) {
       toast.error("You must be logged in to accept invites.");
       return;
     }
-    if (!currentUser) {
+    if (!context.currentUser) {
       toast.error("No current user in context.");
       return;
     }
@@ -83,7 +79,7 @@ export function InvitesPanel() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${context.authToken}`,
         },
         body: JSON.stringify({ inviteId }),
       });
@@ -97,41 +93,28 @@ export function InvitesPanel() {
 
       toast.success("Invite accepted!");
 
-      // 1) Remove accepted invite from local panel state
+      // 1) Remove accepted invite from panel state
       setInvites((prev) => prev.filter((i) => i.id !== inviteId));
 
-      // 2) Re-sync user-level pending invites for the bell badge
-      await refreshInvites({ status: "pending" });
+      // 2) Refresh bell badge count
+      await context.refreshInvites({ status: "pending" });
 
-      // 3) Update the user so:
-      //    - My Studios appears (hasStudioMemberships = true)
-      //    - Studio mode becomes available if role is owner/admin
-      setCurrentUser((prev) => {
+      // 3) Update current user modes / flags
+      context.setCurrentUser((prev) => {
         if (!prev) return prev;
         const updated: any = { ...prev };
 
-        // This is what Navigation checks via hasAnyStudioMemberships()
         updated.hasStudioMemberships = true;
 
         const isStudioRole = ["owner", "admin"].includes(invite.role);
 
         if (isStudioRole) {
-          // Grant studio mode
           const currentModes = updated.availableModes ?? ["artist"];
           if (!currentModes.includes("studio")) {
             updated.availableModes = ["artist", "studio"];
           }
 
-          // We *don't* have to auto-switch them to studio mode;
-          // they can toggle from the avatar menu.  if we want
-          // to default it, we can uncomment this:
-          //
-          // if (updated.activeMode !== "studio") {
-          //   updated.activeMode = "studio";
-          // }
-          //
-          // For now, we keep them in artist mode so they can
-          // see "My Studios" and explore first.
+          // Keep them in artist mode by default, but ensure something is set
           if (!updated.activeMode) {
             updated.activeMode = "artist";
           }
@@ -140,11 +123,10 @@ export function InvitesPanel() {
         return updated;
       });
 
-      // 4) If they didn't have a studio yet, seed currentStudio so the
-      //    "Switch to Studio mode" guard can pass for owner/admin.
-      if (!currentStudio && invite.studios) {
-        setCurrentStudio((prev) => {
-          if (prev) return prev; // if someone else already set it, don't stomp
+      // 4) Seed context.currentStudio if they don't have one yet
+      if (!context.currentStudio && invite.studios) {
+        context.setCurrentStudio((prev) => {
+          if (prev) return prev;
 
           return {
             id: invite.studios?.id,
@@ -153,9 +135,9 @@ export function InvitesPanel() {
             email: "",
             website: "",
             description: "",
-            locations: [], // MyStudios / StudioDashboard can later hydrate this
+            locations: [],
             isActive: true,
-            plan: "studio-solo", // default; backend can override when fetched
+            plan: "studio-solo",
             createdAt: new Date().toISOString(),
             memberCount: 0,
             classCount: 0,
@@ -171,108 +153,113 @@ export function InvitesPanel() {
     }
   };
 
-  if (!currentUser) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-muted-foreground">Please log in to view invites.</p>
-      </div>
-    );
-  }
+  // --- Render helpers -------------------------------------------------------
 
-  if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center text-muted-foreground">
-        Loading invites…
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-sm text-red-500 mb-4">{error}</p>
-        <Button variant="outline" size="sm" onClick={fetchInvites}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  if (invites.length === 0) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 text-center">
-        <h1 className="text-2xl font-semibold mb-2">Invites</h1>
-        <p className="text-muted-foreground">
-          You don’t have any pending studio invites.
+  const renderHeader = () => (
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Studio Invites</h1>
+        <p className="text-sm text-muted-foreground">
+          These studios have invited you to join.
         </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={fetchInvites}>
+        Refresh
+      </Button>
+    </div>
+  );
+
+  if (!context.currentUser) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center">
+        <h1 className="text-2xl font-semibold mb-2">Studio Invites</h1>
+        <p className="text-muted-foreground">Please log in to view invites.</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Studio Invites</h1>
-          <p className="text-sm text-muted-foreground">
-            These studios have invited you to join.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={fetchInvites}>
-          Refresh
-        </Button>
-      </div>
+      {renderHeader()}
 
-      <div className="space-y-3">
-        {invites.map((invite) => (
-          <Card key={invite.id} className="p-4">
-            <div className="flex w-full items-center justify-between gap-4">
-              {/* Left side: studio + role/handle/invited */}
-              <div className="min-w-0">
-                <p className="font-medium truncate">
-                  {invite.studios?.name ?? "A studio"} invited you
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Role: <span className="capitalize">{invite.role}</span>
-                  {invite.studios?.handle && (
-                    <>
-                      {" "}
-                      • Handle: <span>@{invite.studios.handle}</span>
-                    </>
+      {isLoading && (
+        <Card className="p-6 text-center text-muted-foreground">
+          Loading invites…
+        </Card>
+      )}
+
+      {!isLoading && error && (
+        <Card className="p-6 text-center">
+          <CardTitle className="text-lg mb-2">Unable to load invites</CardTitle>
+          <CardDescription className="text-sm text-red-500 mb-4">
+            {error}
+          </CardDescription>
+          <Button variant="outline" size="sm" onClick={fetchInvites}>
+            Retry
+          </Button>
+        </Card>
+      )}
+
+      {!isLoading && !error && invites.length === 0 && (
+        <Card className="p-6 text-center">
+          <CardTitle className="text-lg mb-2">No pending invites</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            When studios invite you to join, you&apos;ll see them here.
+          </CardDescription>
+        </Card>
+      )}
+
+      {!isLoading && !error && invites.length > 0 && (
+        <div className="space-y-3">
+          {invites.map((invite) => (
+            <Card key={invite.id}>
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div className="min-w-0 space-y-1">
+                  <CardTitle className="text-base font-semibold truncate">
+                    {invite.studios?.name ?? "A studio"} invited you
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Role:{" "}
+                    <span className="capitalize font-medium">
+                      {invite.role}
+                    </span>
+                    {invite.studios?.handle && (
+                      <>
+                        {" "}
+                        • <span>@{invite.studios.handle}</span>
+                      </>
+                    )}
+                  </CardDescription>
+                  {invite.invited_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Invited{" "}
+                      {new Date(invite.invited_at).toLocaleDateString(
+                        undefined,
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </p>
                   )}
-                </p>
-                {invite.invited_at && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Invited{" "}
-                    {new Date(invite.invited_at).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                )}
-              </div>
-
-              {/* Right side: status + button */}
-              <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
-                <Badge variant="secondary" className="capitalize">
-                  {invite.status}
-                </Badge>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    handleAccept(invite.id);
-                  }}
-                >
-                  Accept
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+                </div>
+                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
+                  <Badge variant="secondary" className="capitalize">
+                    {invite.status}
+                  </Badge>
+                  <Button size="sm" onClick={() => handleAccept(invite.id)}>
+                    Accept
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 pb-4 text-xs text-muted-foreground">
+                {/* extra metadata can live here later if needed */}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

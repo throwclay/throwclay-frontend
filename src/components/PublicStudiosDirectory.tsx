@@ -66,6 +66,10 @@ export function PublicStudiosDirectory({
   const [appReferralSource, setAppReferralSource] = useState("");
   const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
+  const [memberships, setMemberships] = useState<
+    { studioId: string; locationId: string | null; status: string }[]
+  >([]);
+
   // --- Fetch studios + locations ---
   useEffect(() => {
     const fetchLocations = async () => {
@@ -166,6 +170,39 @@ export function PublicStudiosDirectory({
 
     fetchLocations();
   }, []);
+
+  // --- Fetch user's active memberships (for all studios/locations) ---
+  useEffect(() => {
+    const loadMemberships = async () => {
+      if (!context.currentUser) {
+        setMemberships([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("studio_memberships")
+        .select("studio_id, location_id, status")
+        .eq("user_id", context.currentUser.id)
+        .eq("status", "active");
+
+      if (error) {
+        console.error("Error loading memberships for directory", error);
+        // we can keep memberships empty on error
+        return;
+      }
+
+      const mapped =
+        (data ?? []).map((row: any) => ({
+          studioId: row.studio_id as string,
+          locationId: row.location_id as string | null,
+          status: row.status as string,
+        })) ?? [];
+
+      setMemberships(mapped);
+    };
+
+    loadMemberships();
+  }, [context.currentUser?.id]);
 
   const filteredLocations = locations.filter((loc) => {
     const term = searchTerm.toLowerCase();
@@ -271,15 +308,41 @@ export function PublicStudiosDirectory({
     }
   };
 
-  const isMemberOfLocation = (locationId: string) => {
-    const { currentUser, currentStudio, currentMembership } = context;
+  const isMemberOfLocation = (loc: PublicStudioLocationCard) => {
+    const { currentUser } = context;
+    if (!currentUser) return false;
 
-    if (!currentUser || !currentStudio || !currentMembership) return false;
+    // user is a member if there's an active membership for this studio + location
+    return memberships.some(
+      (m) =>
+        m.studioId === loc.studioId &&
+        m.locationId === loc.locationId &&
+        m.status === "active"
+    );
+  };
 
-    // must match same studio AND same location
-    if (currentMembership.studioId !== currentStudio.id) return false;
+  const isStaffOfStudio = (studioId: string) => {
+    const { currentUser, currentStudio } = context;
+    if (!currentUser || !currentStudio) return false;
 
-    return currentMembership.locationId === locationId;
+    if (currentStudio.id !== studioId) return false;
+
+    const role = currentStudio.roleForCurrentUser as
+      | "owner"
+      | "admin"
+      | "manager"
+      | "instructor"
+      | "employee"
+      | "member"
+      | undefined;
+
+    return (
+      role === "owner" ||
+      role === "admin" ||
+      role === "manager" ||
+      role === "instructor" ||
+      role === "employee"
+    );
   };
 
   return (
@@ -516,10 +579,11 @@ export function PublicStudiosDirectory({
                   {/* Action Buttons */}
                   <div className="flex space-x-2 pt-2">
                     {(() => {
-                      const isMember = isMemberOfLocation(loc.locationId);
+                      const isMember = isMemberOfLocation(loc);
+                      const isStaff = isStaffOfStudio(loc.studioId);
 
                       const handlePrimaryClick = () => {
-                        if (isMember) {
+                        if (isMember || isStaff) {
                           // Route to My Studios view
                           if (onNavigate) {
                             onNavigate("mystudios");
@@ -534,11 +598,12 @@ export function PublicStudiosDirectory({
                         handleApplyToLocation(loc);
                       };
 
-                      const label = isMember
-                        ? "Go to My Studio"
-                        : loc.openToPublic
-                        ? "Apply to Join"
-                        : "Contact Studio";
+                      const label =
+                        isMember || isStaff
+                          ? "Go to My Studio"
+                          : loc.openToPublic
+                          ? "Apply to Join"
+                          : "Contact Studio";
 
                       return (
                         <Button

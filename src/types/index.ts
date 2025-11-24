@@ -1358,4 +1358,4 @@ export interface MemberData extends User {
   eventHistory: any[];
 }
 
-export type InviteRole = "member" | "employee" | "manager" | "admin";
+export type InviteRole = "member";

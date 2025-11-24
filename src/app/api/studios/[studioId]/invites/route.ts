@@ -1,18 +1,10 @@
 // app/api/studios/[studioId]/invites/route.ts
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
+import { getBearerToken } from "@/lib/server/auth";
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
-const MEMBERSHIP_ROLES = ["admin", "manager", "employee", "member"];
-
-function getBearerToken(req: Request): string | null {
-  const authHeader =
-    req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!authHeader) return null;
-  const [scheme, value] = authHeader.split(" ");
-  if (!scheme || scheme.toLowerCase() !== "bearer" || !value) return null;
-  return value;
-}
+const MEMBERSHIP_ROLES = ["member"];
 
 // POST – create invite (studio-scoped)
 export async function POST(
@@ -71,12 +63,12 @@ export async function POST(
   }
 
   // check inviter's membership
-  const { data: membership, error: membershipError } = await supabaseAdmin
+  const { data: memberships, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
     .eq("studio_id", studioId)
     .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("status", "active");
 
   if (membershipError) {
     console.error("Error checking membership", membershipError);
@@ -86,12 +78,15 @@ export async function POST(
     );
   }
 
-  if (
-    !membership ||
-    !INVITER_ROLES.includes((membership.role as string) ?? "")
-  ) {
+  const hasInvitePermission = (memberships ?? []).some((m) =>
+    INVITER_ROLES.includes((m.role as string) ?? "")
+  );
+
+  if (!hasInvitePermission) {
     return NextResponse.json(
-      { error: "You do not have permission to invite members to this studio" },
+      {
+        error: "You do not have permission to invite members to this studio",
+      },
       { status: 403 }
     );
   }
@@ -158,12 +153,12 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: membership, error: membershipError } = await supabaseAdmin
+  const { data: memberships, error: membershipError } = await supabaseAdmin
     .from("studio_memberships")
     .select("role")
     .eq("studio_id", studioId)
     .eq("user_id", user.id)
-    .maybeSingle();
+    .eq("status", "active");
 
   if (membershipError) {
     console.error("Error checking membership", membershipError);
@@ -173,12 +168,15 @@ export async function GET(
     );
   }
 
-  if (
-    !membership ||
-    !INVITER_ROLES.includes((membership.role as string) ?? "")
-  ) {
+  const canViewInvites = (memberships ?? []).some((m) =>
+    INVITER_ROLES.includes((m.role as string) ?? "")
+  );
+
+  if (!canViewInvites) {
     return NextResponse.json(
-      { error: "You do not have permission to view invites for this studio" },
+      {
+        error: "You do not have permission to view invites for this studio",
+      },
       { status: 403 }
     );
   }

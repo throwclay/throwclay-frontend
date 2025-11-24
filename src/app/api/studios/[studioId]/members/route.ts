@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
+import { getBearerToken } from "@/lib/server/auth";
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
-
-function getBearerToken(req: Request): string | null {
-  const authHeader =
-    req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!authHeader) return null;
-  const [scheme, value] = authHeader.split(" ");
-  if (!scheme || scheme.toLowerCase() !== "bearer" || !value) return null;
-  return value;
-}
 
 export async function GET(
   req: Request,
