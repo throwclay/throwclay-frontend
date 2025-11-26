@@ -19,6 +19,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentMembership, setCurrentMembership] =
     useState<StudioMembership | null>(null);
 
+  const [studioMemberships, setStudioMemberships] = useState<
+    StudioMembership[]
+  >([]);
+
   const [currentThrow, setCurrentThrow] = useState<PotteryEntry | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [pendingInvites, setPendingInvites] = useState<StudioInvite[]>([]);
@@ -76,6 +80,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentStudio,
     currentMembership,
     setCurrentMembership,
+    studioMemberships,
+    setStudioMemberships,
     currentThrow,
     setCurrentThrow,
     authToken,

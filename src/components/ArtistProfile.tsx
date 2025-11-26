@@ -1,99 +1,48 @@
 import { useState } from "react";
 import {
   User,
-  Camera,
   Edit,
   Save,
-  ExternalLink,
+  Camera,
   Instagram,
-  Globe,
   Twitter,
   Facebook,
-  Trophy,
+  Globe,
+  ExternalLink,
   Award,
-  Star,
-  Grid3X3,
-  Heart,
-  MessageCircle,
-  Share,
-  Settings,
-  MoreHorizontal,
+  Palette,
+  Briefcase,
+  GraduationCap,
   MapPin,
   Calendar,
-  Users,
-  Copy,
-  Check,
+  Grid3X3,
   ShoppingBag,
-  GraduationCap,
-  BookOpen,
-  Clock,
-  DollarSign,
-  Phone,
-  Mail,
-  Navigation,
+  Heart,
+  MessageCircle,
+  Eye,
+  X,
+  Sparkles,
+  Flame,
+  Package,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "./ui/sheet";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
-import { AspectRatio } from "./ui/aspect-ratio";
-import { Skeleton } from "./ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { BadgeManagement } from "./BadgeManagement";
-import type {
-  User as UserType,
-  ArtistProfile as ArtistProfileType,
-  StudentBadge,
-} from "@/types";
-
+import { Badge } from "./ui/badge";
+import { Label } from "./ui/label";
+import { Textarea } from "./ui/textarea";
+import { Input } from "./ui/input";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { StudentBadge, ArtistProfile as ArtistProfileType } from "@/types";
 import { toast } from "sonner";
-
 import { useAppContext } from "@/app/context/AppContext";
 
-interface ArtistProfileProps {
-  onProfileUpdated?: (user: UserType) => void;
-}
-
-export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
-  const { currentUser, currentStudio } = useAppContext();
+export function ArtistProfile() {
+  const context = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
-  const [copiedBadge, setCopiedBadge] = useState<string | null>(null);
   const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(
-    currentUser?.profile || {
+    context.currentUser?.profile || {
       bio: "",
       socialMedia: {},
       branding: {
@@ -102,14 +51,80 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
     }
   );
 
-  // Mock badges data - in real app would come from API
+  // Mock portfolio data - will be editable
+  const [portfolioData, setPortfolioData] = useState({
+    name: context.currentUser?.name || "Artist Name",
+    title: "Ceramic Artist & Sculptor",
+    tagline:
+      "Creating functional art through traditional and contemporary ceramic techniques",
+    bio: "Passionate ceramic artist specializing in wheel-thrown functional pottery and sculptural pieces. With over 8 years of experience, I blend traditional techniques with modern aesthetics to create unique, handcrafted pieces that bring beauty to everyday life. My work explores the intersection of form and function, with a focus on organic shapes and natural glazes.",
+    location: "Portland, OR",
+    memberSince: "2017",
+    specialties: [
+      "Wheel Throwing",
+      "Hand Building",
+      "Raku Firing",
+      "Glaze Development",
+      "Sculpture",
+    ],
+    techniques: [
+      "High Fire Reduction",
+      "Crystalline Glazes",
+      "Nerikomi",
+      "Sgraffito",
+    ],
+    education: [
+      {
+        degree: "BFA in Ceramics",
+        institution: "Rhode Island School of Design",
+        year: "2015",
+      },
+      {
+        degree: "Certificate in Advanced Pottery",
+        institution: "Haystack Mountain School of Crafts",
+        year: "2018",
+      },
+    ],
+    exhibitions: [
+      {
+        title: "Form & Function: Contemporary Ceramics",
+        venue: "Portland Art Museum",
+        year: "2024",
+        link: "https://portlandartmuseum.org/exhibitions/ceramics",
+      },
+      {
+        title: "Emerging Artists Showcase",
+        venue: "Seattle Pottery Gallery",
+        year: "2023",
+        link: "",
+      },
+    ],
+    awards: [
+      "Best in Show - Northwest Pottery Festival 2024",
+      "Emerging Artist Grant - Oregon Arts Commission 2023",
+      "Excellence in Craftsmanship Award 2022",
+    ],
+    stats: {
+      piecesCreated: 342,
+      exhibitions: 12,
+      yearsActive: 8,
+      studiosWorked: 5,
+    },
+    socialMedia: {
+      instagram: "@ceramicartist",
+      facebook: "ceramicartistpage",
+      website: "www.ceramicartist.com",
+    },
+  });
+
+  // Mock badges/certifications
   const mockBadges: StudentBadge[] = [
     {
       id: "badge_1",
       badgeId: "badge_wheel_mastery",
       classId: "class_1",
-      studentId: currentUser?.id || "student_1",
-      studentName: currentUser?.name || "Student",
+      studentId: context.currentUser?.id || "student_1",
+      studentName: context.currentUser?.name || "Student",
       awardedDate: "2025-01-15T10:00:00Z",
       awardedBy: "Sarah Martinez",
       awardMethod: "automatic",
@@ -120,16 +135,15 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
       finalAttendance: 95,
       projectsCompleted: 5,
       skillsAchieved: ["centering", "pulling", "shaping", "trimming"],
-      instructorNotes:
-        "Excellent progress throughout the course. Mastered wheel throwing fundamentals with exceptional attention to detail.",
+      instructorNotes: "Excellent progress throughout the course.",
       displayOnProfile: true,
     },
     {
       id: "badge_2",
       badgeId: "badge_glazing_expert",
       classId: "class_2",
-      studentId: currentUser?.id || "student_1",
-      studentName: currentUser?.name || "Student",
+      studentId: context.currentUser?.id || "student_1",
+      studentName: context.currentUser?.name || "Student",
       awardedDate: "2025-01-10T14:30:00Z",
       awardedBy: "Michael Chen",
       awardMethod: "manual",
@@ -141,239 +155,229 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
       projectsCompleted: 8,
       skillsAchieved: ["glazing", "color-mixing", "layering"],
       instructorNotes:
-        "Demonstrated advanced understanding of glaze chemistry and application techniques.",
+        "Demonstrated advanced understanding of glaze chemistry.",
+      displayOnProfile: true,
+    },
+    {
+      id: "badge_3",
+      badgeId: "badge_raku_master",
+      classId: "class_3",
+      studentId: context.currentUser?.id || "student_1",
+      studentName: context.currentUser?.name || "Student",
+      awardedDate: "2024-12-20T10:00:00Z",
+      awardedBy: "Elena Rodriguez",
+      awardMethod: "automatic",
+      status: "active",
+      verificationCode: "RM-2024-003-DEF",
+      socialShareEnabled: true,
+      finalGrade: 95,
+      finalAttendance: 100,
+      projectsCompleted: 6,
+      skillsAchieved: [
+        "raku firing",
+        "post-firing reduction",
+        "safety protocols",
+      ],
+      instructorNotes: "Exceptional skill and safety awareness in raku firing.",
       displayOnProfile: true,
     },
   ];
 
-  // Mock posts data for Instagram-like grid
+  // Featured portfolio pieces
+  const featuredWorks = [
+    {
+      id: "1",
+      title: "Ocean Waves Bowl Series",
+      image:
+        "https://images.unsplash.com/photo-1493106819501-66d381c466f1?w=600&h=600&fit=crop",
+      description: "Hand-thrown porcelain bowls with crystalline blue glaze",
+      technique: "Wheel Throwing, Crystalline Glaze",
+      year: "2024",
+      featured: true,
+    },
+    {
+      id: "2",
+      title: "Textured Vase Collection",
+      image:
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=600&h=600&fit=crop",
+      description: "Sculptural vases with organic texture patterns",
+      technique: "Hand Building, Sgraffito",
+      year: "2024",
+      featured: true,
+    },
+    {
+      id: "3",
+      title: "Minimalist Serving Set",
+      image:
+        "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&h=600&fit=crop",
+      description: "Clean lines and matte white glaze for modern dining",
+      technique: "Wheel Throwing, High Fire",
+      year: "2023",
+      featured: true,
+    },
+    {
+      id: "4",
+      title: "Raku Fired Sculpture",
+      image:
+        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&h=600&fit=crop",
+      description: "Abstract form with copper reduction effects",
+      technique: "Raku Firing, Post-Fire Reduction",
+      year: "2024",
+      featured: false,
+    },
+    {
+      id: "5",
+      title: "Nerikomi Platter",
+      image:
+        "https://images.unsplash.com/photo-1615571022219-eb45cf7faa9d?w=600&h=600&fit=crop",
+      description: "Intricate colored clay pattern work",
+      technique: "Nerikomi, Slab Building",
+      year: "2023",
+      featured: false,
+    },
+    {
+      id: "6",
+      title: "Functional Teapot",
+      image:
+        "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=600&h=600&fit=crop",
+      description: "Ergonomic design with celadon glaze",
+      technique: "Wheel Throwing, Altered Forms",
+      year: "2024",
+      featured: false,
+    },
+  ];
+
+  // Mock posts data
   const mockPosts = [
     {
       id: 1,
       image:
         "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop",
-      likes: 124,
-      comments: 18,
-      title: "Morning wheel session with our intermediate students",
-      date: "2025-01-10",
+      likes: 342,
+      comments: 28,
+      caption: "Working on a new series of porcelain bowls 🌊",
     },
     {
       id: 2,
       image:
         "https://images.unsplash.com/photo-1465408953385-7c4627c2d4a6?w=400&h=400&fit=crop",
-      likes: 89,
-      comments: 12,
-      title: "Exploring new glaze combinations in our test kiln",
-      date: "2025-01-08",
+      likes: 256,
+      comments: 19,
+      caption: "Testing new crystalline glaze recipes ✨",
     },
     {
       id: 3,
       image:
         "https://images.unsplash.com/photo-1595475116879-45f4495e6db5?w=400&h=400&fit=crop",
-      likes: 156,
-      comments: 24,
-      title: "Fresh pieces from our weekend intensive workshop",
-      date: "2025-01-06",
+      likes: 428,
+      comments: 45,
+      caption: "Fresh out of the kiln! Love these copper reds",
     },
     {
       id: 4,
       image:
         "https://images.unsplash.com/photo-1593826988276-b9d8e3b74282?w=400&h=400&fit=crop",
-      likes: 67,
-      comments: 8,
-      title: "Behind the scenes: Loading the large reduction kiln",
-      date: "2025-01-05",
+      likes: 189,
+      comments: 12,
+      caption: "Hand building workshop was amazing today!",
     },
     {
       id: 5,
       image:
         "https://images.unsplash.com/photo-1543254382-96cd0c0b8746?w=400&h=400&fit=crop",
-      likes: 203,
-      comments: 31,
-      title: "Student showcase: Amazing texture work by Lisa",
-      date: "2025-01-03",
+      likes: 512,
+      comments: 67,
+      caption: "Raku firing session - always magical ✨",
     },
     {
       id: 6,
       image:
         "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=400&fit=crop",
-      likes: 112,
-      comments: 15,
-      title: "Raku firing session - always magical results",
-      date: "2025-01-01",
+      likes: 298,
+      comments: 34,
+      caption: "Process shot: trimming fresh thrown pieces",
     },
   ];
 
-  // Mock shop items for studio
-  const mockShopItems = [
+  // Mock marketplace items
+  const marketplaceItems = [
     {
-      id: 1,
-      name: "Handcrafted Ceramic Bowl",
-      price: 45,
+      id: "1",
       image:
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop",
-      artist: "Sarah Martinez",
-      inStock: true,
+        "https://images.unsplash.com/photo-1493106819501-66d381c466f1?w=400&h=400&fit=crop",
+      title: "Ocean Waves Serving Bowl",
+      price: 125.0,
+      available: true,
+      views: 456,
+      likes: 89,
     },
     {
-      id: 2,
-      name: "Glazed Pottery Mug Set",
-      price: 65,
+      id: "2",
       image:
-        "https://images.unsplash.com/photo-1465408953385-7c4627c2d4a6?w=300&h=300&fit=crop",
-      artist: "Mike Chen",
-      inStock: true,
+        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=400&h=400&fit=crop",
+      title: "Textured Vase - Medium",
+      price: 95.0,
+      available: true,
+      views: 312,
+      likes: 67,
     },
     {
-      id: 3,
-      name: "Decorative Vase - Blue Glaze",
-      price: 89,
+      id: "3",
       image:
-        "https://images.unsplash.com/photo-1595475116879-45f4495e6db5?w=300&h=300&fit=crop",
-      artist: "Elena Rodriguez",
-      inStock: false,
+        "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=400&h=400&fit=crop",
+      title: "Minimalist Planter Set (3pc)",
+      price: 145.0,
+      available: false,
+      views: 678,
+      likes: 134,
     },
     {
-      id: 4,
-      name: "Ceramic Planter Set",
-      price: 120,
+      id: "4",
       image:
-        "https://images.unsplash.com/photo-1593826988276-b9d8e3b74282?w=300&h=300&fit=crop",
-      artist: "David Kim",
-      inStock: true,
+        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=400&fit=crop",
+      title: "Raku Bowl - Copper Reduction",
+      price: 185.0,
+      available: true,
+      views: 523,
+      likes: 156,
     },
     {
-      id: 5,
-      name: "Artisan Dinner Plates",
-      price: 180,
+      id: "5",
       image:
-        "https://images.unsplash.com/photo-1543254382-96cd0c0b8746?w=300&h=300&fit=crop",
-      artist: "Lisa Park",
-      inStock: true,
+        "https://images.unsplash.com/photo-1615571022219-eb45cf7faa9d?w=400&h=400&fit=crop",
+      title: "Ceramic Mug - Celadon Glaze",
+      price: 45.0,
+      available: true,
+      views: 892,
+      likes: 201,
     },
     {
-      id: 6,
-      name: "Raku Fired Bowl",
-      price: 95,
+      id: "6",
       image:
-        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=300&h=300&fit=crop",
-      artist: "Tom Wilson",
-      inStock: true,
-    },
-  ];
-
-  // Mock classes for studio
-  const mockClasses = [
-    {
-      id: 1,
-      name: "Beginner Wheel Throwing",
-      description:
-        "Learn the fundamentals of wheel throwing in our comprehensive 6-week course.",
-      price: 280,
-      duration: "6 weeks",
-      level: "Beginner",
-      image:
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
-      instructor: "Sarah Martinez",
-      schedule: "Thursdays 7-9 PM",
-      spotsLeft: 3,
-    },
-    {
-      id: 2,
-      name: "Advanced Glazing Techniques",
-      description:
-        "Explore advanced glazing methods including layering, crystalline, and reduction techniques.",
-      price: 320,
-      duration: "4 weeks",
-      level: "Advanced",
-      image:
-        "https://images.unsplash.com/photo-1465408953385-7c4627c2d4a6?w=400&h=250&fit=crop",
-      instructor: "Mike Chen",
-      schedule: "Saturdays 10 AM-1 PM",
-      spotsLeft: 5,
-    },
-    {
-      id: 3,
-      name: "Handbuilding Intensive",
-      description:
-        "Master coil, slab, and pinch techniques in this hands-on workshop series.",
-      price: 350,
-      duration: "5 weeks",
-      level: "Intermediate",
-      image:
-        "https://images.unsplash.com/photo-1595475116879-45f4495e6db5?w=400&h=250&fit=crop",
-      instructor: "Elena Rodriguez",
-      schedule: "Tuesdays 6-8:30 PM",
-      spotsLeft: 2,
+        "https://images.unsplash.com/photo-1603006905003-be475563bc59?w=400&h=400&fit=crop",
+      title: "Artisan Dinner Plate Set (4pc)",
+      price: 220.0,
+      available: true,
+      views: 734,
+      likes: 178,
     },
   ];
-
-  // Mock blog posts for studio
-  const mockBlogPosts = [
-    {
-      id: 1,
-      title: "The Art of Raku Firing: Ancient Techniques for Modern Pottery",
-      excerpt:
-        "Discover the magical process of raku firing and how it creates unique, unpredictable glazes that have captivated ceramicists for centuries.",
-      image:
-        "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400&h=250&fit=crop",
-      author: "Sarah Martinez",
-      date: "2025-01-08",
-      readTime: "8 min read",
-      category: "Techniques",
-    },
-    {
-      id: 2,
-      title: "Choosing the Right Clay Body for Your Project",
-      excerpt:
-        "Understanding the different properties of clay bodies and how to select the perfect one for your specific pottery goals.",
-      image:
-        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
-      author: "Mike Chen",
-      date: "2025-01-05",
-      readTime: "6 min read",
-      category: "Materials",
-    },
-    {
-      id: 3,
-      title: "Studio Spotlight: Student Success Stories",
-      excerpt:
-        "Meet some of our amazing students and learn about their pottery journeys, from first wheel session to confident ceramic artists.",
-      image:
-        "https://images.unsplash.com/photo-1543254382-96cd0c0b8746?w=400&h=250&fit=crop",
-      author: "Elena Rodriguez",
-      date: "2025-01-03",
-      readTime: "10 min read",
-      category: "Community",
-    },
-  ];
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
 
   const handleSave = () => {
-    if (!currentUser) return;
+    if (!context.currentUser) return;
 
-    const updatedUser: UserType = {
-      ...currentUser,
+    const updatedUser = {
+      ...context.currentUser,
       profile: editedProfile,
     };
-
-    // bubble up to parent (Home) so it can store this in state
-    onProfileUpdated?.(updatedUser);
-
+    context.setCurrentUser(updatedUser);
     setIsEditing(false);
     toast.success("Profile updated successfully");
   };
 
   const handleCancel = () => {
     setEditedProfile(
-      currentUser?.profile || {
+      context.currentUser?.profile || {
         bio: "",
         socialMedia: {},
         branding: { primaryColor: "#030213" },
@@ -382,48 +386,7 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
     setIsEditing(false);
   };
 
-  const getSocialIcon = (platform: string) => {
-    const iconClass = "w-5 h-5";
-    switch (platform) {
-      case "instagram":
-        return <Instagram className={iconClass} />;
-      case "twitter":
-        return <Twitter className={iconClass} />;
-      case "facebook":
-        return <Facebook className={iconClass} />;
-      case "website":
-        return <Globe className={iconClass} />;
-      default:
-        return <ExternalLink className={iconClass} />;
-    }
-  };
-
-  const getSocialUrl = (platform: string, value: string) => {
-    switch (platform) {
-      case "instagram":
-        return `https://instagram.com/${value.replace("@", "")}`;
-      case "twitter":
-        return `https://twitter.com/${value.replace("@", "")}`;
-      case "facebook":
-        return value.startsWith("http")
-          ? value
-          : `https://facebook.com/${value}`;
-      case "website":
-        return value.startsWith("http") ? value : `https://${value}`;
-      default:
-        return value;
-    }
-  };
-
-  const copyBadgeUrl = (badge: StudentBadge) => {
-    const badgeUrl = `${window.location.origin}/badge/${badge.verificationCode}`;
-    navigator.clipboard.writeText(badgeUrl);
-    setCopiedBadge(badge.id);
-    setTimeout(() => setCopiedBadge(null), 2000);
-    toast.success("Badge URL copied to clipboard");
-  };
-
-  if (!currentUser) {
+  if (!context.currentUser) {
     return (
       <div className="max-w-4xl mx-auto p-8 text-center py-16">
         <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -437,721 +400,1050 @@ export function ArtistProfile({ onProfileUpdated }: ArtistProfileProps) {
     );
   }
 
-  const isStudio = currentUser.activeMode === "studio" && currentStudio;
-
   return (
-    <TooltipProvider>
-      <div className="max-w-6xl mx-auto">
-        {/* Header Section */}
-        <div className="bg-gradient-to-b from-background to-background/80 border-b">
-          <div className="p-4 md:p-8">
-            {/* Profile Header */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:space-x-12 space-y-8 lg:space-y-0">
-              {/* Profile Picture */}
-              <div className="flex justify-center lg:justify-start">
-                <div className="relative group">
-                  <Avatar className="w-40 h-40 border-4 border-background shadow-xl">
-                    <AvatarImage
-                      src={editedProfile.profileImage}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/20 to-secondary/20">
-                      {getInitials(currentUser.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isEditing && (
-                    <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-8 h-8 text-white" />
-                    </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Hero Section */}
+      <div className="relative mb-12">
+        {/* Cover/Hero Image */}
+        <div
+          className="relative w-full rounded-xl overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-background"
+          style={{ aspectRatio: "21/6" }}
+        >
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=400&fit=crop')] bg-cover bg-center opacity-20" />
+          {isEditing && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute top-4 right-4 z-10"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              Change Cover
+            </Button>
+          )}
+        </div>
+
+        {/* Profile Info */}
+        <div className="relative -mt-20 px-6 md:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            {/* Avatar and Basic Info */}
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+              <div className="relative group">
+                <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${portfolioData.name}`}
+                  />
+                  <AvatarFallback>
+                    {portfolioData.name.substring(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                {isEditing && (
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute bottom-0 right-0 rounded-full"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="text-center md:text-left pb-2">
+                {isEditing ? (
+                  <Input
+                    value={portfolioData.name}
+                    onChange={(e) =>
+                      setPortfolioData({
+                        ...portfolioData,
+                        name: e.target.value,
+                      })
+                    }
+                    className="text-2xl mb-2"
+                    placeholder="Your Name"
+                  />
+                ) : (
+                  <h1 className="mb-1">{portfolioData.name}</h1>
+                )}
+                {isEditing ? (
+                  <Input
+                    value={portfolioData.title}
+                    onChange={(e) =>
+                      setPortfolioData({
+                        ...portfolioData,
+                        title: e.target.value,
+                      })
+                    }
+                    className="mb-2"
+                    placeholder="Your Title"
+                  />
+                ) : (
+                  <p className="text-muted-foreground mb-2">
+                    {portfolioData.title}
+                  </p>
+                )}
+                <div className="flex items-center gap-4 justify-center md:justify-start text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{portfolioData.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Member since {portfolioData.memberSince}</span>
+                  </div>
+                </div>
+                {/* Social Links */}
+                <div className="flex items-center gap-2 mt-3 justify-center md:justify-start">
+                  {portfolioData.socialMedia.instagram && (
+                    <a
+                      href={`https://instagram.com/${portfolioData.socialMedia.instagram.replace(
+                        "@",
+                        ""
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                    >
+                      <Instagram className="w-4 h-4" />
+                    </a>
+                  )}
+                  {portfolioData.socialMedia.facebook && (
+                    <a
+                      href={`https://facebook.com/${portfolioData.socialMedia.facebook}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </a>
+                  )}
+                  {portfolioData.socialMedia.website && (
+                    <a
+                      href={`https://${portfolioData.socialMedia.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                    </a>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Profile Info */}
-              <div className="flex-1 space-y-6">
-                {/* Top Row - Name and Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl md:text-3xl font-light tracking-tight">
-                      {currentUser.name}
-                    </h1>
-                    <p className="text-muted-foreground">
-                      @{currentUser.handle}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    {!isEditing ? (
-                      <>
-                        {isStudio ? (
-                          <Button className="flex-1 sm:flex-none">
-                            <Phone className="w-4 h-4 mr-2" />
-                            Contact Studio
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="default"
-                            onClick={() => setIsEditing(true)}
-                            className="flex-1 sm:flex-none"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Profile
-                          </Button>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="default" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Share className="w-4 h-4 mr-2" />
-                              Share Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Copy className="w-4 h-4 mr-2" />
-                              Copy Profile URL
-                            </DropdownMenuItem>
-                            {isStudio && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                  <Navigation className="w-4 h-4 mr-2" />
-                                  Get Directions
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="outline" onClick={handleCancel}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleSave}>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stats Row */}
-                <div className="flex justify-center lg:justify-start">
-                  <div className="flex space-x-8 md:space-x-12">
-                    <div className="text-center">
-                      <div className="text-xl md:text-2xl font-semibold">
-                        {mockPosts.length}
-                      </div>
-                      <div className="text-sm text-muted-foreground">posts</div>
-                    </div>
-                    {isStudio ? (
-                      <>
-                        <div className="text-center">
-                          <div className="text-xl md:text-2xl font-semibold">
-                            250+
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            members
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xl md:text-2xl font-semibold">
-                            12
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            classes
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xl md:text-2xl font-semibold">
-                            4.9
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            rating
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-center">
-                          <div className="text-xl md:text-2xl font-semibold">
-                            2.8k
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            followers
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xl md:text-2xl font-semibold">
-                            312
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            following
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Bio and Details */}
-                <div className="space-y-4">
-                  {/* Badges and Type */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {isStudio ? "Pottery Studio" : "Artist"}
-                    </Badge>
-                    {currentUser.subscription && (
-                      <Badge variant="secondary" className="text-xs capitalize">
-                        {currentUser.subscription === "free"
-                          ? "Free"
-                          : currentUser.subscription === "passion"
-                          ? "Passion"
-                          : currentUser.subscription === "small-artist"
-                          ? "Artist"
-                          : "Studio Pro"}
-                      </Badge>
-                    )}
-                    {!isStudio &&
-                      mockBadges.filter((b) => b.status === "active").length >
-                        0 && (
-                        <Badge
-                          variant="default"
-                          className="flex items-center space-x-1 text-xs"
-                        >
-                          <Trophy className="w-3 h-3" />
-                          <span>
-                            {
-                              mockBadges.filter((b) => b.status === "active")
-                                .length
-                            }
-                          </span>
-                        </Badge>
-                      )}
-                  </div>
-
-                  {/* Bio */}
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="bio" className="text-sm">
-                        Bio
-                      </Label>
-                      <Textarea
-                        id="bio"
-                        value={editedProfile.bio}
-                        onChange={(e) =>
-                          setEditedProfile((prev) => ({
-                            ...prev,
-                            bio: e.target.value,
-                          }))
-                        }
-                        placeholder={
-                          isStudio
-                            ? "Tell people about your studio..."
-                            : "Tell people about your pottery journey..."
-                        }
-                        rows={3}
-                        className="resize-none"
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {editedProfile.bio ||
-                          (isStudio
-                            ? "A welcoming pottery studio offering classes for all skill levels. Join our community of ceramic artists and discover the joy of working with clay! 🏺"
-                            : "Passionate ceramic artist exploring traditional and contemporary techniques. 🏺✨")}
-                      </p>
-                      {/* Studio Info */}
-                      {isStudio && (
-                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>Portland, OR</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>Est. 2018</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4" />
-                            <span>Mon-Sat 9AM-9PM</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Phone className="w-4 h-4" />
-                            <span>(503) 555-0123</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Social Links */}
-                  <div className="flex space-x-4">
-                    {Object.entries(editedProfile.socialMedia)
-                      .filter(([_, value]) => value)
-                      .map(([platform, value]) => (
-                        <Tooltip key={platform}>
-                          <TooltipTrigger asChild>
-                            <a
-                              href={getSocialUrl(platform, value)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-accent rounded-lg"
-                            >
-                              {getSocialIcon(platform)}
-                            </a>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="capitalize">{platform}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                  </div>
-                </div>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2 justify-center md:justify-end pb-2">
+              {!isEditing ? (
+                <Button onClick={() => setIsEditing(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Portfolio
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={handleCancel}>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Content Tabs */}
-        <Tabs defaultValue="posts" className="w-full">
-          <div className="border-b bg-background/80 backdrop-blur-sm sticky top-16 z-10">
-            <div className="px-4 md:px-8">
-              <TabsList className="bg-transparent border-none h-auto p-0 w-full justify-center">
-                <TabsTrigger
-                  value="posts"
-                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-6 py-4 text-sm font-medium"
-                >
-                  <Grid3X3 className="w-4 h-4 mr-2" />
-                  POSTS
-                </TabsTrigger>
-                {isStudio ? (
-                  <>
-                    <TabsTrigger
-                      value="shop"
-                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-6 py-4 text-sm font-medium"
-                    >
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      SHOP
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="classes"
-                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-6 py-4 text-sm font-medium"
-                    >
-                      <GraduationCap className="w-4 h-4 mr-2" />
-                      CLASSES
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="blog"
-                      className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-6 py-4 text-sm font-medium"
-                    >
-                      <BookOpen className="w-4 h-4 mr-2" />
-                      BLOG
-                    </TabsTrigger>
-                  </>
-                ) : (
-                  <TabsTrigger
-                    value="badges"
-                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-b-primary rounded-none px-6 py-4 text-sm font-medium"
-                  >
-                    <Trophy className="w-4 h-4 mr-2" />
-                    BADGES (
-                    {mockBadges.filter((b) => b.status === "active").length})
-                  </TabsTrigger>
-                )}
-              </TabsList>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold mb-1">
+              {portfolioData.stats.piecesCreated}
             </div>
-          </div>
+            <div className="text-sm text-muted-foreground">Pieces Created</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold mb-1">
+              {portfolioData.stats.exhibitions}
+            </div>
+            <div className="text-sm text-muted-foreground">Exhibitions</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold mb-1">
+              {portfolioData.stats.yearsActive}
+            </div>
+            <div className="text-sm text-muted-foreground">Years Active</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold mb-1">
+              {portfolioData.stats.studiosWorked}
+            </div>
+            <div className="text-sm text-muted-foreground">Studios Worked</div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Posts Grid */}
-          <TabsContent value="posts" className="mt-0 p-4 md:p-8">
-            {mockPosts.length > 0 ? (
-              <div className="grid grid-cols-3 gap-1 md:gap-4">
-                {mockPosts.map((post) => (
-                  <Dialog key={post.id}>
-                    <DialogTrigger asChild>
-                      <div className="aspect-square relative group cursor-pointer overflow-hidden rounded-lg md:rounded-xl">
-                        <img
-                          src={post.image}
-                          alt={post.title}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-6">
-                          <div className="flex items-center text-white font-semibold">
-                            <Heart className="w-5 h-5 mr-2" />
-                            <span>{post.likes}</span>
-                          </div>
-                          <div className="flex items-center text-white font-semibold">
-                            <MessageCircle className="w-5 h-5 mr-2" />
-                            <span>{post.comments}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl p-0">
-                      <div className="grid md:grid-cols-2 h-[80vh]">
-                        <div className="relative">
-                          <img
-                            src={post.image}
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="p-6 flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center space-x-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage src={editedProfile.profileImage} />
-                                <AvatarFallback className="text-xs">
-                                  {getInitials(currentUser.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span>{currentUser.name}</span>
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="flex-1 mt-4 space-y-2">
-                            <p className="text-sm font-medium">{post.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {post.date}
-                            </p>
-                          </div>
-                          <div className="border-t pt-4 mt-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex space-x-4">
-                                <Button variant="ghost" size="sm">
-                                  <Heart className="w-4 h-4 mr-2" />
-                                  {post.likes}
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                  <MessageCircle className="w-4 h-4 mr-2" />
-                                  {post.comments}
-                                </Button>
-                              </div>
-                              <Button variant="ghost" size="sm">
-                                <Share className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 space-y-6">
-                <div className="w-24 h-24 mx-auto bg-muted rounded-full flex items-center justify-center">
-                  <Camera className="w-12 h-12 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">No Posts Yet</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Start sharing your pottery journey! Upload photos of your
-                    latest creations and connect with the community.
+      {/* Main Content with Tabs */}
+      <Tabs defaultValue="portfolio" className="w-full">
+        <TabsList className="grid w-full max-w-lg mb-8 grid-cols-3">
+          <TabsTrigger value="portfolio" className="flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            Portfolio
+          </TabsTrigger>
+          <TabsTrigger value="posts" className="flex items-center gap-2">
+            <Grid3X3 className="w-4 h-4" />
+            Posts
+          </TabsTrigger>
+          <TabsTrigger value="marketplace" className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4" />
+            Marketplace
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Portfolio Tab */}
+        <TabsContent value="portfolio">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* About Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    About
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isEditing ? (
+                    <Textarea
+                      value={portfolioData.bio}
+                      onChange={(e) =>
+                        setPortfolioData({
+                          ...portfolioData,
+                          bio: e.target.value,
+                        })
+                      }
+                      rows={6}
+                      className="w-full"
+                      placeholder="Tell us about yourself..."
+                    />
+                  ) : (
+                    <p className="text-muted-foreground leading-relaxed">
+                      {portfolioData.bio}
+                    </p>
+                  )}
+                  <p className="text-sm text-muted-foreground italic mt-4">
+                    {portfolioData.tagline}
                   </p>
-                </div>
-                <Button>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Create Your First Post
-                </Button>
-              </div>
-            )}
-          </TabsContent>
+                </CardContent>
+              </Card>
 
-          {/* Shop Tab (Studio Only) */}
-          {isStudio && (
-            <TabsContent value="shop" className="mt-0 p-4 md:p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Studio Shop</h2>
-                  <Button variant="outline">
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    View All Items
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockShopItems.map((item) => (
-                    <Card
-                      key={item.id}
-                      className="overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
-                    >
-                      <div className="aspect-square relative">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              {/* Featured Works */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Featured Works
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {featuredWorks
+                      .filter((w) => w.featured)
+                      .map((work) => (
+                        <div
+                          key={work.id}
+                          className="group relative rounded-lg overflow-hidden cursor-pointer"
+                        >
+                          <div className="aspect-square bg-muted">
+                            <ImageWithFallback
+                              src={work.image}
+                              alt={work.title}
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            />
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                              <h4 className="font-medium mb-1 text-sm">
+                                {work.title}
+                              </h4>
+                              <p className="text-xs text-white/80 mb-2 line-clamp-2">
+                                {work.description}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-white/70">
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-white/20 text-white border-0 text-xs"
+                                >
+                                  {work.technique}
+                                </Badge>
+                                <span>{work.year}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* All Portfolio Pieces */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5" />
+                    All Works
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {featuredWorks.map((work) => (
+                      <div
+                        key={work.id}
+                        className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer bg-muted"
+                      >
+                        <ImageWithFallback
+                          src={work.image}
+                          alt={work.title}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-110"
                         />
-                        {!item.inStock && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <Badge variant="secondary">Sold Out</Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-medium text-sm mb-1">
-                          {item.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          by {item.artist}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold">${item.price}</span>
-                          <Button size="sm" disabled={!item.inStock}>
-                            {item.inStock ? "Add to Cart" : "Sold Out"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-          )}
-
-          {/* Classes Tab (Studio Only) */}
-          {isStudio && (
-            <TabsContent value="classes" className="mt-0 p-4 md:p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Available Classes</h2>
-                  <Button variant="outline">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    View Schedule
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {mockClasses.map((classItem) => (
-                    <Card key={classItem.id} className="overflow-hidden">
-                      <div className="md:flex">
-                        <div className="md:w-1/3">
-                          <AspectRatio ratio={4 / 3}>
-                            <img
-                              src={classItem.image}
-                              alt={classItem.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </AspectRatio>
-                        </div>
-                        <CardContent className="md:w-2/3 p-6">
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h3 className="font-semibold">
-                                  {classItem.name}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {classItem.instructor}
-                                </p>
-                              </div>
-                              <Badge variant="outline">{classItem.level}</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {classItem.description}
-                            </p>
-                            <div className="flex items-center space-x-4 text-sm">
-                              <div className="flex items-center space-x-1">
-                                <Clock className="w-4 h-4" />
-                                <span>{classItem.duration}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Calendar className="w-4 h-4" />
-                                <span>{classItem.schedule}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-semibold text-lg">
-                                  ${classItem.price}
-                                </span>
-                                <p className="text-xs text-muted-foreground">
-                                  {classItem.spotsLeft} spots left
-                                </p>
-                              </div>
-                              <Button>Enroll Now</Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-          )}
-
-          {/* Blog Tab (Studio Only) */}
-          {isStudio && (
-            <TabsContent value="blog" className="mt-0 p-4 md:p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Studio Blog</h2>
-                  <Button variant="outline">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    View All Posts
-                  </Button>
-                </div>
-                <div className="space-y-6">
-                  {mockBlogPosts.map((post) => (
-                    <Card
-                      key={post.id}
-                      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                    >
-                      <div className="md:flex">
-                        <div className="md:w-1/3">
-                          <AspectRatio ratio={16 / 9}>
-                            <img
-                              src={post.image}
-                              alt={post.title}
-                              className="w-full h-full object-cover"
-                            />
-                          </AspectRatio>
-                        </div>
-                        <CardContent className="md:w-2/3 p-6">
-                          <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="secondary">{post.category}</Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {post.readTime}
-                              </span>
-                            </div>
-                            <h3 className="text-xl font-semibold hover:text-primary transition-colors">
-                              {post.title}
-                            </h3>
-                            <p className="text-muted-foreground">
-                              {post.excerpt}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                <span>by {post.author}</span>
-                                <span>•</span>
-                                <span>
-                                  {new Date(post.date).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <Button variant="ghost" size="sm">
-                                Read More
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-          )}
-
-          {/* Badges Tab (Artist Only) */}
-          {!isStudio && (
-            <TabsContent value="badges" className="mt-4 p-4 md:p-8">
-              {mockBadges.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Featured Badges */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {mockBadges.slice(0, 4).map((badge) => (
-                      <Card key={badge.id} className="relative overflow-hidden">
-                        <CardContent className="p-4 text-center space-y-3">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                            <Trophy className="w-8 h-8 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-sm">
-                              Badge Earned
-                            </h4>
-                            <p className="text-xs text-muted-foreground">
-                              Grade: {badge.finalGrade}% • Attendance:{" "}
-                              {badge.finalAttendance}%
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-4">
+                            <p className="font-medium text-sm">{work.title}</p>
+                            <p className="text-xs text-white/80 mt-1">
+                              {work.year}
                             </p>
                           </div>
-                          <div className="flex space-x-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => copyBadgeUrl(badge)}
-                                  className="flex-1"
-                                >
-                                  {copiedBadge === badge.id ? (
-                                    <Check className="w-3 h-3" />
-                                  ) : (
-                                    <Copy className="w-3 h-3" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Copy verification URL</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="flex-1"
-                                >
-                                  <Share className="w-3 h-3" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Share badge</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Skills Summary */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Star className="w-5 h-5" />
-                        <span>Skills Mastered</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.from(
-                          new Set(mockBadges.flatMap((b) => b.skillsAchieved))
-                        ).map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="capitalize"
+              {/* Exhibitions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Exhibitions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <>
+                      {portfolioData.exhibitions.map((exhibition, index) => (
+                        <div
+                          key={index}
+                          className="space-y-2 p-3 border rounded-lg relative"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                              const newExhibitions =
+                                portfolioData.exhibitions.filter(
+                                  (_, i) => i !== index
+                                );
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
                           >
-                            {skill}
-                          </Badge>
-                        ))}
+                            <X className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            value={exhibition.title}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                title: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Exhibition Title"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.venue}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                venue: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Venue"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.year}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                year: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Year"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.link || ""}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                link: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Link (optional)"
+                            className="text-sm"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setPortfolioData({
+                            ...portfolioData,
+                            exhibitions: [
+                              ...portfolioData.exhibitions,
+                              { title: "", venue: "", year: "", link: "" },
+                            ],
+                          });
+                        }}
+                      >
+                        + Add Exhibition
+                      </Button>
+                    </>
+                  ) : (
+                    portfolioData.exhibitions.map((exhibition, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="font-medium text-sm">
+                          {exhibition.title}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {exhibition.venue}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {exhibition.year}
+                        </div>
+                        {exhibition.link && (
+                          <a
+                            href={exhibition.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View Exhibition
+                          </a>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <div className="text-center py-16 space-y-6">
-                  <div className="w-24 h-24 mx-auto bg-muted rounded-full flex items-center justify-center">
-                    <Trophy className="w-12 h-12 text-muted-foreground" />
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Education */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5" />
+                    Education
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <>
+                      {portfolioData.education.map((edu, index) => (
+                        <div
+                          key={index}
+                          className="space-y-2 p-3 border rounded-lg relative"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                              const newEducation =
+                                portfolioData.education.filter(
+                                  (_, i) => i !== index
+                                );
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            value={edu.degree}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                degree: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Degree"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={edu.institution}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                institution: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Institution"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={edu.year}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                year: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Year"
+                            className="text-sm"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setPortfolioData({
+                            ...portfolioData,
+                            education: [
+                              ...portfolioData.education,
+                              { degree: "", institution: "", year: "" },
+                            ],
+                          });
+                        }}
+                      >
+                        + Add Education
+                      </Button>
+                    </>
+                  ) : (
+                    portfolioData.education.map((edu, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="font-medium text-sm">{edu.degree}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {edu.institution}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {edu.year}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Exhibitions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Exhibitions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <>
+                      {portfolioData.exhibitions.map((exhibition, index) => (
+                        <div
+                          key={index}
+                          className="space-y-2 p-3 border rounded-lg relative"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                              const newExhibitions =
+                                portfolioData.exhibitions.filter(
+                                  (_, i) => i !== index
+                                );
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            value={exhibition.title}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                title: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Exhibition Title"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.venue}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                venue: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Venue"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.year}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                year: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Year"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={exhibition.link || ""}
+                            onChange={(e) => {
+                              const newExhibitions = [
+                                ...portfolioData.exhibitions,
+                              ];
+                              newExhibitions[index] = {
+                                ...exhibition,
+                                link: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                exhibitions: newExhibitions,
+                              });
+                            }}
+                            placeholder="Link (optional)"
+                            className="text-sm"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setPortfolioData({
+                            ...portfolioData,
+                            exhibitions: [
+                              ...portfolioData.exhibitions,
+                              { title: "", venue: "", year: "", link: "" },
+                            ],
+                          });
+                        }}
+                      >
+                        + Add Exhibition
+                      </Button>
+                    </>
+                  ) : (
+                    portfolioData.exhibitions.map((exhibition, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="font-medium text-sm">
+                          {exhibition.title}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {exhibition.venue}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {exhibition.year}
+                        </div>
+                        {exhibition.link && (
+                          <a
+                            href={exhibition.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View Exhibition
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Education */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5" />
+                    Education
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEditing ? (
+                    <>
+                      {portfolioData.education.map((edu, index) => (
+                        <div
+                          key={index}
+                          className="space-y-2 p-3 border rounded-lg relative"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                              const newEducation =
+                                portfolioData.education.filter(
+                                  (_, i) => i !== index
+                                );
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            value={edu.degree}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                degree: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Degree"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={edu.institution}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                institution: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Institution"
+                            className="text-sm"
+                          />
+                          <Input
+                            value={edu.year}
+                            onChange={(e) => {
+                              const newEducation = [...portfolioData.education];
+                              newEducation[index] = {
+                                ...edu,
+                                year: e.target.value,
+                              };
+                              setPortfolioData({
+                                ...portfolioData,
+                                education: newEducation,
+                              });
+                            }}
+                            placeholder="Year"
+                            className="text-sm"
+                          />
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setPortfolioData({
+                            ...portfolioData,
+                            education: [
+                              ...portfolioData.education,
+                              { degree: "", institution: "", year: "" },
+                            ],
+                          });
+                        }}
+                      >
+                        + Add Education
+                      </Button>
+                    </>
+                  ) : (
+                    portfolioData.education.map((edu, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="font-medium text-sm">{edu.degree}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {edu.institution}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {edu.year}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Specialties */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="w-5 h-5" />
+                    Specialties
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {portfolioData.specialties.map((specialty, index) => (
+                      <Badge key={index} variant="secondary">
+                        {specialty}
+                      </Badge>
+                    ))}
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">No Badges Yet</h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      Complete classes and achieve learning milestones to earn
-                      badges that showcase your pottery skills.
-                    </p>
+                </CardContent>
+              </Card>
+
+              {/* Techniques */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Flame className="w-5 h-5" />
+                    Techniques
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {portfolioData.techniques.map((technique, index) => (
+                      <Badge key={index} variant="outline">
+                        {technique}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Certifications & Badges */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    Certifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3">
+                    {mockBadges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="relative group cursor-pointer"
+                      >
+                        <div className="aspect-square rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                          <Award className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="absolute inset-0 bg-black/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                          <p className="text-white text-xs text-center">
+                            {badge.skillsAchieved.join(", ")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Posts Tab */}
+        <TabsContent value="posts">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {mockPosts.map((post) => (
+              <div
+                key={post.id}
+                className="group relative aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer"
+              >
+                <ImageWithFallback
+                  src={post.image}
+                  alt={post.caption}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="flex gap-4 text-white">
+                    <div className="flex items-center gap-1">
+                      <Heart className="w-5 h-5 fill-white" />
+                      <span>{post.likes}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-5 h-5 fill-white" />
+                      <span>{post.comments}</span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </TabsContent>
-          )}
-        </Tabs>
-      </div>
-    </TooltipProvider>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white text-sm line-clamp-2">
+                    {post.caption}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Marketplace Tab */}
+        <TabsContent value="marketplace">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {marketplaceItems.map((item) => (
+              <Card
+                key={item.id}
+                className="group cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <div className="relative aspect-square overflow-hidden rounded-t-lg bg-muted">
+                  <ImageWithFallback
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  />
+                  {!item.available && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Badge variant="secondary" className="text-lg">
+                        SOLD
+                      </Badge>
+                    </div>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast.success("Added to favorites!");
+                    }}
+                  >
+                    <Heart className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-medium mb-1 line-clamp-1">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-lg font-bold">
+                      ${item.price.toFixed(2)}
+                    </span>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        <span>{item.views}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-4 h-4" />
+                        <span>{item.likes}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {item.available ? (
+                    <Button
+                      className="w-full"
+                      onClick={() => toast.success("Added to cart!")}
+                    >
+                      <ShoppingBag className="w-4 h-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  ) : (
+                    <Button className="w-full" variant="outline" disabled>
+                      Sold Out
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

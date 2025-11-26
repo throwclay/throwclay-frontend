@@ -1206,6 +1206,11 @@ export interface StudioMembership {
   lastActivity?: string | Date | null;
   startDate?: string;
 
+  role?: StudioRole;
+  studioName?: string;
+  studioHandle?: string;
+  locationName?: string | null;
+
   // Room for whatever else you already have:
   createdAt?: string;
   updatedAt?: string;
@@ -1298,6 +1303,9 @@ export type AppContextType = {
 
   currentMembership: StudioMembership | null;
   setCurrentMembership: (m: StudioMembership | null) => void;
+
+  studioMemberships: StudioMembership[];
+  setStudioMemberships: (ms: StudioMembership[]) => void;
 
   currentThrow: PotteryEntry | null;
   setCurrentThrow: (t: PotteryEntry | null) => void;
