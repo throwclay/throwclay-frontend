@@ -5,10 +5,12 @@ import { useState } from "react";
 import { ArtistProfile } from "@/components/ArtistProfile";
 import { ArtistClasses } from "@/components/ArtistClasses";
 import { BlogManagement } from "@/components/BlogManagement";
+import { CalendarPage } from "@/components/CalendarPage";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClassesManagement } from "@/components/ClassesManagement";
 import { CommerceMarketplace } from "@/components/CommerceMarketplace";
 import { EventsManagement } from "@/components/EventsManagement";
+import { Feed } from "@/components/Feed";
 import { GlazeManagement } from "@/components/GlazeManagement";
 import { InvitesPanel } from "@/components/InvitesPanel";
 import { KilnManagement } from "@/components/KilnManagement";
@@ -19,11 +21,13 @@ import { MessagingCenter } from "@/components/MessagingCenter";
 import { MyStudios } from "@/components/MyStudios";
 import { Navigation } from "@/components/Navigation";
 import { PotteryJournal } from "@/components/PotteryJournal";
+import { Products } from "@/components/Products";
 import { PublicStudiosDirectory } from "@/components/PublicStudiosDirectory";
 import { PublicCeramicsMarketplace } from "@/components/PublicCeramicsMarketplace";
 import { Settings } from "@/components/Settings";
 import { StaffManagement } from "@/components/StaffManagement";
 import { StudioDashboard } from "@/components/StudioDashboard";
+import { StudioDocuments } from "@/components/StudioDocuments";
 import { WhiteboardEditor } from "@/components/WhiteboardEditor";
 
 import type {
@@ -370,6 +374,14 @@ export default function Home() {
         return <InvitesPanel />;
       case "mystudios":
         return <MyStudios />;
+      case "calendar":
+        return <CalendarPage />;
+      case "products":
+        return <Products />;
+      case "documents":
+        return <StudioDocuments />;
+      case "feed":
+        return <Feed />;
 
       default:
         return (

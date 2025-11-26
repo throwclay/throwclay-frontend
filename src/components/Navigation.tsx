@@ -25,6 +25,8 @@ import {
   Beaker,
   BookOpen,
   Mail,
+  Package,
+  Rss,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -176,6 +178,7 @@ export function Navigation({
 
     const base: NavItem[] = [
       { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+      { id: "feed", label: "Feed", icon: Rss },
       { id: "classes", label: "Classes", icon: GraduationCap },
       { id: "blog", label: "Blog", icon: BookOpen },
       { id: "messages", label: "Messages", icon: MessageCircle },
@@ -242,6 +245,18 @@ export function Navigation({
           label: "Ceramics",
           icon: Grid3X3,
           description: "Browse ceramics",
+        },
+        {
+          id: "products",
+          label: "Products",
+          icon: Package,
+          description: "Manage inventory & products for sale",
+        },
+        {
+          id: "documents",
+          label: "Documents",
+          icon: FileText,
+          description: "Policies & instructional materials",
         },
       ];
     } else {
