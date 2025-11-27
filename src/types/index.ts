@@ -938,7 +938,7 @@ export interface ManagerProfile {
   id: string;
   userId: string;
   studioId: string;
-  role: "co-admin" | "manager" | "employee";
+  role: "admin" | "manager" | "employee";
   responsibilities: string[];
   standardWorkHours: {
     monday: { start: string; end: string; isAvailable: boolean };

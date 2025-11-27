@@ -711,13 +711,9 @@ export function MemberManagement() {
                       <SelectValue placeholder="Select membership type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="basic">Basic – $85/month</SelectItem>
-                      <SelectItem value="premium">
-                        Premium – $125/month
-                      </SelectItem>
-                      <SelectItem value="unlimited">
-                        Unlimited – $185/month
-                      </SelectItem>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="unlimited">Unlimited</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1301,11 +1297,12 @@ export function MemberManagement() {
                           <div className="flex items-center space-x-3">
                             <Users2 className="w-8 h-8 text-muted-foreground" />
                             <div className="space-y-1">
-                              <div className="font-medium">
+                              <div className="font-medium">{invite.name}</div>
+                              <div className="text-xs text-muted-foreground">
                                 {invite.email.split("@")[0] || "New member"}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Studio invite
+                                {invite.role}
                               </div>
                             </div>
                           </div>
@@ -1334,11 +1331,11 @@ export function MemberManagement() {
                               <div className="font-medium capitalize">
                                 {membershipLabel}
                               </div>
-                              {membershipPrice && (
+                              {/* {membershipPrice && (
                                 <div className="text-xs text-muted-foreground">
                                   {membershipPrice}
                                 </div>
-                              )}
+                              )} */}
                             </div>
                           ) : (
                             <span className="text-sm text-muted-foreground">

@@ -337,11 +337,11 @@ export function PublicStudiosDirectory({
       | undefined;
 
     return (
-      role === "owner" ||
-      role === "admin" ||
-      role === "manager" ||
-      role === "instructor" ||
-      role === "employee"
+      role === "owner" //||
+      // role === "admin" ||
+      // role === "manager" ||
+      // role === "instructor" ||
+      // role === "employee"
     );
   };
 
