@@ -34,7 +34,7 @@ import type {
 } from '@/app/context/AppContext';
 
 export function KilnManagement() {
-  const { currentStudio } = useAppContext();
+  const { currentStudio, authToken } = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
@@ -72,6 +72,18 @@ export function KilnManagement() {
   const [scheduleSearchTerm, setScheduleSearchTerm] = useState('');
   const [scheduleStatusFilter, setScheduleStatusFilter] = useState<string>('all');
   const [selectedRacks, setSelectedRacks] = useState<string[]>([]);
+
+  const [scheduleForm, setScheduleForm] = useState({
+    name: '',
+    kilnId: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    firingType: '',
+    operatorId: '',
+    locationId: currentStudio?.locations?.[0]?.id || '',
+    notes: '',
+  });
 
   // Available rack numbers
   const availableRacks = [
@@ -112,30 +124,58 @@ export function KilnManagement() {
     ]
   });
 
-  const handleCreateKiln = () => {
-    const kiln: Kiln = {
-      id: `kiln_${Date.now()}`,
-      studioId: currentStudio?.id || '',
-      ...newKiln
-    } as Kiln;
+  const handleCreateKiln = async () => {
+    if (!currentStudio?.id || !authToken) {
+      console.error('Cannot create kiln: missing studio or auth token');
+      return;
+    }
 
-    console.log('Creating new kiln:', kiln);
-    setShowAddKiln(false);
-    // Reset form
-    setNewKiln({
-      name: '',
-      type: 'electric',
-      manufacturer: '',
-      model: '',
-      locationId: currentStudio?.locations?.[0]?.id || '',
-      capacity: 20,
-      maxTemp: 1300,
-      shelfCount: 4,
-      isActive: true,
-      status: 'available',
-      totalFirings: 0,
-      notes: ''
-    });
+    try {
+      const res = await fetch(`/api/admin/studios/${currentStudio.id}/kilns`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: newKiln.name,
+          type: newKiln.type,
+          manufacturer: newKiln.manufacturer,
+          model: newKiln.model,
+          serialNumber: (newKiln as any).serialNumber,
+          locationId: newKiln.locationId,
+          capacity: newKiln.capacity,
+          maxTemp: newKiln.maxTemp,
+          shelfCount: newKiln.shelfCount,
+          status: newKiln.status,
+          notes: newKiln.notes,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error('Failed to create kiln', await res.text());
+        return;
+      }
+
+      console.log('Created kiln', await res.json());
+      setShowAddKiln(false);
+      setNewKiln({
+        name: '',
+        type: 'electric',
+        manufacturer: '',
+        model: '',
+        locationId: currentStudio?.locations?.[0]?.id || '',
+        capacity: 20,
+        maxTemp: 1300,
+        shelfCount: 4,
+        isActive: true,
+        status: 'available',
+        totalFirings: 0,
+        notes: ''
+      });
+    } catch (err) {
+      console.error('Error creating kiln', err);
+    }
   };
 
   const handleCreateKilnTemplate = () => {
@@ -352,10 +392,56 @@ export function KilnManagement() {
     );
   };
 
-  const handleCreateSchedule = () => {
-    console.log('Creating firing schedule with racks:', selectedRacks);
-    setShowCreateScheduleDialog(false);
-    setSelectedRacks([]);
+  const handleCreateSchedule = async () => {
+    if (!currentStudio?.id || !authToken) {
+      console.error('Cannot create firing schedule: missing studio or auth token');
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name: scheduleForm.name,
+            kilnId: scheduleForm.kilnId,
+            date: scheduleForm.date,
+            startTime: scheduleForm.startTime,
+            atmosphere: null,
+            targetCone: null,
+            notes: scheduleForm.notes,
+            rackNumbers: selectedRacks,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error('Failed to create kiln firing', await res.text());
+        return;
+      }
+
+      console.log('Created kiln firing', await res.json());
+      setShowCreateScheduleDialog(false);
+      setSelectedRacks([]);
+      setScheduleForm({
+        name: '',
+        kilnId: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        firingType: '',
+        operatorId: '',
+        locationId: currentStudio?.locations?.[0]?.id || '',
+        notes: '',
+      });
+    } catch (err) {
+      console.error('Error creating kiln firing', err);
+    }
   };
 
   return (
@@ -1218,16 +1304,33 @@ export function KilnManagement() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Firing Name</Label>
-                        <Input placeholder="e.g., Morning Bisque Load" />
+                        <Input
+                          placeholder="e.g., Morning Bisque Load"
+                          value={scheduleForm.name}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Kiln</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.kilnId}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              kilnId: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select kiln" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.kilns?.map(kiln => (
+                            {currentStudio?.kilns?.map((kiln) => (
                               <SelectItem key={kiln.id} value={kiln.id}>
                                 {kiln.name} ({kiln.type})
                               </SelectItem>
@@ -1240,22 +1343,57 @@ export function KilnManagement() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Date</Label>
-                        <Input type="date" />
+                        <Input
+                          type="date"
+                          value={scheduleForm.date}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              date: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Start Time</Label>
-                        <Input type="time" />
+                        <Input
+                          type="time"
+                          value={scheduleForm.startTime}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              startTime: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>End Time</Label>
-                        <Input type="time" />
+                        <Input
+                          type="time"
+                          value={scheduleForm.endTime}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              endTime: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Firing Type</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.firingType}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              firingType: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
@@ -1263,18 +1401,28 @@ export function KilnManagement() {
                             <SelectItem value="bisque">Bisque</SelectItem>
                             <SelectItem value="glaze">Glaze</SelectItem>
                             <SelectItem value="raku">Raku</SelectItem>
-                            <SelectItem value="crystalline">Crystalline</SelectItem>
+                            <SelectItem value="crystalline">
+                              Crystalline
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <Label>Operator</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.operatorId}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              operatorId: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select operator" />
                           </SelectTrigger>
                           <SelectContent>
-                            {operators.map(operator => (
+                            {operators.map((operator) => (
                               <SelectItem key={operator.id} value={operator.id}>
                                 {operator.name} - {operator.role}
                               </SelectItem>
@@ -1335,6 +1483,13 @@ export function KilnManagement() {
                       <Textarea
                         placeholder="Special instructions, notes about this firing..."
                         rows={3}
+                        value={scheduleForm.notes}
+                        onChange={(e) =>
+                          setScheduleForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
                       />
                     </div>
 
