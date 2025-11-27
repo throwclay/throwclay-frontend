@@ -181,7 +181,7 @@ export function StaffManagement() {
         <TabsContent value="employees" className="space-y-6">
           <EmployeeManagement />
 
-          <Card>
+          {staffInvites.length > 0 && <Card>
             <CardHeader>
               <CardTitle>Pending Staff Invites</CardTitle>
             </CardHeader>
@@ -259,7 +259,10 @@ export function StaffManagement() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card>}
+
+
+
         </TabsContent>
       </Tabs>
     </div>
