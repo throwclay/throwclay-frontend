@@ -72,7 +72,8 @@ export async function GET(
       )
     `
     )
-    .eq("studio_id", studioId);
+    .eq("studio_id", studioId)
+    .eq("role", "member"); // restricitng to members only for now (no staff)
 
   if (error) {
     console.error("Error fetching members", error);

@@ -328,16 +328,14 @@ export function Navigation({
           >
             <Icon className="w-4 h-4 mr-2" />
             {item.label}
-            {item.id === "staff" &&
+            {/* {item.id === "staff" &&
               currentUser.activeMode === "studio" &&
               currentStudio && (
                 <Badge
                   variant="secondary"
                   className="ml-2 text-xs px-1.5 py-0.5"
-                >
-                  5
-                </Badge>
-              )}
+                ></Badge>
+              )} */}
           </Button>
         );
       })}

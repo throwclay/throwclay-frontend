@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         membership_type: invite.membership_type,
       } as any,
       {
-        onConflict: "studio_id,user_id",
+        onConflict: "studio_id,user_id,location_id",
       }
     );
 

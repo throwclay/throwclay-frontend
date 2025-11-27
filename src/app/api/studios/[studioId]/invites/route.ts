@@ -4,7 +4,13 @@ import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
 import { getBearerToken } from "@/lib/server/auth";
 
 const INVITER_ROLES = ["owner", "admin", "manager"];
-const MEMBERSHIP_ROLES = ["member"];
+const MEMBERSHIP_ROLES = [
+  "member",
+  "admin",
+  "manager",
+  "instructor",
+  "employee",
+] as const;
 
 // POST – create invite (studio-scoped)
 export async function POST(
@@ -191,6 +197,7 @@ export async function GET(
       id,
       studio_id,
       email,
+      name,
       role,
       status,
       invited_at,

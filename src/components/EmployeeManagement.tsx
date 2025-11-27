@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -106,6 +106,8 @@ import {
 import { useAppContext } from "@/app/context/AppContext";
 
 interface EmployeeData extends User {
+  staffMembershipId: string;
+  locationId?: string | null;
   managerProfile?: ManagerProfile;
   instructorProfile?: InstructorProfile;
   workLogs: WorkLog[];
@@ -121,7 +123,7 @@ interface EmployeeData extends User {
 }
 
 export function EmployeeManagement() {
-  const { currentStudio } = useAppContext();
+  const context = useAppContext();
   const [activeTab, setActiveTab] = useState("employees");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -133,251 +135,20 @@ export function EmployeeManagement() {
     new Date()
   );
 
-  // Mock employee data
-  const [employees] = useState<EmployeeData[]>([
-    {
-      id: "mgr1",
-      name: "Sarah Wilson",
-      email: "sarah.wilson@clayandfire.com",
-      handle: "sarahwilson",
-      type: "artist",
-      studioId: currentStudio?.id,
-      role: "manager",
-      phone: "(503) 555-0100",
-      createdAt: "2024-03-15T00:00:00Z",
-      isActive: true,
-      managerProfile: {
-        id: "profile1",
-        userId: "mgr1",
-        studioId: currentStudio?.id || "",
-        role: "co-admin",
-        responsibilities: ["resp1", "resp2", "resp3"],
-        standardWorkHours: {
-          monday: { start: "09:00", end: "17:00", isAvailable: true },
-          tuesday: { start: "09:00", end: "17:00", isAvailable: true },
-          wednesday: { start: "09:00", end: "17:00", isAvailable: true },
-          thursday: { start: "09:00", end: "17:00", isAvailable: true },
-          friday: { start: "09:00", end: "15:00", isAvailable: true },
-          saturday: { start: "10:00", end: "14:00", isAvailable: true },
-          sunday: { start: "00:00", end: "00:00", isAvailable: false },
-        },
-        permissions: {
-          manageMembers: true,
-          manageClasses: true,
-          manageEvents: true,
-          manageMessages: true,
-          manageInventory: true,
-          manageFiring: true,
-          manageFinances: false,
-          manageSettings: false,
-          deleteProfiles: false,
-          changeSubscription: false,
-          approveTimeCards: true,
-          viewPayroll: false,
-        },
-        profileImage:
-          "https://images.unsplash.com/photo-1494790108755-2616b812c8e5?w=200&h=200&fit=crop&crop=face",
-        phone: "(503) 555-0100",
-        maxVacationDays: 15,
-        maxSickDays: 10,
-        usedVacationDays: 5,
-        usedSickDays: 2,
-        isActive: true,
-        hiredDate: "2024-03-15",
-        lastActivity: "2025-06-13",
-        notes: "Excellent with member relations and class coordination",
-        hourlyRate: 25,
-        salaryType: "hourly",
-        overtimeEligible: true,
-      },
-      workLogs: [],
-      scheduleEntries: [
-        {
-          id: "sched1",
-          employeeId: "mgr1",
-          date: "2025-06-14",
-          startTime: "09:00",
-          endTime: "17:00",
-          category: "operations",
-          description: "Studio management and member support",
-          locationId: "loc1",
-          status: "scheduled",
-          createdAt: "2025-06-10",
-          updatedAt: "2025-06-10",
-        },
-      ],
-      timeOffRequests: [],
-      unfilledResponsibilities: [],
-      credentials: {
-        id: "cred1",
-        employeeId: "mgr1",
-        username: "sarah.wilson",
-        email: "sarah.wilson@clayandfire.com",
-        requirePasswordChange: false,
-        loginAttempts: 0,
-        createdAt: "2024-03-15",
-        updatedAt: "2025-06-13",
-      },
-    },
-    {
-      id: "mgr2",
-      name: "Mike Chen",
-      email: "mike.chen@clayandfire.com",
-      handle: "mikechen",
-      type: "artist",
-      studioId: currentStudio?.id,
-      role: "manager",
-      phone: "(503) 555-0101",
-      createdAt: "2024-05-20T00:00:00Z",
-      isActive: true,
-      managerProfile: {
-        id: "profile2",
-        userId: "mgr2",
-        studioId: currentStudio?.id || "",
-        role: "manager",
-        responsibilities: ["resp3"],
-        standardWorkHours: {
-          monday: { start: "13:00", end: "21:00", isAvailable: true },
-          tuesday: { start: "13:00", end: "21:00", isAvailable: true },
-          wednesday: { start: "13:00", end: "21:00", isAvailable: true },
-          thursday: { start: "13:00", end: "21:00", isAvailable: true },
-          friday: { start: "13:00", end: "21:00", isAvailable: true },
-          saturday: { start: "12:00", end: "20:00", isAvailable: true },
-          sunday: { start: "12:00", end: "18:00", isAvailable: true },
-        },
-        permissions: {
-          manageMembers: false,
-          manageClasses: true,
-          manageEvents: false,
-          manageMessages: false,
-          manageInventory: true,
-          manageFiring: true,
-          manageFinances: false,
-          manageSettings: false,
-          deleteProfiles: false,
-          changeSubscription: false,
-          approveTimeCards: false,
-          viewPayroll: false,
-        },
-        profileImage:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-        phone: "(503) 555-0101",
-        maxVacationDays: 12,
-        maxSickDays: 8,
-        usedVacationDays: 3,
-        usedSickDays: 1,
-        isActive: true,
-        hiredDate: "2024-05-20",
-        lastActivity: "2025-06-12",
-        notes: "Specializes in kiln operations and glazing workshops",
-        hourlyRate: 22,
-        salaryType: "hourly",
-        overtimeEligible: true,
-      },
-      workLogs: [],
-      scheduleEntries: [],
-      timeOffRequests: [
-        {
-          id: "time1",
-          employeeId: "mgr2",
-          startDate: "2025-06-20",
-          endDate: "2025-06-22",
-          type: "vacation",
-          reason: "Long weekend getaway",
-          status: "pending",
-          requestedAt: "2025-06-10",
-        },
-      ],
-      unfilledResponsibilities: ["resp1", "resp2"],
-    },
-  ]);
+  const [staff, setStaff] = useState<EmployeeData[]>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
 
-  // Mock instructor data
-  const [instructors] = useState<EmployeeData[]>([
-    {
-      id: "inst1",
-      name: "Emma Davis",
-      email: "emma.davis@clayandfire.com",
-      handle: "emmadavis",
-      type: "artist",
-      studioId: currentStudio?.id,
-      role: "instructor",
-      phone: "(503) 555-0102",
-      createdAt: "2024-01-15T00:00:00Z",
-      isActive: true,
-      instructorProfile: {
-        id: "inst_profile1",
-        userId: "inst1",
-        studioId: currentStudio?.id || "",
-        bio: "Professional ceramics instructor with 10+ years of experience in wheel throwing and glazing techniques.",
-        specialties: ["Wheel Throwing", "Glazing", "Hand Building", "Raku"],
-        certifications: [
-          "Certified Pottery Instructor",
-          "Kiln Safety Certification",
-        ],
-        experience: "10+ years",
-        hourlyRate: 45,
-        availability: {
-          monday: { start: "10:00", end: "18:00", isAvailable: true },
-          tuesday: { start: "10:00", end: "18:00", isAvailable: true },
-          wednesday: { start: "10:00", end: "18:00", isAvailable: true },
-          thursday: { start: "10:00", end: "18:00", isAvailable: true },
-          friday: { start: "10:00", end: "16:00", isAvailable: true },
-          saturday: { start: "09:00", end: "15:00", isAvailable: true },
-          sunday: { start: "00:00", end: "00:00", isAvailable: false },
-        },
-        assignedClasses: ["class1", "class3"],
-        isActive: true,
-        hiredDate: "2024-01-15",
-        profileImage:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
-        phone: "(503) 555-0102",
-        emergencyContact: {
-          name: "John Davis",
-          phone: "(503) 555-0103",
-          relationship: "Spouse",
-        },
-        notes:
-          "Excellent with beginners, specializes in traditional techniques",
-      },
-      workLogs: [],
-      scheduleEntries: [
-        {
-          id: "sched_inst1",
-          employeeId: "inst1",
-          date: "2025-06-14",
-          startTime: "10:00",
-          endTime: "12:00",
-          category: "classes",
-          description: "Beginner Wheel Throwing Class",
-          classId: "class1",
-          locationId: "loc1",
-          status: "scheduled",
-          createdAt: "2025-06-10",
-          updatedAt: "2025-06-10",
-        },
-      ],
-      timeOffRequests: [],
-      unfilledResponsibilities: [],
-      credentials: {
-        id: "cred_inst1",
-        employeeId: "inst1",
-        username: "emma.davis",
-        email: "emma.davis@clayandfire.com",
-        requirePasswordChange: false,
-        loginAttempts: 0,
-        createdAt: "2024-01-15",
-        updatedAt: "2025-06-13",
-      },
-    },
-  ]);
+  const employees = staff.filter(
+    (emp) => emp.role !== "instructor" // admin/manager/employee
+  );
+  const instructors = staff.filter((emp) => emp.role === "instructor");
 
   // Form states
   const [employeeForm, setEmployeeForm] = useState({
     name: "",
     email: "",
     phone: "",
-    role: "manager" as "co-admin" | "manager" | "employee",
+    role: "manager" as "admin" | "manager" | "employee",
     hiredDate: "",
     notes: "",
     responsibilities: [] as string[],
@@ -433,6 +204,9 @@ export function EmployeeManagement() {
     isRequired: false,
   });
 
+  const [employeeLocationId, setEmployeeLocationId] = useState<string>("");
+  const [instructorLocationId, setInstructorLocationId] = useState<string>("");
+
   const filteredEmployees = employees.filter((emp) => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -449,8 +223,8 @@ export function EmployeeManagement() {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case "co-admin":
-        return <Badge className="bg-purple-500">Co-Admin</Badge>;
+      case "admin":
+        return <Badge className="bg-purple-500">Admin</Badge>;
       case "manager":
         return <Badge variant="default">Manager</Badge>;
       case "employee":
@@ -572,21 +346,153 @@ export function EmployeeManagement() {
     });
   };
 
-  const handleCreateEmployee = () => {
-    console.log("Creating employee:", employeeForm);
-    setShowCreateDialog(false);
+  const handleCreateEmployee = async () => {
+    if (!context.currentStudio || !context.authToken) return;
+
+    if (!employeeForm.email) {
+      console.error("Email is required to invite an employee");
+      return;
+    }
+
+    if (!employeeLocationId) {
+      console.error("Location is required to invite an employee");
+      // TODO: show a toast in UI instead of console
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/studios/${context.currentStudio.id}/invites`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${context.authToken}`,
+          },
+          body: JSON.stringify({
+            email: employeeForm.email,
+            role: employeeForm.role, // "admin" | "manager" | "employee"
+            locationId: employeeLocationId,
+            membershipType: "unlimited",
+            name: employeeForm.name,
+            phone: employeeForm.phone,
+            notes: employeeForm.notes,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error("Failed to create employee invite", await res.text());
+        return;
+      }
+
+      const body = await res.json();
+      console.log("Created staff invite", body.invite);
+
+      // TODO: toast "Invite sent"
+      setShowCreateDialog(false);
+    } catch (err) {
+      console.error("Error creating employee invite", err);
+    }
   };
 
-  const handleCreateInstructor = () => {
-    console.log("Creating instructor:", instructorForm);
-    setShowCreateDialog(false);
+  const handleCreateInstructor = async () => {
+    if (!context.currentStudio || !context.authToken) return;
+
+    if (!instructorForm.email) {
+      console.error("Email is required to invite an instructor");
+      return;
+    }
+
+    if (!instructorLocationId) {
+      console.error("Location is required to invite an instructor");
+      // TODO: toast
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/studios/${context.currentStudio.id}/invites`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${context.authToken}`,
+          },
+          body: JSON.stringify({
+            email: instructorForm.email,
+            role: "instructor",
+            locationId: instructorLocationId,
+            membershipType: "unlimited",
+            name: instructorForm.name,
+            phone: instructorForm.phone,
+            notes: instructorForm.notes,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error("Failed to create instructor invite", await res.text());
+        return;
+      }
+
+      const body = await res.json();
+      console.log("Created instructor invite", body.invite);
+
+      // TODO: toast "Invite sent"
+      setShowCreateDialog(false);
+    } catch (err) {
+      console.error("Error creating instructor invite", err);
+    }
   };
 
-  const coAdminCount = employees.filter(
-    (emp) => emp.managerProfile?.role === "co-admin"
-  ).length;
-  // Fixed: Use a fallback value since currentStudio doesn't have settings.maxCoAdmins
-  const maxCoAdmins = 2; // Default max co-admins limit
+  const adminCount = staff.filter((emp) => emp.role === "admin").length;
+  const maxAdmins = 2;
+
+  useEffect(() => {
+    if (!context.currentStudio || !context.authToken) {
+      setStaff([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadStaff() {
+      setIsLoadingStaff(true);
+      try {
+        const res = await fetch(
+          `/api/admin/studios/${context.currentStudio?.id}/staff`,
+          {
+            headers: {
+              Authorization: `Bearer ${context.authToken}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error("Failed to load staff", await res.text());
+          if (!cancelled) setStaff([]);
+          return;
+        }
+
+        const body = await res.json();
+        if (!cancelled) {
+          setStaff(body.staff ?? []);
+        }
+      } catch (err) {
+        console.error("Error loading staff", err);
+        if (!cancelled) setStaff([]);
+      } finally {
+        if (!cancelled) setIsLoadingStaff(false);
+      }
+    }
+
+    loadStaff();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [context.currentStudio?.id, context.authToken]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -757,16 +663,58 @@ export function EmployeeManagement() {
                       </div>
                     </div>
 
-                    {/* Co-Admin limit warning */}
-                    {employeeForm.role === "co-admin" &&
-                      coAdminCount >= maxCoAdmins && (
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label>Role</Label>
+                        <Select
+                          value={employeeForm.role}
+                          onValueChange={(value) =>
+                            setEmployeeForm((prev) => ({
+                              ...prev,
+                              role: value as "admin" | "manager" | "employee",
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="employee">Employee</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Location</Label>
+                        <Select
+                          value={employeeLocationId}
+                          onValueChange={(value) => setEmployeeLocationId(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {context.currentStudio?.locations?.map((loc) => (
+                              <SelectItem key={loc.id} value={loc.id}>
+                                {loc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Admin limit warning */}
+                    {employeeForm.role === "admin" &&
+                      adminCount >= maxAdmins && (
                         <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
                           <div className="flex items-center space-x-2">
                             <AlertTriangle className="w-4 h-4 text-orange-600" />
                             <span className="text-sm text-orange-800">
-                              Co-Admin limit reached ({coAdminCount}/
-                              {maxCoAdmins}). Consider upgrading your plan for
-                              more Co-Admin slots.
+                              Admin limit reached ({adminCount}/{maxAdmins}).
+                              Consider upgrading your plan for more Admin slots.
                             </span>
                           </div>
                         </div>
@@ -783,8 +731,7 @@ export function EmployeeManagement() {
                     <Button
                       onClick={handleCreateEmployee}
                       disabled={
-                        employeeForm.role === "co-admin" &&
-                        coAdminCount >= maxCoAdmins
+                        employeeForm.role === "admin" && adminCount >= maxAdmins
                       }
                     >
                       <Save className="w-4 h-4 mr-2" />
@@ -856,6 +803,27 @@ export function EmployeeManagement() {
                           placeholder="Enter email address"
                         />
                       </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <Label>Location</Label>
+                      <Select
+                        value={instructorLocationId}
+                        onValueChange={(value) =>
+                          setInstructorLocationId(value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {context.currentStudio?.locations?.map((loc) => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -995,7 +963,7 @@ export function EmployeeManagement() {
 
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      {getRoleBadge(profile?.role || "employee")}
+                      {getRoleBadge(employee?.role || "employee")}
                       <div
                         className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
                           availability.status === "available"
@@ -1228,7 +1196,7 @@ export function EmployeeManagement() {
                               {entry.startTime} - {entry.endTime}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {currentStudio?.locations.find(
+                              {context.currentStudio?.locations.find(
                                 (loc) => loc.id === entry.locationId
                               )?.name || "Main Studio"}
                             </p>

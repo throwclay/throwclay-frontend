@@ -6,6 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 import { supabase } from "../lib/apis/supabaseClient";
+import { SignupFlow, type SignupData } from "./SignupFlow"
 
 interface LoginFormProps {
   onLogin: (userData: { email: string; phone?: string; session: any }) => void;
@@ -21,6 +22,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSignup, setShowSignup] = useState(false);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -50,38 +52,11 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
 
         // Bubble up to parent with session info
         onLogin({ email, phone, session: data.session });
-      } else {
-        // --- SIGNUP FLOW ---
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name,
-              profile_phone: phone,
-            },
-          },
-        });
-
-        if (error) {
-          setError(error.message);
-          return;
-        }
-
-        if (!data.session) {
-          // Email confirmation ON: user must verify before logging in
-          setMessage(
-            "Account created! Please check your email and click the verification link to activate your account."
-          );
-        } else {
-          // Email confirmation OFF: user already logged in
-          onLogin({ email, phone, session: data.session });
-        }
       }
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");
     } finally {
-      // setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -92,6 +67,103 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
       ? "Sign in to your account"
       : "Sign up to start using Throw Clay";
 
+  const handleSignupComplete = async (signupData: SignupData) => {
+    setIsLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            name: signupData.name,
+            account_type: signupData.accountType,
+            handle:
+              signupData.accountType === "studio"
+                ? signupData.studioHandle
+                : signupData.artistHandle,
+            city: signupData.city,
+            state: signupData.state,
+            country: signupData.country,
+            selected_plan: signupData.selectedPlan,
+            studio_name: signupData.studioName,
+            studio_type: signupData.studioType,
+          },
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // If email confirmations are enabled, Supabase won't return a session yet
+      if (!data.session) {
+        setMessage(
+          "Account created! Please check your email and click the verification link to activate your account."
+        );
+        setShowSignup(false);
+        return;
+      }
+
+      // We have a session: for studio accounts, create studio + membership.
+      if (signupData.accountType === "studio") {
+        try {
+          const res = await fetch("/api/studios", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.session.access_token}`,
+            },
+            body: JSON.stringify({
+              studioName: signupData.studioName,
+              studioHandle: signupData.studioHandle,
+              city: signupData.city,
+              state: signupData.state,
+              selectedPlan: signupData.selectedPlan,
+              locationName: signupData.locationName,
+              locationAddress: signupData.locationAddress,
+              locationZip: signupData.locationZip,
+              locationPhone: signupData.locationPhone,
+            }),
+          });
+
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            console.error("Failed to create studio on signup", body);
+          }
+        } catch (studioErr) {
+          console.error("Error calling /api/studios during signup", studioErr);
+        }
+      }
+
+      // Auto-login after successful signup
+      onLogin({
+        email: signupData.email,
+        session: data.session,
+      });
+      setShowSignup(false);
+    } catch (err: any) {
+      setError(err.message ?? "Something went wrong during signup");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  // Show signup flow if user clicked create account
+  if (showSignup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+        <SignupFlow
+          onComplete={handleSignupComplete}
+          onBack={() => setShowSignup(false)}
+        />
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
       <div className="w-full max-w-md">
@@ -209,7 +281,8 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                     variant="link"
                     className="p-0 h-auto"
                     onClick={() => {
-                      setAuthMode("signup");
+                      // setAuthMode("signup");
+                      setShowSignup(true)
                       setMessage(null);
                       setError(null);
                     }}
