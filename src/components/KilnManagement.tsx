@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Flame, Plus, Edit2, Trash2, Search, Filter, Calendar, Clock, 
   Thermometer, Users, Package, Settings, Eye, Bell, Download,
@@ -7,7 +7,7 @@ import {
   Play, Pause, RotateCcw, Timer, Gauge, Activity, Video, Monitor,
   Wifi, WifiOff, Battery, BatteryLow, Palette, Wrench, ClipboardList,
   FileText, Copy, Share, Star, TrendingUp, Target, Beaker,
-  Layers, BookOpen, PlusCircle, Save, X, Send
+  Layers, BookOpen, PlusCircle, Save, X, Send, Calculator
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -28,22 +28,46 @@ import { Slider } from './ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { useAppContext } from '@/app/context/AppContext';
 import type { 
-  Kiln, KilnLoad, KilnLoadItem, KilnShelf, FiringSchedule, 
+  Kiln, KilnLoad, KilnLoadItem, KilnShelf, 
   KilnAssignment, CustomFiringType, KilnCamera, RingIntegration,
   KilnFiringTemplate
-} from '@/app/context/AppContext';
+} from '@/types';
+import {
+  calculateTotalCapacity,
+  calculateOptimalShelfConfig,
+  PIECE_SIZE_PRESETS,
+  type CapacityCalculation
+} from '@/lib/utils/kilnCalculations';
+import { toast } from 'sonner';
 
 export function KilnManagement() {
-  const { currentStudio } = useAppContext();
+  const { currentStudio, authToken } = useAppContext();
   const [selectedTab, setSelectedTab] = useState('kilns');
   const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
+  const [kilns, setKilns] = useState<any[]>([]);
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [showTemplateDetails, setShowTemplateDetails] = useState(false);
   const [showAddKiln, setShowAddKiln] = useState(false);
   const [showKilnDetails, setShowKilnDetails] = useState(false);
   const [showScheduleFiring, setShowScheduleFiring] = useState(false);
+  const [showQuickStartFiring, setShowQuickStartFiring] = useState(false);
+  const [showScheduledFiringSelection, setShowScheduledFiringSelection] = useState(false);
+  const [scheduledFiringsForKiln, setScheduledFiringsForKiln] = useState<any[]>([]);
+  const [quickStartKilnId, setQuickStartKilnId] = useState<string>('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedKilnId, setSelectedKilnId] = useState<string>('');
+  const [kilnFiringTemplates, setKilnFiringTemplates] = useState<any[]>([]);
+  
+  // Quick-start firing form state
+  const [quickStartForm, setQuickStartForm] = useState({
+    name: '',
+    templateId: '',
+    atmosphere: 'oxidation' as 'oxidation' | 'reduction' | 'neutral',
+    targetCone: '',
+    targetTemperature: '',
+    notes: '',
+    operatorId: '',
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [templateSearchTerm, setTemplateSearchTerm] = useState('');
@@ -55,6 +79,7 @@ export function KilnManagement() {
     type: 'electric',
     manufacturer: '',
     model: '',
+    serialNumber: '',
     locationId: currentStudio?.locations?.[0]?.id || '',
     capacity: 20,
     maxTemp: 1300,
@@ -62,7 +87,35 @@ export function KilnManagement() {
     isActive: true,
     status: 'available',
     totalFirings: 0,
-    notes: ''
+    notes: '',
+    shelfConfiguration: [],
+    specifications: {},
+    installDate: undefined,
+    warrantyExpiry: undefined,
+    maintenanceSchedule: undefined,
+  });
+
+  // Enhanced form states for capacity calculator
+  const [shelfDimensions, setShelfDimensions] = useState({
+    width: 24,
+    depth: 24,
+    height: 10,
+    totalKilnHeight: 36,
+    shelfThickness: 1,
+  });
+  const [selectedPieceSize, setSelectedPieceSize] = useState<'small' | 'medium' | 'large' | 'extraLarge' | 'custom'>('medium');
+  const [customPieceSize, setCustomPieceSize] = useState({ width: 6, depth: 6, height: 8 });
+  const [capacityCalculation, setCapacityCalculation] = useState<CapacityCalculation | null>(null);
+  const [showCapacityCalculator, setShowCapacityCalculator] = useState(false);
+  const [autoCalculateCapacity, setAutoCalculateCapacity] = useState(true);
+  
+  // Maintenance schedule state
+  const [maintenanceScheduleType, setMaintenanceScheduleType] = useState<'firings' | 'time' | 'both'>('time');
+  const [maintenanceInterval, setMaintenanceInterval] = useState<number>(180); // days or firings
+  const [interiorDimensions, setInteriorDimensions] = useState({
+    width: 24,
+    depth: 24,
+    height: 36,
   });
 
   // Firing Schedule state
@@ -72,6 +125,20 @@ export function KilnManagement() {
   const [scheduleSearchTerm, setScheduleSearchTerm] = useState('');
   const [scheduleStatusFilter, setScheduleStatusFilter] = useState<string>('all');
   const [selectedRacks, setSelectedRacks] = useState<string[]>([]);
+  const [firingSchedules, setFiringSchedules] = useState<any[]>([]);
+
+  const [scheduleForm, setScheduleForm] = useState({
+    name: '',
+    kilnId: '',
+    date: '',
+    startTime: '',
+    endTime: '',
+    firingType: '',
+    operatorId: '',
+    locationId: currentStudio?.locations?.[0]?.id || '',
+    temperature: '',
+    notes: '',
+  });
 
   // Available rack numbers
   const availableRacks = [
@@ -112,30 +179,296 @@ export function KilnManagement() {
     ]
   });
 
-  const handleCreateKiln = () => {
-    const kiln: Kiln = {
-      id: `kiln_${Date.now()}`,
-      studioId: currentStudio?.id || '',
-      ...newKiln
-    } as Kiln;
+  // Load kilns & firings from backend when studio/auth token available
+  useEffect(() => {
+    if (!currentStudio?.id || !authToken) {
+      setKilns([]);
+      setFiringSchedules([]);
+      return;
+    }
 
-    console.log('Creating new kiln:', kiln);
-    setShowAddKiln(false);
-    // Reset form
-    setNewKiln({
-      name: '',
-      type: 'electric',
-      manufacturer: '',
-      model: '',
-      locationId: currentStudio?.locations?.[0]?.id || '',
-      capacity: 20,
-      maxTemp: 1300,
-      shelfCount: 4,
-      isActive: true,
-      status: 'available',
-      totalFirings: 0,
-      notes: ''
-    });
+    let cancelled = false;
+
+    async function loadKilns() {
+      try {
+        const res = await fetch(
+          `/api/admin/studios/${currentStudio?.id}/kilns`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error('Failed to load kilns', await res.text());
+          if (!cancelled) setKilns([]);
+          return;
+        }
+
+        const body = await res.json();
+        if (!cancelled) {
+          setKilns(body.kilns ?? []);
+        }
+      } catch (err) {
+        console.error('Error loading kilns', err);
+        if (!cancelled) setKilns([]);
+      }
+    }
+
+    async function loadFirings() {
+      try {
+        const res = await fetch(
+          `/api/admin/studios/${currentStudio?.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error('Failed to load kiln firings', await res.text());
+          if (!cancelled) setFiringSchedules([]);
+          return;
+        }
+
+        const body = await res.json();
+        if (!cancelled) {
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error loading kiln firings', err);
+        if (!cancelled) setFiringSchedules([]);
+      }
+    }
+
+    async function loadStaff() {
+      try {
+        const res = await fetch(
+          `/api/admin/studios/${currentStudio?.id}/staff`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          console.error('Failed to load staff', await res.text());
+          if (!cancelled) setStaff([]);
+          return;
+        }
+
+        const body = await res.json();
+        if (!cancelled) {
+          setStaff(body.staff ?? []);
+        }
+      } catch (err) {
+        console.error('Error loading staff', err);
+        if (!cancelled) setStaff([]);
+      }
+    }
+
+    loadKilns();
+    loadFirings();
+    loadStaff();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStudio?.id, authToken]);
+
+  // Capacity calculation handler
+  const handleCalculateCapacity = () => {
+    try {
+      const pieceSize = selectedPieceSize === 'custom' 
+        ? customPieceSize 
+        : selectedPieceSize;
+      
+      const calculation = calculateTotalCapacity(
+        newKiln.shelfCount || 4,
+        {
+          width: shelfDimensions.width,
+          depth: shelfDimensions.depth,
+          height: shelfDimensions.height,
+        },
+        pieceSize as any
+      );
+      
+      setCapacityCalculation(calculation);
+      // Auto-update capacity in form
+      setNewKiln(prev => ({ ...prev, capacity: calculation.totalCapacity }));
+    } catch (error) {
+      console.error('Error calculating capacity:', error);
+    }
+  };
+
+  // Auto-calculate capacity when dimensions change (if auto-calculate is enabled)
+  useEffect(() => {
+    if (autoCalculateCapacity && newKiln.shelfCount && shelfDimensions.width && shelfDimensions.depth) {
+      const pieceSize = selectedPieceSize === 'custom' 
+        ? customPieceSize 
+        : selectedPieceSize;
+      
+      try {
+        const calculation = calculateTotalCapacity(
+          newKiln.shelfCount,
+          {
+            width: shelfDimensions.width,
+            depth: shelfDimensions.depth,
+            height: shelfDimensions.height,
+          },
+          pieceSize as any
+        );
+        
+        setCapacityCalculation(calculation);
+        setNewKiln(prev => ({ ...prev, capacity: calculation.totalCapacity }));
+      } catch (error) {
+        // Silently fail for auto-calculations
+      }
+    }
+  }, [
+    autoCalculateCapacity,
+    newKiln.shelfCount,
+    shelfDimensions.width,
+    shelfDimensions.depth,
+    shelfDimensions.height,
+    selectedPieceSize,
+    customPieceSize.width,
+    customPieceSize.depth,
+    customPieceSize.height,
+  ]);
+
+  // Auto-generate shelf configuration
+  const handleAutoGenerateShelves = () => {
+    if (!shelfDimensions.totalKilnHeight) return;
+    
+    const config = calculateOptimalShelfConfig(
+      shelfDimensions.totalKilnHeight,
+      shelfDimensions.shelfThickness
+    );
+    
+    setNewKiln(prev => ({
+      ...prev,
+      shelfCount: config.shelfCount,
+      shelfConfiguration: config.shelves.map(shelf => ({
+        level: shelf.level,
+        height: shelf.height,
+        capacity: 0, // Will be calculated
+      })),
+    }));
+    
+    // Update shelf dimensions height to average
+    setShelfDimensions(prev => ({
+      ...prev,
+      height: config.averageShelfHeight,
+    }));
+  };
+
+  const handleCreateKiln = async () => {
+    if (!currentStudio?.id || !authToken) {
+      console.error('Cannot create kiln: missing studio or auth token');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/studios/${currentStudio.id}/kilns`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: newKiln.name,
+          type: newKiln.type,
+          manufacturer: newKiln.manufacturer,
+          model: newKiln.model,
+          serialNumber: newKiln.serialNumber,
+          locationId: newKiln.locationId,
+          capacity: newKiln.capacity,
+          maxTemp: newKiln.maxTemp,
+          shelfCount: newKiln.shelfCount,
+          shelfConfiguration: newKiln.shelfConfiguration,
+          specifications: newKiln.specifications,
+          installDate: newKiln.installDate,
+          warrantyExpiry: newKiln.warrantyExpiry,
+          maintenanceSchedule: newKiln.maintenanceSchedule,
+          status: newKiln.status,
+          isActive: newKiln.isActive,
+          notes: newKiln.notes,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to create kiln', errorText);
+        toast.error('Failed to create kiln', {
+          description: 'Please check all required fields and try again.',
+        });
+        return;
+      }
+
+      const result = await res.json();
+      console.log('Created kiln', result);
+      
+      // Refresh kilns from backend
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kilns`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setKilns(body.kilns ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing kilns', err);
+      }
+      
+      toast.success('Kiln created successfully', {
+        description: `${newKiln.name} has been added to your studio.`,
+      });
+      
+      setShowAddKiln(false);
+      setNewKiln({
+        name: '',
+        type: 'electric',
+        manufacturer: '',
+        model: '',
+        serialNumber: '',
+        locationId: currentStudio?.locations?.[0]?.id || '',
+        capacity: 20,
+        maxTemp: 1300,
+        shelfCount: 4,
+        isActive: true,
+        status: 'available',
+        totalFirings: 0,
+        notes: '',
+        shelfConfiguration: [],
+        specifications: {},
+      });
+      // Reset capacity calculator
+      setCapacityCalculation(null);
+      setShelfDimensions({
+        width: 24,
+        depth: 24,
+        height: 10,
+        totalKilnHeight: 36,
+        shelfThickness: 1,
+      });
+      setSelectedPieceSize('medium');
+      setShowCapacityCalculator(false);
+    } catch (err) {
+      console.error('Error creating kiln', err);
+      toast.error('Error creating kiln', {
+        description: 'An unexpected error occurred. Please try again.',
+      });
+    }
   };
 
   const handleCreateKilnTemplate = () => {
@@ -174,9 +507,110 @@ export function KilnManagement() {
     });
   };
 
+  const [isEditingKiln, setIsEditingKiln] = useState(false);
+  const [editingKiln, setEditingKiln] = useState<Partial<Kiln> | null>(null);
+  const [editingShelfDimensions, setEditingShelfDimensions] = useState({
+    width: 24,
+    depth: 24,
+    height: 10,
+    totalKilnHeight: 36,
+    shelfThickness: 1,
+  });
+
   const handleViewKilnDetails = (kilnId: string) => {
+    const kiln = kilns.find((k: any) => k.id === kilnId);
+    if (kiln) {
     setSelectedKilnId(kilnId);
+      setEditingKiln({ ...kiln });
+      // Extract shelf dimensions if available
+      if (kiln.shelfConfiguration && kiln.shelfConfiguration.length > 0) {
+        const firstShelf = kiln.shelfConfiguration[0];
+        setEditingShelfDimensions(prev => ({
+          ...prev,
+          height: firstShelf.height || prev.height,
+        }));
+      }
+      setIsEditingKiln(false);
     setShowKilnDetails(true);
+    }
+  };
+
+  const handleUpdateKiln = async () => {
+    if (!currentStudio?.id || !authToken || !editingKiln?.id) {
+      console.error('Cannot update kiln: missing studio, auth token, or kiln ID');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/studios/${currentStudio.id}/kilns/${editingKiln.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: editingKiln.name,
+          type: editingKiln.type,
+          manufacturer: editingKiln.manufacturer,
+          model: editingKiln.model,
+          serialNumber: editingKiln.serialNumber,
+          locationId: editingKiln.locationId,
+          capacity: editingKiln.capacity,
+          maxTemp: editingKiln.maxTemp,
+          shelfCount: editingKiln.shelfCount,
+          shelfConfiguration: editingKiln.shelfConfiguration,
+          specifications: editingKiln.specifications,
+          installDate: editingKiln.installDate,
+          warrantyExpiry: editingKiln.warrantyExpiry,
+          maintenanceSchedule: editingKiln.maintenanceSchedule,
+          status: editingKiln.status,
+          isActive: editingKiln.isActive,
+          notes: editingKiln.notes,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to update kiln', errorText);
+        toast.error('Failed to update kiln', {
+          description: 'Please check all required fields and try again.',
+        });
+        return;
+      }
+
+      const result = await res.json();
+      console.log('Updated kiln', result);
+
+      // Refresh kilns from backend
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kilns`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setKilns(body.kilns ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing kilns', err);
+      }
+      
+      toast.success('Kiln updated successfully', {
+        description: `${editingKiln.name} has been updated.`,
+      });
+      
+      setIsEditingKiln(false);
+      setShowKilnDetails(false);
+    } catch (err) {
+      console.error('Error updating kiln', err);
+      toast.error('Error updating kiln', {
+        description: 'An unexpected error occurred. Please try again.',
+      });
+    }
   };
 
   const handleUseTemplate = (templateId: string) => {
@@ -220,6 +654,7 @@ export function KilnManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'available': return 'default';
+      case 'in-use': return 'secondary';
       case 'loading': return 'secondary';
       case 'firing': return 'destructive';
       case 'cooling': return 'secondary';
@@ -229,80 +664,27 @@ export function KilnManagement() {
     }
   };
 
-  const filteredKilns = currentStudio?.kilns?.filter(kiln => {
+  const filteredKilns = kilns.filter((kiln) => {
     const matchesSearch = kiln.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          kiln.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || kiln.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }) || [];
+  });
 
-  const filteredTemplates = currentStudio?.kilnFiringTemplates?.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
-                         template.description?.toLowerCase().includes(templateSearchTerm.toLowerCase());
-    const matchesType = templateTypeFilter === 'all' || template.baseType === templateTypeFilter;
-    return matchesSearch && matchesType && template.isActive;
-  }) || [];
+  // Templates would be loaded separately - for now use empty array
+  const filteredTemplates: any[] = [];
 
-  // Mock firing schedules for the schedule tab
-  const mockFiringSchedules: FiringSchedule[] = [
-    {
-      id: '1',
-      date: '2025-07-10',
-      type: 'Bisque',
-      temperature: '1000°C',
-      capacity: 20,
-      bookedSlots: 15,
-      notes: 'Standard bisque firing - Racks: A1, A2, A3, B1, B2',
-      status: 'scheduled',
-      kilnId: 'kiln1',
-      startTime: '09:00',
-      endTime: '18:00',
-      locationId: 'loc1',
-      assignedEmployeeId: 'emp1'
-    },
-    {
-      id: '2',
-      date: '2025-07-12',
-      type: 'Glaze',
-      temperature: '1280°C',
-      capacity: 15,
-      bookedSlots: 8,
-      notes: 'High-fire reduction glaze - Racks: C1, C2, C3',
-      status: 'scheduled',
-      kilnId: 'kiln2',
-      startTime: '08:00',
-      endTime: '20:00',
-      locationId: 'loc1',
-      assignedEmployeeId: 'emp2'
-    },
-    {
-      id: '3',
-      date: '2025-07-08',
-      type: 'Bisque',
-      temperature: '980°C',
-      capacity: 20,
-      bookedSlots: 18,
-      notes: 'Large member bisque load - Racks: A1, A2, A3, A4, B1, B2, B3, B4',
-      status: 'in-progress',
-      kilnId: 'kiln1',
-      startTime: '10:00',
-      endTime: '19:00',
-      locationId: 'loc1',
-      assignedEmployeeId: 'emp1'
-    }
-  ];
+  // Staff/operators state
+  const [staff, setStaff] = useState<any[]>([]);
 
-  // Mock operators/staff
-  const operators = [
-    { id: 'emp1', name: 'Mike Chen', role: 'Lead Kiln Operator' },
-    { id: 'emp2', name: 'Sarah Wilson', role: 'Studio Manager' },
-    { id: 'emp3', name: 'David Park', role: 'Kiln Technician' }
-  ];
-
-  const filteredSchedules = mockFiringSchedules.filter(schedule => {
-    const matchesSearch = schedule.type.toLowerCase().includes(scheduleSearchTerm.toLowerCase()) ||
-                         schedule.notes?.toLowerCase().includes(scheduleSearchTerm.toLowerCase());
-    const matchesStatus = scheduleStatusFilter === 'all' || schedule.status === scheduleStatusFilter;
+  const filteredSchedules = firingSchedules.filter((schedule: any) => {
+    const type = (schedule.type ?? schedule.firing_type ?? '').toString();
+    const notes = (schedule.notes ?? '').toString();
+    const matchesSearch =
+      type.toLowerCase().includes(scheduleSearchTerm.toLowerCase()) ||
+      notes.toLowerCase().includes(scheduleSearchTerm.toLowerCase());
+    const matchesStatus =
+      scheduleStatusFilter === 'all' || schedule.status === scheduleStatusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -352,10 +734,468 @@ export function KilnManagement() {
     );
   };
 
-  const handleCreateSchedule = () => {
-    console.log('Creating firing schedule with racks:', selectedRacks);
-    setShowCreateScheduleDialog(false);
-    setSelectedRacks([]);
+  const handleCreateSchedule = async () => {
+    if (!currentStudio?.id || !authToken) {
+      console.error('Cannot create firing schedule: missing studio or auth token');
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name: scheduleForm.name,
+            kilnId: scheduleForm.kilnId,
+            date: scheduleForm.date,
+            startTime: scheduleForm.startTime,
+            atmosphere: null,
+            targetCone: scheduleForm.temperature || null,
+            operatorId: scheduleForm.operatorId || null,
+            notes: scheduleForm.notes,
+            rackNumbers: selectedRacks,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error('Failed to create kiln firing', await res.text());
+        return;
+      }
+
+      console.log('Created kiln firing', await res.json());
+      // Refresh firing schedules from backend
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing kiln firings', err);
+      }
+      setShowCreateScheduleDialog(false);
+      setSelectedRacks([]);
+      setScheduleForm({
+        name: '',
+        kilnId: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        firingType: '',
+        operatorId: '',
+        locationId: currentStudio?.locations?.[0]?.id || '',
+        temperature: '',
+        notes: '',
+      });
+    } catch (err) {
+      console.error('Error creating kiln firing', err);
+    }
+  };
+
+  const handleStartFiring = (kilnId: string) => {
+    // First, check if there's already an active firing for this kiln
+    // A kiln can only have one active firing at a time (loading, firing, or cooling)
+    const activeFiring = firingSchedules.find(
+      (f: any) => 
+        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+        ['loading', 'firing', 'cooling'].includes(f.status)
+    );
+
+    if (activeFiring) {
+      toast.error('Cannot start new firing', {
+        description: `This kiln already has an active firing: "${activeFiring.name || 'Unnamed'}" (${activeFiring.status}). Please complete or cancel the current firing first.`,
+      });
+      return;
+    }
+
+    // Check if kiln status is in-use (should match active firing check, but double-check)
+    const kiln = kilns.find((k: any) => k.id === kilnId);
+    if (kiln?.status === 'in-use') {
+      toast.error('Cannot start new firing', {
+        description: 'This kiln is currently in use. Please complete the current firing first.',
+      });
+      return;
+    }
+
+    // Find all scheduled firings for this kiln
+    // Handle both snake_case (from API) and camelCase (transformed) formats
+    const scheduledFirings = firingSchedules.filter(
+      (f: any) => (f.kiln_id === kilnId || f.kilnId === kilnId) && f.status === 'scheduled'
+    );
+
+    if (scheduledFirings.length === 0) {
+      // No scheduled firings, open quick-start modal
+      setQuickStartKilnId(kilnId);
+      setQuickStartForm({
+        name: '',
+        templateId: '',
+        atmosphere: 'oxidation',
+        targetCone: '',
+        targetTemperature: '',
+        notes: '',
+        operatorId: '',
+      });
+      setShowQuickStartFiring(true);
+      return;
+    }
+
+    // Sort scheduled firings by priority:
+    // 1. Past due firings first (scheduled_start < now)
+    // 2. Then by scheduled_start time (earliest first)
+    const now = new Date();
+    const sortedFirings = scheduledFirings.sort((a: any, b: any) => {
+      const aStart = a.scheduled_start ? new Date(a.scheduled_start) : null;
+      const bStart = b.scheduled_start ? new Date(b.scheduled_start) : null;
+      
+      // Both have dates
+      if (aStart && bStart) {
+        const aPastDue = aStart < now;
+        const bPastDue = bStart < now;
+        
+        // Past due firings come first
+        if (aPastDue && !bPastDue) return -1;
+        if (!aPastDue && bPastDue) return 1;
+        
+        // Both past due or both future: sort by time
+        return aStart.getTime() - bStart.getTime();
+      }
+      
+      // One has date, one doesn't - prioritize the one with date
+      if (aStart && !bStart) return -1;
+      if (!aStart && bStart) return 1;
+      
+      // Neither has date - sort by creation time
+      const aCreated = a.created_at ? new Date(a.created_at) : new Date(0);
+      const bCreated = b.created_at ? new Date(b.created_at) : new Date(0);
+      return aCreated.getTime() - bCreated.getTime();
+    });
+
+    // Always show selection dialog, even for single scheduled firing
+    setScheduledFiringsForKiln(sortedFirings);
+    setQuickStartKilnId(kilnId); // Store kilnId for fallback to quick-start
+    setShowScheduledFiringSelection(true);
+  };
+
+  const handleStartScheduledFiring = async (firingId: string) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot start firing', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            status: 'loading',
+            actualStart: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to start firing', errorText);
+        toast.error('Failed to start firing', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh firings and kilns
+      const refreshFirings = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setFiringSchedules(body.firings ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing firings', err);
+        }
+      };
+
+      const refreshKilns = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kilns`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setKilns(body.kilns ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing kilns', err);
+        }
+      };
+
+      await Promise.all([refreshFirings(), refreshKilns()]);
+
+      toast.success('Firing started', {
+        description: 'The kiln is now loading.',
+      });
+    } catch (err) {
+      console.error('Error starting firing', err);
+      toast.error('Failed to start firing', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
+  const handleQuickStartFiring = async () => {
+    if (!currentStudio?.id || !authToken || !quickStartKilnId) {
+      toast.error('Cannot start firing', {
+        description: 'Missing required information.',
+      });
+      return;
+    }
+
+    try {
+      // Create firing with status "loading" to start immediately
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name: quickStartForm.name || `Quick Start - ${new Date().toLocaleString()}`,
+            kilnId: quickStartKilnId,
+            date: new Date().toISOString().split('T')[0],
+            startTime: new Date().toTimeString().slice(0, 5),
+            atmosphere: quickStartForm.atmosphere || null,
+            targetCone: quickStartForm.targetCone || null,
+            targetTemperature: quickStartForm.targetTemperature || null,
+            operatorId: quickStartForm.operatorId || null,
+            notes: quickStartForm.notes || null,
+            status: 'loading', // Start immediately
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to create firing', errorText);
+        toast.error('Failed to start firing', {
+          description: 'Please check all fields and try again.',
+        });
+        return;
+      }
+
+      // Refresh firings and kilns
+      const refreshFirings = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setFiringSchedules(body.firings ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing firings', err);
+        }
+      };
+
+      const refreshKilns = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kilns`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setKilns(body.kilns ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing kilns', err);
+        }
+      };
+
+      await Promise.all([refreshFirings(), refreshKilns()]);
+
+      setShowQuickStartFiring(false);
+      setQuickStartKilnId('');
+      setQuickStartForm({
+        name: '',
+        templateId: '',
+        atmosphere: 'oxidation',
+        targetCone: '',
+        targetTemperature: '',
+        notes: '',
+        operatorId: '',
+      });
+
+      toast.success('Firing started', {
+        description: 'The kiln is now loading.',
+      });
+    } catch (err) {
+      console.error('Error starting firing', err);
+      toast.error('Failed to start firing', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
+  const handleProgressFiring = async (firingId: string, currentStatus: string) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot progress firing', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    let nextStatus: string;
+    let statusMessage: string;
+
+    // Determine next status in the progression
+    switch (currentStatus) {
+      case 'loading':
+        nextStatus = 'firing';
+        statusMessage = 'Firing started. The kiln is now firing.';
+        break;
+      case 'firing':
+        nextStatus = 'cooling';
+        statusMessage = 'Firing complete. The kiln is now cooling.';
+        break;
+      case 'cooling':
+        nextStatus = 'completed';
+        statusMessage = 'Firing completed successfully!';
+        break;
+      default:
+        toast.error('Invalid firing status', {
+          description: `Cannot progress from status: ${currentStatus}`,
+        });
+        return;
+    }
+
+    try {
+      const updateData: any = {
+        status: nextStatus,
+      };
+
+      // Set actual_start when moving to firing
+      if (nextStatus === 'firing') {
+        updateData.actualStart = new Date().toISOString();
+      }
+
+      // Set actual_end when completing
+      if (nextStatus === 'completed') {
+        updateData.actualEnd = new Date().toISOString();
+      }
+
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(updateData),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to progress firing', errorText);
+        toast.error('Failed to progress firing', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh firings and kilns
+      const refreshFirings = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setFiringSchedules(body.firings ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing firings', err);
+        }
+      };
+
+      const refreshKilns = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kilns`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setKilns(body.kilns ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing kilns', err);
+        }
+      };
+
+      await Promise.all([refreshFirings(), refreshKilns()]);
+
+      toast.success(statusMessage);
+    } catch (err) {
+      console.error('Error progressing firing', err);
+      toast.error('Failed to progress firing', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
   };
 
   return (
@@ -415,17 +1255,26 @@ export function KilnManagement() {
                   Add Kiln
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
+              <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+                <DialogHeader className="flex-shrink-0">
                   <DialogTitle>Add New Kiln</DialogTitle>
                   <DialogDescription>
-                    Add a new kiln to your studio inventory
+                    Add a new kiln to your studio inventory with detailed configuration
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6">
+                <Tabs defaultValue="basic" className="w-full flex flex-col flex-1 min-h-0">
+                  <TabsList className="grid w-full grid-cols-4 flex-shrink-0 gap-2">
+                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                    <TabsTrigger value="shelves">Capacity</TabsTrigger>
+                    <TabsTrigger value="specs">Specifications</TabsTrigger>
+                    <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+                  </TabsList>
+
+                  {/* Basic Information Tab */}
+                  <TabsContent value="basic" className="space-y-6 flex-1 overflow-y-auto mt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Kiln Name</Label>
+                        <Label>Kiln Name *</Label>
                       <Input
                         value={newKiln.name}
                         onChange={(e) => setNewKiln(prev => ({ ...prev, name: e.target.value }))}
@@ -433,7 +1282,7 @@ export function KilnManagement() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Type</Label>
+                        <Label>Type *</Label>
                       <Select 
                         value={newKiln.type} 
                         onValueChange={(value) => setNewKiln(prev => ({ ...prev, type: value as any }))}
@@ -470,21 +1319,81 @@ export function KilnManagement() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Capacity (pieces)</Label>
+                        <Label>Serial Number</Label>
                       <Input
-                        type="number"
-                        value={newKiln.capacity}
-                        onChange={(e) => setNewKiln(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
+                          value={newKiln.serialNumber}
+                          onChange={(e) => setNewKiln(prev => ({ ...prev, serialNumber: e.target.value }))}
+                          placeholder="Optional"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Max Temperature (°C)</Label>
+                        <Label>Location *</Label>
+                        <Select 
+                          value={newKiln.locationId} 
+                          onValueChange={(value) => setNewKiln(prev => ({ ...prev, locationId: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currentStudio?.locations.map(location => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Max Temperature (°C) *</Label>
                       <Input
                         type="number"
                         value={newKiln.maxTemp}
                         onChange={(e) => setNewKiln(prev => ({ ...prev, maxTemp: parseInt(e.target.value) || 0 }))}
+                        placeholder="e.g., 1300"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={newKiln.notes}
+                        onChange={(e) => setNewKiln(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Additional notes about this kiln..."
+                        rows={3}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Capacity Tab */}
+                  <TabsContent value="shelves" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">Shelf Configuration</h3>
+                          <p className="text-sm text-muted-foreground">Configure shelves and calculate capacity</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAutoGenerateShelves}
+                        >
+                          <Calculator className="w-4 h-4 mr-2" />
+                          Auto-Generate
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Total Kiln Height (inches)</Label>
+                          <Input
+                            type="number"
+                            value={shelfDimensions.totalKilnHeight}
+                            onChange={(e) => setShelfDimensions(prev => ({ ...prev, totalKilnHeight: parseInt(e.target.value) || 0 }))}
                       />
                     </div>
                     <div className="space-y-2">
@@ -495,38 +1404,617 @@ export function KilnManagement() {
                         onChange={(e) => setNewKiln(prev => ({ ...prev, shelfCount: parseInt(e.target.value) || 0 }))}
                       />
                     </div>
+                        <div className="space-y-2">
+                          <Label>Shelf Thickness (inches)</Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={shelfDimensions.shelfThickness}
+                            onChange={(e) => setShelfDimensions(prev => ({ ...prev, shelfThickness: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
                   </div>
 
+                      <Separator />
+
+                      {/* Shelf Dimensions */}
+                      <div>
+                        <h4 className="font-medium mb-3">Shelf Dimensions</h4>
+                        <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Location</Label>
+                            <Label>Width (inches)</Label>
+                            <Input
+                              type="number"
+                              value={shelfDimensions.width}
+                              onChange={(e) => setShelfDimensions(prev => ({ ...prev, width: parseInt(e.target.value) || 0 }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Depth (inches)</Label>
+                            <Input
+                              type="number"
+                              value={shelfDimensions.depth}
+                              onChange={(e) => setShelfDimensions(prev => ({ ...prev, depth: parseInt(e.target.value) || 0 }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Height/Clearance (inches)</Label>
+                            <Input
+                              type="number"
+                              value={shelfDimensions.height}
+                              onChange={(e) => setShelfDimensions(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Capacity Calculator */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Capacity Calculator</h4>
+                            <p className="text-sm text-muted-foreground">Calculate capacity based on piece size</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={autoCalculateCapacity}
+                                onCheckedChange={setAutoCalculateCapacity}
+                                id="auto-calculate"
+                              />
+                              <Label htmlFor="auto-calculate" className="text-sm">Auto-calculate</Label>
+                            </div>
+                            {!autoCalculateCapacity && (
+                              <Button onClick={handleCalculateCapacity} variant="outline" size="sm">
+                                <Calculator className="w-4 h-4 mr-2" />
+                                Calculate
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Piece Size</Label>
                     <Select 
-                      value={newKiln.locationId} 
-                      onValueChange={(value) => setNewKiln(prev => ({ ...prev, locationId: value }))}
+                              value={selectedPieceSize}
+                              onValueChange={(value) => setSelectedPieceSize(value as any)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select location" />
+                                <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {currentStudio?.locations.map(location => (
-                          <SelectItem key={location.id} value={location.id}>
-                            {location.name}
+                                {Object.entries(PIECE_SIZE_PRESETS).map(([key, preset]) => (
+                                  <SelectItem key={key} value={key}>
+                                    {preset.name} - {preset.description}
                           </SelectItem>
                         ))}
+                                <SelectItem value="custom">Custom Size</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
+                          {selectedPieceSize === 'custom' && (
+                            <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-2">
-                    <Label>Notes</Label>
+                                <Label>Width (in)</Label>
+                                <Input
+                                  type="number"
+                                  value={customPieceSize.width}
+                                  onChange={(e) =>
+                                    setCustomPieceSize(prev => ({
+                                      ...prev,
+                                      width: parseInt(e.target.value) || 0,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Depth (in)</Label>
+                                <Input
+                                  type="number"
+                                  value={customPieceSize.depth}
+                                  onChange={(e) =>
+                                    setCustomPieceSize(prev => ({
+                                      ...prev,
+                                      depth: parseInt(e.target.value) || 0,
+                                    }))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Height (in)</Label>
+                                <Input
+                                  type="number"
+                                  value={customPieceSize.height}
+                                  onChange={(e) =>
+                                    setCustomPieceSize(prev => ({
+                                      ...prev,
+                                      height: parseInt(e.target.value) || 0,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {capacityCalculation && (
+                          <Card className="bg-muted/50">
+                            <CardContent className="pt-6">
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Pieces per Shelf</p>
+                                  <p className="text-2xl font-bold">{capacityCalculation.piecesPerShelf}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Total Capacity</p>
+                                  <p className="text-2xl font-bold">{capacityCalculation.totalCapacity}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Utilization</p>
+                                  <p className="text-2xl font-bold">
+                                    {(capacityCalculation.utilizationRate * 100).toFixed(0)}%
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <Label>Calculated Capacity (will auto-fill)</Label>
+                                <Input
+                                  type="number"
+                                  value={newKiln.capacity}
+                                  onChange={(e) => setNewKiln(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
+                                  readOnly={!!capacityCalculation}
+                                  className={capacityCalculation ? 'bg-muted' : ''}
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Technical Specifications Tab */}
+                  <TabsContent value="specs" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                    <div className="space-y-4">
+                      <h3 className="font-semibold">Technical Specifications</h3>
+                      
+                      {/* Interior Dimensions */}
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-3">Interior Dimensions (inches)</h4>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label>Width</Label>
+                              <Input
+                                type="number"
+                                value={interiorDimensions.width}
+                                onChange={(e) => {
+                                  const width = parseInt(e.target.value) || 0;
+                                  setInteriorDimensions(prev => ({ ...prev, width }));
+                                  setShelfDimensions(prev => ({ ...prev, width }));
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Depth</Label>
+                              <Input
+                                type="number"
+                                value={interiorDimensions.depth}
+                                onChange={(e) => {
+                                  const depth = parseInt(e.target.value) || 0;
+                                  setInteriorDimensions(prev => ({ ...prev, depth }));
+                                  setShelfDimensions(prev => ({ ...prev, depth }));
+                                }}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Height</Label>
+                              <Input
+                                type="number"
+                                value={interiorDimensions.height}
+                                onChange={(e) => {
+                                  const height = parseInt(e.target.value) || 0;
+                                  setInteriorDimensions(prev => ({ ...prev, height }));
+                                  setShelfDimensions(prev => ({ ...prev, totalKilnHeight: height }));
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <Separator />
+                      </div>
+                      
+                      {/* Electric Kiln Fields */}
+                      {newKiln.type === 'electric' && (
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Electrical Specifications</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Voltage</Label>
+                              <Input
+                                value={newKiln.specifications?.voltage || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, voltage: e.target.value }
+                                }))}
+                                placeholder="e.g., 240V"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Amperage</Label>
+                              <Input
+                                value={newKiln.specifications?.amperage || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, amperage: e.target.value }
+                                }))}
+                                placeholder="e.g., 50A"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Controller Type</Label>
+                              <Select
+                                value={newKiln.specifications?.controllerType || ''}
+                                onValueChange={(value) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, controllerType: value }
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select controller type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="digital">Digital</SelectItem>
+                                  <SelectItem value="manual">Manual</SelectItem>
+                                  <SelectItem value="programmable">Programmable</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Element Count</Label>
+                              <Input
+                                type="number"
+                                value={(newKiln.specifications as any)?.elementCount || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, elementCount: parseInt(e.target.value) || undefined }
+                                }))}
+                                placeholder="Number of elements"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gas Kiln Fields */}
+                      {newKiln.type === 'gas' && (
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Gas Specifications</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Gas Type</Label>
+                              <Select
+                                value={newKiln.specifications?.gasType || ''}
+                                onValueChange={(value) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, gasType: value as 'natural' | 'propane' }
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select gas type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="natural">Natural Gas</SelectItem>
+                                  <SelectItem value="propane">Propane</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Burner Count</Label>
+                              <Input
+                                type="number"
+                                value={(newKiln.specifications as any)?.burnerCount || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, burnerCount: parseInt(e.target.value) || undefined }
+                                }))}
+                                placeholder="Number of burners"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Ventilation Required</Label>
+                              <Select
+                                value={(newKiln.specifications as any)?.ventilationRequired ? 'yes' : 'no'}
+                                onValueChange={(value) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, ventilationRequired: value === 'yes' }
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="yes">Yes</SelectItem>
+                                  <SelectItem value="no">No</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Wood Kiln Fields */}
+                      {newKiln.type === 'wood' && (
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Wood Firing Specifications</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Firebox Size (cubic feet)</Label>
+                              <Input
+                                type="number"
+                                value={(newKiln.specifications as any)?.fireboxSize || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, fireboxSize: parseFloat(e.target.value) || undefined }
+                                }))}
+                                placeholder="Firebox volume"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Chimney Height (feet)</Label>
+                              <Input
+                                type="number"
+                                value={(newKiln.specifications as any)?.chimneyHeight || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, chimneyHeight: parseFloat(e.target.value) || undefined }
+                                }))}
+                                placeholder="Chimney height"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Raku Kiln Fields */}
+                      {newKiln.type === 'raku' && (
+                        <div className="space-y-4">
+                          <h4 className="font-medium">Raku Specifications</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Safety Equipment Required</Label>
                     <Textarea
-                      value={newKiln.notes}
-                      onChange={(e) => setNewKiln(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Additional notes about this kiln..."
+                                value={(newKiln.specifications as any)?.safetyEquipment || ''}
+                                onChange={(e) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, safetyEquipment: e.target.value }
+                                }))}
+                                placeholder="List required safety equipment"
                       rows={3}
                     />
                   </div>
+                            <div className="space-y-2">
+                              <Label>Cooling Area Available</Label>
+                              <Select
+                                value={(newKiln.specifications as any)?.coolingArea ? 'yes' : 'no'}
+                                onValueChange={(value) => setNewKiln(prev => ({
+                                  ...prev,
+                                  specifications: { ...prev.specifications, coolingArea: value === 'yes' }
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="yes">Yes</SelectItem>
+                                  <SelectItem value="no">No</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
 
-                  <div className="flex justify-end space-x-3">
+                  {/* Maintenance Tab */}
+                  <TabsContent value="maintenance" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-4">Installation & Warranty</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Install Date</Label>
+                            <Input
+                              type="date"
+                              value={newKiln.installDate ? newKiln.installDate.split('T')[0] : ''}
+                              onChange={(e) => setNewKiln(prev => ({
+                                ...prev,
+                                installDate: e.target.value ? new Date(e.target.value).toISOString() : undefined
+                              }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Warranty Expiry</Label>
+                            <Input
+                              type="date"
+                              value={newKiln.warrantyExpiry ? newKiln.warrantyExpiry.split('T')[0] : ''}
+                              onChange={(e) => setNewKiln(prev => ({
+                                ...prev,
+                                warrantyExpiry: e.target.value ? new Date(e.target.value).toISOString() : undefined
+                              }))}
+                            />
+                            {newKiln.warrantyExpiry && new Date(newKiln.warrantyExpiry) < new Date() && (
+                              <p className="text-sm text-destructive">Warranty has expired</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <h3 className="font-semibold mb-4">Maintenance Schedule</h3>
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>Schedule Type</Label>
+                            <Select
+                              value={maintenanceScheduleType}
+                              onValueChange={(value) => {
+                                setMaintenanceScheduleType(value as 'firings' | 'time' | 'both');
+                                setNewKiln(prev => ({
+                                  ...prev,
+                                  maintenanceSchedule: {
+                                    ...prev.maintenanceSchedule,
+                                    maintenanceType: 'routine',
+                                    lastMaintenance: new Date().toISOString(),
+                                    nextMaintenance: new Date().toISOString(),
+                                  }
+                                }));
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="time">Time-based (days/months)</SelectItem>
+                                <SelectItem value="firings">Firing-based (every N firings)</SelectItem>
+                                <SelectItem value="both">Both time and firing-based</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>
+                              {maintenanceScheduleType === 'firings' 
+                                ? 'Maintenance Interval (number of firings)' 
+                                : maintenanceScheduleType === 'time'
+                                ? 'Maintenance Interval (days)'
+                                : 'Time Interval (days)'}
+                            </Label>
+                            <Input
+                              type="number"
+                              value={maintenanceInterval}
+                              onChange={(e) => {
+                                const interval = parseInt(e.target.value) || 0;
+                                setMaintenanceInterval(interval);
+                                
+                                // Calculate next maintenance date
+                                if (maintenanceScheduleType === 'time' || maintenanceScheduleType === 'both') {
+                                  const nextDate = new Date();
+                                  nextDate.setDate(nextDate.getDate() + interval);
+                                  setNewKiln(prev => ({
+                                    ...prev,
+                                    maintenanceSchedule: {
+                                      ...prev.maintenanceSchedule,
+                                      maintenanceType: 'routine',
+                                      lastMaintenance: new Date().toISOString(),
+                                      nextMaintenance: nextDate.toISOString(),
+                                    }
+                                  }));
+                                }
+                              }}
+                              placeholder={maintenanceScheduleType === 'firings' ? 'e.g., 50' : 'e.g., 180'}
+                            />
+                            {maintenanceScheduleType === 'firings' && (
+                              <p className="text-sm text-muted-foreground">
+                                Maintenance will be scheduled after every {maintenanceInterval} firings
+                              </p>
+                            )}
+                            {maintenanceScheduleType === 'time' && (
+                              <p className="text-sm text-muted-foreground">
+                                Next maintenance: {maintenanceInterval > 0 
+                                  ? new Date(Date.now() + maintenanceInterval * 24 * 60 * 60 * 1000).toLocaleDateString()
+                                  : 'Not set'}
+                              </p>
+                            )}
+                          </div>
+
+                          {maintenanceScheduleType === 'both' && (
+                            <div className="space-y-2">
+                              <Label>Firing Interval (number of firings)</Label>
+                              <Input
+                                type="number"
+                                value={(newKiln.maintenanceSchedule as any)?.firingInterval || ''}
+                                onChange={(e) => {
+                                  const interval = parseInt(e.target.value) || undefined;
+                                  setNewKiln(prev => ({
+                                    ...prev,
+                                    maintenanceSchedule: prev.maintenanceSchedule ? {
+                                      ...prev.maintenanceSchedule,
+                                      lastMaintenance: prev.maintenanceSchedule.lastMaintenance || new Date().toISOString(),
+                                      nextMaintenance: prev.maintenanceSchedule.nextMaintenance || new Date().toISOString(),
+                                      maintenanceType: prev.maintenanceSchedule.maintenanceType || 'routine',
+                                      firingInterval: interval
+                                    } : {
+                                      lastMaintenance: new Date().toISOString(),
+                                      nextMaintenance: new Date().toISOString(),
+                                      maintenanceType: 'routine',
+                                      firingInterval: interval
+                                    }
+                                  }));
+                                }}
+                                placeholder="e.g., 50"
+                              />
+                              <p className="text-sm text-muted-foreground">
+                                Maintenance will be scheduled based on both time ({maintenanceInterval} days) and firings
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <Label>Maintenance Type</Label>
+                            <Select
+                              value={newKiln.maintenanceSchedule?.maintenanceType || 'routine'}
+                              onValueChange={(value) => setNewKiln(prev => ({
+                                ...prev,
+                                maintenanceSchedule: {
+                                  ...prev.maintenanceSchedule,
+                                  maintenanceType: value,
+                                  lastMaintenance: prev.maintenanceSchedule?.lastMaintenance || new Date().toISOString(),
+                                  nextMaintenance: prev.maintenanceSchedule?.nextMaintenance || new Date().toISOString(),
+                                }
+                              }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="routine">Routine Maintenance</SelectItem>
+                                <SelectItem value="deep-clean">Deep Clean</SelectItem>
+                                <SelectItem value="inspection">Inspection</SelectItem>
+                                <SelectItem value="repair">Repair</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label>Kiln Status</Label>
+                          <p className="text-sm text-muted-foreground">Set whether this kiln is currently active</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={newKiln.isActive ?? true}
+                            onCheckedChange={(checked) => setNewKiln(prev => ({ ...prev, isActive: checked }))}
+                          />
+                          <Label>{newKiln.isActive ? 'Active' : 'Inactive'}</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0 mt-4">
                     <Button variant="outline" onClick={() => setShowAddKiln(false)}>
                       Cancel
                     </Button>
@@ -534,7 +2022,6 @@ export function KilnManagement() {
                       <Save className="w-4 h-4 mr-2" />
                       Add Kiln
                     </Button>
-                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -542,7 +2029,21 @@ export function KilnManagement() {
 
           {/* Kilns Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {filteredKilns.map((kiln) => (
+            {filteredKilns.map((kiln) => {
+              // Determine kiln status - check if there's an active firing
+              const activeFiring = firingSchedules.find(
+                (f: any) => 
+                  (f.kiln_id === kiln.id || f.kilnId === kiln.id) && 
+                  ['loading', 'firing', 'cooling'].includes(f.status)
+              );
+              
+              // If there's an active firing but kiln status isn't in-use, use in-use
+              // Otherwise use the kiln's actual status
+              const displayStatus = activeFiring && kiln.status !== 'in-use' 
+                ? 'in-use' 
+                : (kiln.status || 'available');
+              
+              return (
               <Card key={kiln.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -552,8 +2053,8 @@ export function KilnManagement() {
                         <Badge variant="outline" className="capitalize">
                           {kiln.type}
                         </Badge>
-                        <Badge variant={getStatusBadge(kiln.status) as any}>
-                          {kiln.status}
+                        <Badge variant={getStatusBadge(displayStatus) as any}>
+                          {displayStatus}
                         </Badge>
                       </div>
                     </div>
@@ -568,7 +2069,10 @@ export function KilnManagement() {
                           <Eye className="w-4 h-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          handleViewKilnDetails(kiln.id);
+                          setIsEditingKiln(true);
+                        }}>
                           <Edit2 className="w-4 h-4 mr-2" />
                           Edit Kiln
                         </DropdownMenuItem>
@@ -611,19 +2115,75 @@ export function KilnManagement() {
                     </div>
                   )}
 
+                  {/* Active Firing Status */}
+                  {activeFiring && (
+                    <div className="space-y-3 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {activeFiring.name || 'Active Firing'}
+                            </span>
+                            <Badge variant={
+                              activeFiring.status === 'loading' ? 'secondary' :
+                              activeFiring.status === 'firing' ? 'destructive' :
+                              'default'
+                            }>
+                              {activeFiring.status}
+                            </Badge>
+                          </div>
+                          {activeFiring.actual_start && (
+                            <p className="text-xs text-muted-foreground">
+                              Started: {new Date(activeFiring.actual_start).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleProgressFiring(activeFiring.id, activeFiring.status)}
+                        >
+                          {activeFiring.status === 'loading' && (
+                            <>
+                              <Flame className="w-4 h-4 mr-2" />
+                              Start Firing
+                            </>
+                          )}
+                          {activeFiring.status === 'firing' && (
+                            <>
+                              <Timer className="w-4 h-4 mr-2" />
+                              Start Cooling
+                            </>
+                          )}
+                          {activeFiring.status === 'cooling' && (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Complete
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center space-x-2">
                     <Button size="sm" variant="outline" onClick={() => handleViewKilnDetails(kiln.id)}>
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
-                    <Button size="sm">
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleStartFiring(kiln.id)}
+                      disabled={displayStatus === 'in-use' || !!activeFiring}
+                    >
                       <Play className="w-4 h-4 mr-2" />
                       Start Firing
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </TabsContent>
 
@@ -688,7 +2248,7 @@ export function KilnManagement() {
                             <SelectValue placeholder="Choose kiln" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.kilns?.map((kiln) => (
+                            {kilns.map((kiln: any) => (
                               <SelectItem key={kiln.id} value={kiln.id}>
                                 {kiln.name} ({kiln.type})
                               </SelectItem>
@@ -990,7 +2550,7 @@ export function KilnManagement() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemplates.map((template) => {
-                const kiln = currentStudio?.kilns?.find(k => k.id === template.kilnId);
+                const kiln = kilns.find((k: any) => k.id === template.kilnId);
                 const successRate = template.averageSuccessRate || 0;
                 
                 return (
@@ -1098,7 +2658,7 @@ export function KilnManagement() {
                         </div>
                         <div className="text-sm">
                           <span className="font-medium">
-                            {Math.min(...template.temperatureCurve.map(c => c.targetTemp))}°C - {Math.max(...template.temperatureCurve.map(c => c.targetTemp))}°C
+                            {Math.min(...template.temperatureCurve.map((c: any) => c.targetTemp))}°C - {Math.max(...template.temperatureCurve.map((c: any) => c.targetTemp))}°C
                           </span>
                         </div>
                       </div>
@@ -1218,16 +2778,33 @@ export function KilnManagement() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Firing Name</Label>
-                        <Input placeholder="e.g., Morning Bisque Load" />
+                        <Input
+                          placeholder="e.g., Morning Bisque Load"
+                          value={scheduleForm.name}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Kiln</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.kilnId}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              kilnId: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select kiln" />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentStudio?.kilns?.map(kiln => (
+                            {kilns.map((kiln: any) => (
                               <SelectItem key={kiln.id} value={kiln.id}>
                                 {kiln.name} ({kiln.type})
                               </SelectItem>
@@ -1240,22 +2817,57 @@ export function KilnManagement() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Date</Label>
-                        <Input type="date" />
+                        <Input
+                          type="date"
+                          value={scheduleForm.date}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              date: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Start Time</Label>
-                        <Input type="time" />
+                        <Input
+                          type="time"
+                          value={scheduleForm.startTime}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              startTime: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>End Time</Label>
-                        <Input type="time" />
+                        <Input
+                          type="time"
+                          value={scheduleForm.endTime}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              endTime: e.target.value,
+                            }))
+                          }
+                        />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Firing Type</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.firingType}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              firingType: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
@@ -1263,20 +2875,43 @@ export function KilnManagement() {
                             <SelectItem value="bisque">Bisque</SelectItem>
                             <SelectItem value="glaze">Glaze</SelectItem>
                             <SelectItem value="raku">Raku</SelectItem>
-                            <SelectItem value="crystalline">Crystalline</SelectItem>
+                            <SelectItem value="crystalline">
+                              Crystalline
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
+                        <Label>Temperature / Cone</Label>
+                        <Input
+                          placeholder="e.g., 1280°C or Cone 10"
+                          value={scheduleForm.temperature}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              temperature: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label>Operator</Label>
-                        <Select>
+                        <Select
+                          value={scheduleForm.operatorId}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              operatorId: value,
+                            }))
+                          }
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select operator" />
                           </SelectTrigger>
                           <SelectContent>
-                            {operators.map(operator => (
-                              <SelectItem key={operator.id} value={operator.id}>
-                                {operator.name} - {operator.role}
+                            {staff.map((operator) => (
+                              <SelectItem key={operator.id || operator.userId} value={operator.id || operator.userId}>
+                                {operator.name} - {operator.role || 'Staff'}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1335,6 +2970,13 @@ export function KilnManagement() {
                       <Textarea
                         placeholder="Special instructions, notes about this firing..."
                         rows={3}
+                        value={scheduleForm.notes}
+                        onChange={(e) =>
+                          setScheduleForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
                       />
                     </div>
 
@@ -1342,6 +2984,18 @@ export function KilnManagement() {
                       <Button variant="outline" onClick={() => {
                         setShowCreateScheduleDialog(false);
                         setSelectedRacks([]);
+                        setScheduleForm({
+                          name: '',
+                          kilnId: '',
+                          date: '',
+                          startTime: '',
+                          endTime: '',
+                          firingType: '',
+                          operatorId: '',
+                          locationId: currentStudio?.locations?.[0]?.id || '',
+                          temperature: '',
+                          notes: '',
+                        });
                       }}>
                         Cancel
                       </Button>
@@ -1373,6 +3027,7 @@ export function KilnManagement() {
                       onCheckedChange={handleSelectAllSchedules}
                     />
                   </TableHead>
+                  <TableHead>Firing Name</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Kiln</TableHead>
@@ -1385,10 +3040,60 @@ export function KilnManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSchedules.map((schedule) => {
-                  const kiln = currentStudio?.kilns?.find(k => k.id === schedule.kilnId);
-                  const operator = operators.find(op => op.id === schedule.assignedEmployeeId);
+                {filteredSchedules.map((schedule: any) => {
+                  // Get kiln from joined data or fallback to kilns state
+                  const kiln = schedule.kilns || kilns.find((k) => k.id === (schedule.kiln_id || schedule.kilnId));
+                  // Get template if available
+                  const template = schedule.templates;
+                  // Get creator/operator from joined data or fallback to staff lookup
+                  const creator = schedule.creator;
+                  const operatorProfile = schedule.operator;
                   
+                  // Find operator: first try operator from joined data, then fall back to creator
+                  const operator = operatorProfile
+                    ? staff.find((s) => (s.userId === operatorProfile.id || s.id === operatorProfile.id))
+                    : creator
+                    ? staff.find((s) => s.userId === creator.id || s.id === creator.id)
+                    : staff.find((s) => s.userId === schedule.created_by || s.id === schedule.created_by);
+                  
+                  const scheduledStart = schedule.scheduled_start
+                    ? new Date(schedule.scheduled_start)
+                    : schedule.date
+                    ? new Date(schedule.date)
+                    : null;
+
+                  // Map firing type: from template base_type, or derive from kiln type, or fallback
+                  const firingType = template?.base_type 
+                    || (kiln?.type === 'raku' ? 'raku' : kiln?.type === 'electric' ? 'bisque' : 'glaze')
+                    || schedule.type 
+                    || schedule.firing_type 
+                    || schedule.firingType 
+                    || '—';
+
+                  // Map temperature: from target_cone, or from template temperature curve max, or fallback
+                  let temperature = '';
+                  if (schedule.target_cone) {
+                    temperature = schedule.target_cone;
+                  } else if (template?.temperature_curve && Array.isArray(template.temperature_curve)) {
+                    const maxTemp = Math.max(...template.temperature_curve.map((phase: any) => phase.targetTemp || 0));
+                    if (maxTemp > 0) {
+                      temperature = `${maxTemp}°C`;
+                    }
+                  }
+
+                  // Map capacity: from kiln capacity
+                  const capacity = kiln?.capacity || null;
+                  const bookedSlots = schedule.booked_slots || 0;
+
+                  // Map racks: parse from notes (format: "Racks: A1, A2, B1")
+                  let racks: string[] = [];
+                  if (schedule.notes && schedule.notes.includes("Racks:")) {
+                    const racksMatch = schedule.notes.match(/Racks:\s*([^-\n]+)/);
+                    if (racksMatch && racksMatch[1]) {
+                      racks = racksMatch[1].split(',').map((r: string) => r.trim()).filter(Boolean);
+                    }
+                  }
+
                   return (
                     <TableRow key={schedule.id}>
                       <TableCell>
@@ -1398,18 +3103,30 @@ export function KilnManagement() {
                         />
                       </TableCell>
                       <TableCell>
+                        <div className="font-medium">
+                          {schedule.name || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">
-                            {new Date(schedule.date).toLocaleDateString()}
+                            {scheduledStart
+                              ? scheduledStart.toLocaleDateString()
+                              : "—"}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {schedule.startTime} - {schedule.endTime}
+                            {scheduledStart
+                              ? scheduledStart.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">
-                          {schedule.type}
+                          {firingType}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1420,10 +3137,12 @@ export function KilnManagement() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{schedule.temperature}</TableCell>
+                      <TableCell>{temperature}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">{operator?.name}</div>
+                          <div className="font-medium">
+                            {operator?.name || creator?.name}
+                          </div>
                           <div className="text-sm text-muted-foreground">
                             {operator?.role}
                           </div>
@@ -1431,31 +3150,43 @@ export function KilnManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {schedule.notes && schedule.notes.includes('Racks:') ? (
+                          {racks.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {schedule.notes.split('Racks: ')[1]?.split(' - ')[0]?.split(', ')?.slice(0, 3).map(rack => (
-                                <Badge key={rack} variant="outline" className="text-xs font-mono">
-                                  {rack.trim()}
+                              {racks.slice(0, 3).map((rack: string) => (
+                                <Badge
+                                  key={rack}
+                                  variant="outline"
+                                  className="text-xs font-mono"
+                                >
+                                  {rack}
                                 </Badge>
                               ))}
-                              {schedule.notes.split('Racks: ')[1]?.split(' - ')[0]?.split(', ')?.length > 3 && (
+                              {racks.length > 3 && (
                                 <Badge variant="outline" className="text-xs">
-                                  +{schedule.notes.split('Racks: ')[1]?.split(' - ')[0]?.split(', ')?.length - 3} more
+                                  +{racks.length - 3} more
                                 </Badge>
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-muted-foreground">No racks specified</span>
+                            <span className="text-sm text-muted-foreground">
+                              No racks specified
+                            </span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div>{schedule.bookedSlots}/{schedule.capacity}</div>
+                          {capacity
+                            ? `${bookedSlots}/${capacity}`
+                            : "—"}
                           <div className="w-full bg-secondary rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
-                              style={{ width: `${(schedule.bookedSlots / schedule.capacity) * 100}%` }}
+                            <div
+                              className="bg-primary h-2 rounded-full"
+                              style={{
+                                width: capacity
+                                  ? `${((bookedSlots / capacity) * 100).toFixed(0)}%`
+                                  : "0%",
+                              }}
                             />
                           </div>
                         </div>
@@ -1535,31 +3266,843 @@ export function KilnManagement() {
         </TabsContent>
       </Tabs>
 
-      {/* Kiln Details Dialog */}
-      <Dialog open={showKilnDetails} onOpenChange={setShowKilnDetails}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Kiln Details</DialogTitle>
+      {/* Kiln Details/Edit Dialog */}
+      <Dialog open={showKilnDetails} onOpenChange={(open) => {
+        setShowKilnDetails(open);
+        if (!open) {
+          setIsEditingKiln(false);
+          setEditingKiln(null);
+        }
+      }}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>
+                  {isEditingKiln ? 'Edit Kiln' : 'Kiln Details'}
+                </DialogTitle>
             <DialogDescription>
-              View detailed information about this kiln
+                  {isEditingKiln 
+                    ? 'Update kiln information and configuration'
+                    : 'View detailed information about this kiln'}
             </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6">
-            <div className="text-center py-8">
-              <Flame className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold">Kiln Details View</h3>
-              <p className="text-muted-foreground">
-                Detailed kiln information would be displayed here
-              </p>
+              </div>
+              {!isEditingKiln && editingKiln && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingKiln(true)}
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              )}
             </div>
-            <div className="flex justify-end space-x-2">
+          </DialogHeader>
+
+          {editingKiln ? (
+            <Tabs defaultValue="basic" className="w-full flex flex-col flex-1 min-h-0">
+              <TabsList className="grid w-full grid-cols-4 flex-shrink-0 gap-2">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="shelves">Capacity</TabsTrigger>
+                <TabsTrigger value="specs">Specifications</TabsTrigger>
+                <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+              </TabsList>
+
+              {/* Basic Information Tab */}
+              <TabsContent value="basic" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Kiln Name *</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        value={editingKiln.name || ''}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, name: e.target.value }) : null)}
+                        placeholder="e.g., Studio Kiln 1"
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.name || '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Type *</Label>
+                    {isEditingKiln ? (
+                      <Select 
+                        value={editingKiln.type} 
+                        onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, type: value as any }) : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="electric">Electric</SelectItem>
+                          <SelectItem value="gas">Gas</SelectItem>
+                          <SelectItem value="wood">Wood</SelectItem>
+                          <SelectItem value="raku">Raku</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm py-2 capitalize">{editingKiln.type || '—'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Manufacturer</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        value={editingKiln.manufacturer || ''}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, manufacturer: e.target.value }) : null)}
+                        placeholder="e.g., L&L Kiln"
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.manufacturer || '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Model</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        value={editingKiln.model || ''}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, model: e.target.value }) : null)}
+                        placeholder="e.g., Jupiter 2327"
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.model || '—'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Serial Number</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        value={editingKiln.serialNumber || ''}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, serialNumber: e.target.value }) : null)}
+                        placeholder="Optional"
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.serialNumber || '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location *</Label>
+                    {isEditingKiln ? (
+                      <Select 
+                        value={editingKiln.locationId || ''} 
+                        onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, locationId: value }) : null)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {currentStudio?.locations.map(location => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm py-2">
+                        {currentStudio?.locations.find(l => l.id === editingKiln.locationId)?.name || '—'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Capacity (pieces)</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        type="number"
+                        value={editingKiln.capacity || 0}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, capacity: parseInt(e.target.value) || 0 }) : null)}
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.capacity || '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max Temperature (°C) *</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        type="number"
+                        value={editingKiln.maxTemp || 0}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, maxTemp: parseInt(e.target.value) || 0 }) : null)}
+                        placeholder="e.g., 1300"
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.maxTemp ? `${editingKiln.maxTemp}°C` : '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Shelf Count</Label>
+                    {isEditingKiln ? (
+                      <Input
+                        type="number"
+                        value={editingKiln.shelfCount || 0}
+                        onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, shelfCount: parseInt(e.target.value) || 0 }) : null)}
+                      />
+                    ) : (
+                      <p className="text-sm py-2">{editingKiln.shelfCount || '—'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  {isEditingKiln ? (
+                    <Select 
+                      value={editingKiln.status} 
+                      onValueChange={(value) => setEditingKiln(prev => prev ? ({ ...prev, status: value as any }) : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="in-use">In Use</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="out-of-service">Out of Service</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    (() => {
+                      // Check if there's an active firing for this kiln
+                      const activeFiring = editingKiln?.id 
+                        ? firingSchedules.find(
+                            (f: any) => 
+                              (f.kiln_id === editingKiln.id || f.kilnId === editingKiln.id) && 
+                              ['loading', 'firing', 'cooling'].includes(f.status)
+                          )
+                        : null;
+                      
+                      // If there's an active firing, show "in-use" status
+                      // Otherwise use the kiln's actual status
+                      const displayStatus = activeFiring 
+                        ? 'in-use' 
+                        : (editingKiln.status || 'available');
+                      
+                      return (
+                        <Badge variant={getStatusBadge(displayStatus) as any}>
+                          {displayStatus}
+                        </Badge>
+                      );
+                    })()
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  {isEditingKiln ? (
+                    <Textarea
+                      value={editingKiln.notes || ''}
+                      onChange={(e) => setEditingKiln(prev => prev ? ({ ...prev, notes: e.target.value }) : null)}
+                      placeholder="Additional notes about this kiln..."
+                      rows={3}
+                    />
+                  ) : (
+                    <p className="text-sm py-2 whitespace-pre-wrap">{editingKiln.notes || '—'}</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Capacity Tab */}
+              <TabsContent value="shelves" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Shelf Configuration</h3>
+                    {isEditingKiln && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Add a new shelf
+                          const newShelf = {
+                            level: (editingKiln.shelfConfiguration?.length || 0) + 1,
+                            height: 10,
+                            capacity: 0,
+                          };
+                          setEditingKiln(prev => prev ? ({
+                            ...prev,
+                            shelfConfiguration: [...(prev.shelfConfiguration || []), newShelf],
+                            shelfCount: (prev.shelfCount || 0) + 1,
+                          }) : null);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Shelf
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {editingKiln.shelfConfiguration && editingKiln.shelfConfiguration.length > 0 ? (
+                    <div className="space-y-3">
+                      {editingKiln.shelfConfiguration.map((shelf, index) => (
+                        <Card key={index}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-start justify-between">
+                              <div className="grid grid-cols-3 gap-4 flex-1">
+                                <div>
+                                  <Label className="text-muted-foreground">Level</Label>
+                                  {isEditingKiln ? (
+                                    <Input
+                                      type="number"
+                                      value={shelf.level}
+                                      onChange={(e) => {
+                                        const newConfig = [...(editingKiln.shelfConfiguration || [])];
+                                        newConfig[index].level = parseInt(e.target.value) || 0;
+                                        setEditingKiln(prev => prev ? ({ ...prev, shelfConfiguration: newConfig }) : null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <p className="text-sm font-medium py-2">{shelf.level}</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Height (inches)</Label>
+                                  {isEditingKiln ? (
+                                    <Input
+                                      type="number"
+                                      value={shelf.height}
+                                      onChange={(e) => {
+                                        const newConfig = [...(editingKiln.shelfConfiguration || [])];
+                                        newConfig[index].height = parseInt(e.target.value) || 0;
+                                        setEditingKiln(prev => prev ? ({ ...prev, shelfConfiguration: newConfig }) : null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <p className="text-sm py-2">{shelf.height}"</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <Label className="text-muted-foreground">Capacity</Label>
+                                  {isEditingKiln ? (
+                                    <Input
+                                      type="number"
+                                      value={shelf.capacity || 0}
+                                      onChange={(e) => {
+                                        const newConfig = [...(editingKiln.shelfConfiguration || [])];
+                                        newConfig[index].capacity = parseInt(e.target.value) || 0;
+                                        setEditingKiln(prev => prev ? ({ ...prev, shelfConfiguration: newConfig }) : null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <p className="text-sm py-2">{shelf.capacity || '—'} pieces</p>
+                                  )}
+                                </div>
+                              </div>
+                              {isEditingKiln && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newConfig = editingKiln.shelfConfiguration?.filter((_, i) => i !== index) || [];
+                                    setEditingKiln(prev => prev ? ({
+                                      ...prev,
+                                      shelfConfiguration: newConfig,
+                                      shelfCount: newConfig.length,
+                                    }) : null);
+                                  }}
+                                  className="ml-2"
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No shelf configuration available
+                        </p>
+                        {isEditingKiln && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                              const newShelf = {
+                                level: 1,
+                                height: 10,
+                                capacity: 0,
+                              };
+                              setEditingKiln(prev => prev ? ({
+                                ...prev,
+                                shelfConfiguration: [newShelf],
+                                shelfCount: 1,
+                              }) : null);
+                            }}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add First Shelf
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Separator />
+
+                  <div className="pt-4">
+                    <h4 className="font-medium mb-4">Capacity Summary</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="pt-6">
+                          <p className="text-sm text-muted-foreground">Total Capacity</p>
+                          <p className="text-2xl font-bold">{editingKiln.capacity || 0}</p>
+                          <p className="text-xs text-muted-foreground">pieces</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <p className="text-sm text-muted-foreground">Shelf Count</p>
+                          <p className="text-2xl font-bold">{editingKiln.shelfCount || 0}</p>
+                          <p className="text-xs text-muted-foreground">shelves</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-6">
+                          <p className="text-sm text-muted-foreground">Total Firings</p>
+                          <p className="text-2xl font-bold">{editingKiln.totalFirings || 0}</p>
+                          <p className="text-xs text-muted-foreground">firings</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Technical Specifications Tab */}
+              <TabsContent value="specs" className="space-y-6 flex-1 overflow-y-auto mt-4">
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Technical Specifications</h3>
+                  
+                  {/* Electric Kiln Specifications */}
+                  {editingKiln.type === 'electric' && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Voltage</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            value={editingKiln.specifications?.voltage || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, voltage: e.target.value }
+                            }) : null)}
+                            placeholder="e.g., 240V"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{editingKiln.specifications?.voltage || '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Amperage</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            value={editingKiln.specifications?.amperage || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, amperage: e.target.value }
+                            }) : null)}
+                            placeholder="e.g., 50A"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{editingKiln.specifications?.amperage || '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Controller Type</Label>
+                        {isEditingKiln ? (
+                          <Select
+                            value={editingKiln.specifications?.controllerType || ''}
+                            onValueChange={(value) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, controllerType: value }
+                            }) : null)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select controller type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="digital">Digital</SelectItem>
+                              <SelectItem value="manual">Manual</SelectItem>
+                              <SelectItem value="programmable">Programmable</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm py-2 capitalize">{editingKiln.specifications?.controllerType || '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Element Count</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="number"
+                            value={(editingKiln.specifications as any)?.elementCount || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, elementCount: parseInt(e.target.value) || undefined }
+                            }) : null)}
+                            placeholder="Number of elements"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{(editingKiln.specifications as any)?.elementCount || '—'}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Gas Kiln Specifications */}
+                  {editingKiln.type === 'gas' && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Gas Type</Label>
+                        {isEditingKiln ? (
+                          <Select
+                            value={editingKiln.specifications?.gasType || ''}
+                            onValueChange={(value) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, gasType: value as 'natural' | 'propane' }
+                            }) : null)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select gas type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="natural">Natural Gas</SelectItem>
+                              <SelectItem value="propane">Propane</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm py-2 capitalize">{editingKiln.specifications?.gasType || '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Burner Count</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="number"
+                            value={(editingKiln.specifications as any)?.burnerCount || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, burnerCount: parseInt(e.target.value) || undefined }
+                            }) : null)}
+                            placeholder="Number of burners"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{(editingKiln.specifications as any)?.burnerCount || '—'}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Wood Kiln Specifications */}
+                  {editingKiln.type === 'wood' && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Firebox Size (cubic feet)</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="number"
+                            value={(editingKiln.specifications as any)?.fireboxSize || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, fireboxSize: parseFloat(e.target.value) || undefined }
+                            }) : null)}
+                            placeholder="Firebox volume"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{(editingKiln.specifications as any)?.fireboxSize ? `${(editingKiln.specifications as any).fireboxSize} cu ft` : '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Chimney Height (feet)</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="number"
+                            value={(editingKiln.specifications as any)?.chimneyHeight || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, chimneyHeight: parseFloat(e.target.value) || undefined }
+                            }) : null)}
+                            placeholder="Chimney height"
+                          />
+                        ) : (
+                          <p className="text-sm py-2">{(editingKiln.specifications as any)?.chimneyHeight ? `${(editingKiln.specifications as any).chimneyHeight} ft` : '—'}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Raku Kiln Specifications */}
+                  {editingKiln.type === 'raku' && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Safety Equipment Required</Label>
+                        {isEditingKiln ? (
+                          <Textarea
+                            value={(editingKiln.specifications as any)?.safetyEquipment || ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, safetyEquipment: e.target.value }
+                            }) : null)}
+                            placeholder="List required safety equipment"
+                            rows={3}
+                          />
+                        ) : (
+                          <p className="text-sm py-2 whitespace-pre-wrap">{(editingKiln.specifications as any)?.safetyEquipment || '—'}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cooling Area Available</Label>
+                        {isEditingKiln ? (
+                          <Select
+                            value={(editingKiln.specifications as any)?.coolingArea ? 'yes' : 'no'}
+                            onValueChange={(value) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              specifications: { ...prev.specifications, coolingArea: value === 'yes' }
+                            }) : null)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="yes">Yes</SelectItem>
+                              <SelectItem value="no">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-sm py-2">{(editingKiln.specifications as any)?.coolingArea ? 'Yes' : 'No'}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {(!editingKiln.specifications || Object.keys(editingKiln.specifications).length === 0) && !isEditingKiln && (
+                    <p className="text-sm text-muted-foreground">No specifications available</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Maintenance Tab */}
+              <TabsContent value="maintenance" className="space-y-6 flex-1 overflow-y-auto mt-4">
+          <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold mb-4">Installation & Warranty</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Install Date</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="date"
+                            value={editingKiln.installDate ? editingKiln.installDate.split('T')[0] : ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              installDate: e.target.value ? new Date(e.target.value).toISOString() : undefined
+                            }) : null)}
+                          />
+                        ) : (
+                          <p className="text-sm py-2">
+                            {editingKiln.installDate ? new Date(editingKiln.installDate).toLocaleDateString() : '—'}
+                          </p>
+                        )}
+            </div>
+                      <div className="space-y-2">
+                        <Label>Warranty Expiry</Label>
+                        {isEditingKiln ? (
+                          <Input
+                            type="date"
+                            value={editingKiln.warrantyExpiry ? editingKiln.warrantyExpiry.split('T')[0] : ''}
+                            onChange={(e) => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              warrantyExpiry: e.target.value ? new Date(e.target.value).toISOString() : undefined
+                            }) : null)}
+                          />
+                        ) : (
+                          <p className="text-sm py-2">
+                            {editingKiln.warrantyExpiry 
+                              ? new Date(editingKiln.warrantyExpiry).toLocaleDateString() 
+                              : '—'}
+                            {editingKiln.warrantyExpiry && new Date(editingKiln.warrantyExpiry) < new Date() && (
+                              <Badge variant="destructive" className="ml-2">Expired</Badge>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="font-semibold mb-4">Maintenance Schedule</h3>
+                    {editingKiln.maintenanceSchedule || isEditingKiln ? (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Maintenance Type</Label>
+                          {isEditingKiln ? (
+                            <Select
+                              value={editingKiln.maintenanceSchedule?.maintenanceType || 'routine'}
+                              onValueChange={(value) => setEditingKiln(prev => prev ? ({
+                                ...prev,
+                                maintenanceSchedule: {
+                                  ...prev.maintenanceSchedule,
+                                  maintenanceType: value,
+                                  lastMaintenance: prev.maintenanceSchedule?.lastMaintenance || new Date().toISOString(),
+                                  nextMaintenance: prev.maintenanceSchedule?.nextMaintenance || new Date().toISOString(),
+                                }
+                              }) : null)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="routine">Routine Maintenance</SelectItem>
+                                <SelectItem value="deep-clean">Deep Clean</SelectItem>
+                                <SelectItem value="inspection">Inspection</SelectItem>
+                                <SelectItem value="repair">Repair</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-sm py-2 capitalize">
+                              {editingKiln.maintenanceSchedule?.maintenanceType || '—'}
+                            </p>
+                          )}
+                        </div>
+                        {editingKiln.maintenanceSchedule?.lastMaintenance && (
+                          <div className="space-y-2">
+                            <Label>Last Maintenance</Label>
+                            {isEditingKiln ? (
+                              <Input
+                                type="date"
+                                value={editingKiln.maintenanceSchedule.lastMaintenance.split('T')[0]}
+                                onChange={(e) => setEditingKiln(prev => prev ? ({
+                                  ...prev,
+                                  maintenanceSchedule: {
+                                    ...prev.maintenanceSchedule,
+                                    lastMaintenance: e.target.value ? new Date(e.target.value).toISOString() : new Date().toISOString(),
+                                    maintenanceType: prev.maintenanceSchedule?.maintenanceType || 'routine',
+                                    nextMaintenance: prev.maintenanceSchedule?.nextMaintenance || new Date().toISOString(),
+                                  }
+                                }) : null)}
+                              />
+                            ) : (
+                              <p className="text-sm py-2">
+                                {new Date(editingKiln.maintenanceSchedule.lastMaintenance).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {editingKiln.maintenanceSchedule?.nextMaintenance && (
+                          <div className="space-y-2">
+                            <Label>Next Maintenance</Label>
+                            {isEditingKiln ? (
+                              <Input
+                                type="date"
+                                value={editingKiln.maintenanceSchedule.nextMaintenance.split('T')[0]}
+                                onChange={(e) => setEditingKiln(prev => prev ? ({
+                                  ...prev,
+                                  maintenanceSchedule: {
+                                    ...prev.maintenanceSchedule,
+                                    nextMaintenance: e.target.value ? new Date(e.target.value).toISOString() : new Date().toISOString(),
+                                    maintenanceType: prev.maintenanceSchedule?.maintenanceType || 'routine',
+                                    lastMaintenance: prev.maintenanceSchedule?.lastMaintenance || new Date().toISOString(),
+                                  }
+                                }) : null)}
+                              />
+                            ) : (
+                              <p className="text-sm py-2">
+                                {new Date(editingKiln.maintenanceSchedule.nextMaintenance).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {isEditingKiln && !editingKiln.maintenanceSchedule && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditingKiln(prev => prev ? ({
+                              ...prev,
+                              maintenanceSchedule: {
+                                maintenanceType: 'routine',
+                                lastMaintenance: new Date().toISOString(),
+                                nextMaintenance: new Date().toISOString(),
+                              }
+                            }) : null)}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Maintenance Schedule
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No maintenance schedule configured</p>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label>Kiln Status</Label>
+                      <p className="text-sm text-muted-foreground">Active/Inactive status</p>
+                    </div>
+                    {isEditingKiln ? (
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={editingKiln.isActive ?? true}
+                          onCheckedChange={(checked) => setEditingKiln(prev => prev ? ({ ...prev, isActive: checked }) : null)}
+                        />
+                        <Label>{editingKiln.isActive ? 'Active' : 'Inactive'}</Label>
+                      </div>
+                    ) : (
+                      <Badge variant={editingKiln.isActive ? 'default' : 'secondary'}>
+                        {editingKiln.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading kiln details...</p>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0 mt-4">
+            {isEditingKiln ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditingKiln(false);
+                    // Reset to original kiln data
+                    const kiln = kilns.find((k: any) => k.id === selectedKilnId);
+                    if (kiln) {
+                      setEditingKiln({ ...kiln });
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateKiln}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+              </>
+            ) : (
               <Button variant="outline" onClick={() => setShowKilnDetails(false)}>
                 Close
               </Button>
-              <Button>
-                Edit Kiln
-              </Button>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1616,6 +4159,243 @@ export function KilnManagement() {
               </Button>
               <Button>
                 Schedule Firing
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scheduled Firing Selection Dialog */}
+      <Dialog open={showScheduledFiringSelection} onOpenChange={setShowScheduledFiringSelection}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Scheduled Firing to Start</DialogTitle>
+            <DialogDescription>
+              Multiple scheduled firings found for this kiln. Select which one to start.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {scheduledFiringsForKiln.map((firing: any) => {
+                const scheduledStart = firing.scheduled_start ? new Date(firing.scheduled_start) : null;
+                const isPastDue = scheduledStart && scheduledStart < new Date();
+                const timeInfo = scheduledStart 
+                  ? scheduledStart.toLocaleString()
+                  : 'No scheduled time';
+                
+                return (
+                  <Card 
+                    key={firing.id}
+                    className={`cursor-pointer transition-all hover:bg-accent ${
+                      isPastDue ? 'border-orange-500 bg-orange-50/50' : ''
+                    }`}
+                    onClick={() => {
+                      handleStartScheduledFiring(firing.id);
+                      setShowScheduledFiringSelection(false);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold">
+                              {firing.name || 'Unnamed Firing'}
+                            </h4>
+                            {isPastDue && (
+                              <Badge variant="destructive" className="text-xs">
+                                Past Due
+                              </Badge>
+                            )}
+                            {firing.target_cone && (
+                              <Badge variant="outline" className="text-xs">
+                                Cone {firing.target_cone}
+                              </Badge>
+                            )}
+    </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-3 h-3" />
+                              <span>{timeInfo}</span>
+                            </div>
+                            {firing.atmosphere && (
+                              <div className="flex items-center gap-2">
+                                <Flame className="w-3 h-3" />
+                                <span className="capitalize">{firing.atmosphere}</span>
+                              </div>
+                            )}
+                            {firing.notes && (
+                              <p className="text-xs mt-1">{firing.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartScheduledFiring(firing.id);
+                            setShowScheduledFiringSelection(false);
+                          }}
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          Start
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            <Separator />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowScheduledFiringSelection(false);
+                  // Open quick-start modal instead
+                  setShowQuickStartFiring(true);
+                }}
+              >
+                Start New Firing Instead
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowScheduledFiringSelection(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Start Firing Dialog */}
+      <Dialog open={showQuickStartFiring} onOpenChange={setShowQuickStartFiring}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Quick Start Firing</DialogTitle>
+            <DialogDescription>
+              Start a firing immediately for this kiln
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Firing Name (Optional)</Label>
+              <Input
+                placeholder="e.g., Morning Bisque Firing"
+                value={quickStartForm.name}
+                onChange={(e) => setQuickStartForm(prev => ({ ...prev, name: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to auto-generate a name
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Atmosphere</Label>
+                <Select
+                  value={quickStartForm.atmosphere}
+                  onValueChange={(value: 'oxidation' | 'reduction' | 'neutral') =>
+                    setQuickStartForm(prev => ({ ...prev, atmosphere: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oxidation">Oxidation</SelectItem>
+                    <SelectItem value="reduction">Reduction</SelectItem>
+                    <SelectItem value="neutral">Neutral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Target Cone (Optional)</Label>
+                <Input
+                  placeholder="e.g., 04, 6, 10"
+                  value={quickStartForm.targetCone}
+                  onChange={(e) => setQuickStartForm(prev => ({ ...prev, targetCone: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Temperature (Optional)</Label>
+              <Input
+                type="number"
+                placeholder="e.g., 1200"
+                value={quickStartForm.targetTemperature}
+                onChange={(e) => setQuickStartForm(prev => ({ ...prev, targetTemperature: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Operator (Optional)</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={quickStartForm.operatorId || undefined}
+                  onValueChange={(value) => setQuickStartForm(prev => ({ ...prev, operatorId: value }))}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select operator (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(currentStudio as any)?.employees?.map((employee: any) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name || employee.email}
+                      </SelectItem>
+                    ))}
+                    {(!(currentStudio as any)?.employees || (currentStudio as any)?.employees?.length === 0) && (
+                      <SelectItem value="no-employees" disabled>
+                        No employees available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {quickStartForm.operatorId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuickStartForm(prev => ({ ...prev, operatorId: '' }))}
+                    title="Clear operator"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                placeholder="Add any notes about this firing..."
+                value={quickStartForm.notes}
+                onChange={(e) => setQuickStartForm(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={() => {
+                setShowQuickStartFiring(false);
+                setQuickStartKilnId('');
+                setQuickStartForm({
+                  name: '',
+                  templateId: '',
+                  atmosphere: 'oxidation',
+                  targetCone: '',
+                  targetTemperature: '',
+                  notes: '',
+                  operatorId: '',
+                });
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleQuickStartFiring}>
+                <Play className="w-4 h-4 mr-2" />
+                Start Firing
               </Button>
             </div>
           </div>
