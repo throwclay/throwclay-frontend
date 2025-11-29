@@ -440,6 +440,28 @@ export interface GlazeExperimentTemplate {
 }
 
 // Kiln Interfaces
+export interface KilnFiring {
+  id: string;
+  studioId: string;
+  kilnId: string;
+  templateId?: string;
+  name?: string;
+  scheduledStart?: string;
+  actualStart?: string;
+  actualEnd?: string;
+  atmosphere?: string;
+  targetCone?: string;
+  targetTemperature?: number;
+  actualTemperature?: number;
+  notes?: string;
+  completionNotes?: string;
+  operatorId?: string;
+  status: "scheduled" | "loading" | "firing" | "cooling" | "completed" | "cancelled";
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface KilnFiringTemplate {
   id: string;
   studioId: string;
