@@ -1196,6 +1196,100 @@ export function KilnManagement() {
     }
   };
 
+  const handleCancelFiring = async (firingId: string, firingName?: string) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot cancel firing', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    // Confirm cancellation
+    const confirmed = confirm(
+      `Are you sure you want to cancel this firing?${firingName ? `\n\nFiring: "${firingName}"` : ''}\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings/${firingId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            status: 'cancelled',
+            actualEnd: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to cancel firing', errorText);
+        toast.error('Failed to cancel firing', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh firings and kilns
+      const refreshFirings = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setFiringSchedules(body.firings ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing firings', err);
+        }
+      };
+
+      const refreshKilns = async () => {
+        try {
+          const res = await fetch(
+            `/api/admin/studios/${currentStudio.id}/kilns`,
+            {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const body = await res.json();
+            setKilns(body.kilns ?? []);
+          }
+        } catch (err) {
+          console.error('Error refreshing kilns', err);
+        }
+      };
+
+      await Promise.all([refreshFirings(), refreshKilns()]);
+
+      toast.success('Firing cancelled', {
+        description: 'The kiln is now available.',
+      });
+    } catch (err) {
+      console.error('Error cancelling firing', err);
+      toast.error('Failed to cancel firing', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
       {/* Header */}
@@ -2136,30 +2230,41 @@ export function KilnManagement() {
                             </p>
                           )}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleProgressFiring(activeFiring.id, activeFiring.status)}
-                        >
-                          {activeFiring.status === 'loading' && (
-                            <>
-                              <Flame className="w-4 h-4 mr-2" />
-                              Start Firing
-                            </>
-                          )}
-                          {activeFiring.status === 'firing' && (
-                            <>
-                              <Timer className="w-4 h-4 mr-2" />
-                              Start Cooling
-                            </>
-                          )}
-                          {activeFiring.status === 'cooling' && (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Complete
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleProgressFiring(activeFiring.id, activeFiring.status)}
+                          >
+                            {activeFiring.status === 'loading' && (
+                              <>
+                                <Flame className="w-4 h-4 mr-2" />
+                                Start Firing
+                              </>
+                            )}
+                            {activeFiring.status === 'firing' && (
+                              <>
+                                <Timer className="w-4 h-4 mr-2" />
+                                Start Cooling
+                              </>
+                            )}
+                            {activeFiring.status === 'cooling' && (
+                              <>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Complete
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCancelFiring(activeFiring.id, activeFiring.name)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
