@@ -1290,6 +1290,103 @@ export function KilnManagement() {
     }
   };
 
+  const handleDeleteKiln = async (kilnId: string, kilnName: string) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot delete kiln', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    // Check if there are any active firings for this kiln
+    const activeFiring = firingSchedules.find(
+      (f: any) => 
+        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+        ['loading', 'firing', 'cooling'].includes(f.status)
+    );
+
+    if (activeFiring) {
+      toast.error('Cannot delete kiln', {
+        description: `This kiln has an active firing: "${activeFiring.name || 'Unnamed'}". Please complete or cancel the firing first.`,
+      });
+      return;
+    }
+
+    // Check for scheduled firings
+    const scheduledFirings = firingSchedules.filter(
+      (f: any) => 
+        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+        f.status === 'scheduled'
+    );
+
+    let warningMessage = `Are you sure you want to delete "${kilnName}"?`;
+    if (scheduledFirings.length > 0) {
+      warningMessage += `\n\nWarning: This kiln has ${scheduledFirings.length} scheduled firing(s) that will need to be rescheduled or cancelled.`;
+    }
+    warningMessage += '\n\nThis action cannot be undone.';
+
+    const confirmed = confirm(warningMessage);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kilns/${kilnId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to delete kiln', errorText);
+        toast.error('Failed to delete kiln', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh kilns list
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kilns`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setKilns(body.kilns ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing kilns', err);
+      }
+
+      // Close details modal if it's open for this kiln
+      if (editingKiln?.id === kilnId) {
+        setShowKilnDetails(false);
+        setEditingKiln(null);
+        setIsEditingKiln(false);
+      }
+
+      toast.success('Kiln deleted', {
+        description: `"${kilnName}" has been deleted.`,
+      });
+    } catch (err) {
+      console.error('Error deleting kiln', err);
+      toast.error('Failed to delete kiln', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
       {/* Header */}
@@ -2175,6 +2272,13 @@ export function KilnManagement() {
                         <DropdownMenuItem>
                           <Wrench className="w-4 h-4 mr-2" />
                           Maintenance
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteKiln(kiln.id, kiln.name)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Kiln
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -4180,32 +4284,44 @@ export function KilnManagement() {
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0 mt-4">
-            {isEditingKiln ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsEditingKiln(false);
-                    // Reset to original kiln data
-                    const kiln = kilns.find((k: any) => k.id === selectedKilnId);
-                    if (kiln) {
-                      setEditingKiln({ ...kiln });
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateKiln}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </Button>
-              </>
-            ) : (
-              <Button variant="outline" onClick={() => setShowKilnDetails(false)}>
-                Close
+          <div className="flex justify-between items-center pt-4 border-t flex-shrink-0 mt-4">
+            {!isEditingKiln && editingKiln && (
+              <Button
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={() => handleDeleteKiln(editingKiln.id!, editingKiln.name || 'this kiln')}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Kiln
               </Button>
             )}
+            <div className="flex justify-end space-x-3 ml-auto">
+              {isEditingKiln ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditingKiln(false);
+                      // Reset to original kiln data
+                      const kiln = kilns.find((k: any) => k.id === selectedKilnId);
+                      if (kiln) {
+                        setEditingKiln({ ...kiln });
+                      }
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleUpdateKiln}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={() => setShowKilnDetails(false)}>
+                  Close
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
