@@ -764,11 +764,16 @@ export function KilnManagement() {
       );
 
       if (!res.ok) {
-        console.error('Failed to create kiln firing', await res.text());
+        const errorText = await res.text();
+        console.error('Failed to create kiln firing', errorText);
+        toast.error('Failed to schedule firing', {
+          description: 'Please check all fields and try again.',
+        });
         return;
       }
 
-      console.log('Created kiln firing', await res.json());
+      const result = await res.json();
+      console.log('Created kiln firing', result);
       // Refresh firing schedules from backend
       try {
         const refreshRes = await fetch(
@@ -786,7 +791,9 @@ export function KilnManagement() {
       } catch (err) {
         console.error('Error refreshing kiln firings', err);
       }
+      // Close the appropriate dialog
       setShowCreateScheduleDialog(false);
+      setShowScheduleFiring(false);
       setSelectedRacks([]);
       setScheduleForm({
         name: '',
@@ -800,8 +807,15 @@ export function KilnManagement() {
         temperature: '',
         notes: '',
       });
+
+      toast.success('Firing scheduled', {
+        description: `"${scheduleForm.name || 'Unnamed firing'}" has been scheduled.`,
+      });
     } catch (err) {
       console.error('Error creating kiln firing', err);
+      toast.error('Failed to schedule firing', {
+        description: 'An error occurred. Please try again.',
+      });
     }
   };
 
@@ -2265,7 +2279,22 @@ export function KilnManagement() {
                           <Edit2 className="w-4 h-4 mr-2" />
                           Edit Kiln
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setScheduleForm({
+                            name: '',
+                            kilnId: kiln.id,
+                            date: '',
+                            startTime: '',
+                            endTime: '',
+                            firingType: '',
+                            operatorId: '',
+                            locationId: currentStudio?.locations?.[0]?.id || '',
+                            temperature: '',
+                            notes: '',
+                          });
+                          setSelectedRacks([]);
+                          setShowScheduleFiring(true);
+                        }}>
                           <Calendar className="w-4 h-4 mr-2" />
                           Schedule Firing
                         </DropdownMenuItem>
@@ -4356,27 +4385,196 @@ export function KilnManagement() {
       </Dialog>
 
       {/* Schedule Firing Dialog */}
-      <Dialog open={showScheduleFiring} onOpenChange={setShowScheduleFiring}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={showScheduleFiring} onOpenChange={(open) => {
+        setShowScheduleFiring(open);
+        if (!open) {
+          // Reset form when closing
+          setScheduleForm({
+            name: '',
+            kilnId: '',
+            date: '',
+            startTime: '',
+            endTime: '',
+            firingType: '',
+            operatorId: '',
+            locationId: currentStudio?.locations?.[0]?.id || '',
+            temperature: '',
+            notes: '',
+          });
+          setSelectedRacks([]);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Schedule Firing</DialogTitle>
             <DialogDescription>
-              Schedule a new firing session using the selected template
+              Schedule a new firing session for this kiln
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-center py-8">
-              <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold">Firing Schedule Form</h3>
-              <p className="text-muted-foreground">
-                Firing scheduling interface would be here
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Firing Name</Label>
+                <Input
+                  placeholder="e.g., Morning Bisque Load"
+                  value={scheduleForm.name}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Kiln</Label>
+                <Select
+                  value={scheduleForm.kilnId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      kilnId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select kiln" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kilns.map((kiln: any) => (
+                      <SelectItem key={kiln.id} value={kiln.id}>
+                        {kiln.name} ({kiln.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowScheduleFiring(false)}>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={scheduleForm.date}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={scheduleForm.startTime}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      startTime: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Target Cone (Optional)</Label>
+                <Input
+                  placeholder="e.g., 04, 6, 10"
+                  value={scheduleForm.temperature}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      temperature: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Operator (Optional)</Label>
+                <Select
+                  value={scheduleForm.operatorId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      operatorId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select operator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff.map((operator) => (
+                      <SelectItem key={operator.id || operator.userId} value={operator.id || operator.userId}>
+                        {operator.name || operator.email} {operator.role ? `- ${operator.role}` : ''}
+                      </SelectItem>
+                    ))}
+                    {staff.length === 0 && (
+                      <SelectItem value="no-employees" disabled>
+                        No employees available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                placeholder="Add any notes about this firing..."
+                value={scheduleForm.notes}
+                onChange={(e) =>
+                  setScheduleForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowScheduleFiring(false);
+                  setScheduleForm({
+                    name: '',
+                    kilnId: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    firingType: '',
+                    operatorId: '',
+                    locationId: currentStudio?.locations?.[0]?.id || '',
+                    temperature: '',
+                    notes: '',
+                  });
+                  setSelectedRacks([]);
+                }}
+              >
                 Cancel
               </Button>
-              <Button>
+              <Button 
+                onClick={async () => {
+                  if (!scheduleForm.kilnId || !scheduleForm.date || !scheduleForm.startTime) {
+                    toast.error('Missing required fields', {
+                      description: 'Please fill in kiln, date, and start time.',
+                    });
+                    return;
+                  }
+
+                  await handleCreateSchedule();
+                  setShowScheduleFiring(false);
+                }}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
                 Schedule Firing
               </Button>
             </div>
