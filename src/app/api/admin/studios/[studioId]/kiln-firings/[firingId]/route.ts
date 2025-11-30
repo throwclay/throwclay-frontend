@@ -151,7 +151,7 @@ export async function PUT(
     // First verify the firing exists and belongs to this studio
     const { data: existingFiring, error: fetchError } = await supabaseAdmin
       .from("kiln_firings")
-      .select("id, studio_id, kiln_id, status")
+      .select("id, studio_id, kiln_id, status, actual_start, actual_end")
       .eq("id", firingId)
       .eq("studio_id", studioId)
       .single();

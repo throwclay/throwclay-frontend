@@ -1117,10 +1117,8 @@ export function KilnManagement() {
         status: nextStatus,
       };
 
-      // Set actual_start when moving to firing
-      if (nextStatus === 'firing') {
-        updateData.actualStart = new Date().toISOString();
-      }
+      // Note: actualStart is already set when firing starts (status becomes 'loading')
+      // via handleStartScheduledFiring, so we don't set it again here when progressing to 'firing'
 
       // Set actual_end when completing
       if (nextStatus === 'completed') {
@@ -4341,12 +4339,12 @@ export function KilnManagement() {
                     <SelectValue placeholder="Select operator (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(currentStudio as any)?.employees?.map((employee: any) => (
-                      <SelectItem key={employee.id} value={employee.id}>
-                        {employee.name || employee.email}
+                    {staff.map((operator) => (
+                      <SelectItem key={operator.id || operator.userId} value={operator.id || operator.userId}>
+                        {operator.name || operator.email} {operator.role ? `- ${operator.role}` : ''}
                       </SelectItem>
                     ))}
-                    {(!(currentStudio as any)?.employees || (currentStudio as any)?.employees?.length === 0) && (
+                    {staff.length === 0 && (
                       <SelectItem value="no-employees" disabled>
                         No employees available
                       </SelectItem>
