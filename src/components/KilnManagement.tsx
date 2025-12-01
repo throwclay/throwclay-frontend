@@ -70,6 +70,7 @@ export function KilnManagement() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
   const [templateSearchTerm, setTemplateSearchTerm] = useState('');
   const [templateTypeFilter, setTemplateTypeFilter] = useState<string>('all');
 
@@ -668,7 +669,8 @@ export function KilnManagement() {
     const matchesSearch = kiln.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          kiln.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || kiln.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesLocation = locationFilter === 'all' || kiln.locationId === locationFilter;
+    return matchesSearch && matchesStatus && matchesLocation;
   });
 
   // Templates would be loaded separately - for now use empty array
@@ -2246,19 +2248,31 @@ export function KilnManagement() {
                 ? 'in-use' 
                 : (kiln.status || 'available');
               
+              // Get location name from currentStudio locations
+              const location = (currentStudio as any)?.locations?.find(
+                (loc: any) => loc.id === kiln.locationId
+              );
+              const locationName = location?.name || 'No location';
+              
               return (
               <Card key={kiln.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <CardTitle className="text-lg">{kiln.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap gap-2">
                         <Badge variant="outline" className="capitalize">
                           {kiln.type}
                         </Badge>
                         <Badge variant={getStatusBadge(displayStatus) as any}>
                           {displayStatus}
                         </Badge>
+                        {kiln.locationId && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{locationName}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <DropdownMenu>
