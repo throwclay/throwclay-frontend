@@ -53,6 +53,9 @@ export function KilnManagement() {
   const [showQuickStartFiring, setShowQuickStartFiring] = useState(false);
   const [showScheduledFiringSelection, setShowScheduledFiringSelection] = useState(false);
   const [scheduledFiringsForKiln, setScheduledFiringsForKiln] = useState<any[]>([]);
+  const [showScheduleDetails, setShowScheduleDetails] = useState(false);
+  const [showEditSchedule, setShowEditSchedule] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null);
   const [quickStartKilnId, setQuickStartKilnId] = useState<string>('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedKilnId, setSelectedKilnId] = useState<string>('');
@@ -70,6 +73,7 @@ export function KilnManagement() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
   const [templateSearchTerm, setTemplateSearchTerm] = useState('');
   const [templateTypeFilter, setTemplateTypeFilter] = useState<string>('all');
 
@@ -138,6 +142,7 @@ export function KilnManagement() {
     locationId: currentStudio?.locations?.[0]?.id || '',
     temperature: '',
     notes: '',
+    atmosphere: 'oxidation' as 'oxidation' | 'reduction' | 'neutral',
   });
 
   // Available rack numbers
@@ -653,11 +658,12 @@ export function KilnManagement() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'available': return 'default';
+      case 'available': return 'green'; // Green color
       case 'in-use': return 'secondary';
       case 'loading': return 'secondary';
       case 'firing': return 'destructive';
-      case 'cooling': return 'secondary';
+      case 'cooling': return 'blue'; // Blue color
+      case 'completed': return 'green'; // Green color
       case 'maintenance': return 'secondary';
       case 'out-of-service': return 'destructive';
       default: return 'outline';
@@ -668,7 +674,8 @@ export function KilnManagement() {
     const matchesSearch = kiln.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          kiln.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || kiln.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesLocation = locationFilter === 'all' || kiln.locationId === locationFilter;
+    return matchesSearch && matchesStatus && matchesLocation;
   });
 
   // Templates would be loaded separately - for now use empty array
@@ -704,6 +711,387 @@ export function KilnManagement() {
     }
   };
 
+  const handleViewScheduleDetails = (schedule: any) => {
+    setSelectedSchedule(schedule);
+    setShowScheduleDetails(true);
+  };
+
+  const handleEditSchedule = (schedule: any) => {
+    setSelectedSchedule(schedule);
+    // Populate the schedule form with existing data
+    const scheduledStart = schedule.scheduled_start ? new Date(schedule.scheduled_start) : null;
+    setScheduleForm({
+      name: schedule.name || '',
+      kilnId: schedule.kiln_id || schedule.kilnId || '',
+      date: scheduledStart ? scheduledStart.toISOString().split('T')[0] : '',
+      startTime: scheduledStart ? scheduledStart.toTimeString().slice(0, 5) : '',
+      endTime: schedule.actual_end ? new Date(schedule.actual_end).toTimeString().slice(0, 5) : '',
+      firingType: schedule.firing_type || schedule.firingType || '',
+      operatorId: schedule.operator_id || schedule.operatorId || '',
+      locationId: currentStudio?.locations?.[0]?.id || '',
+      temperature: schedule.target_cone || schedule.targetCone || '',
+      notes: schedule.notes || '',
+      atmosphere: schedule.atmosphere || 'oxidation',
+    });
+    setShowEditSchedule(true);
+  };
+
+  const handleCancelScheduleFiring = async (schedule: any) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot cancel firing', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    // Only allow cancelling scheduled firings
+    if (schedule.status !== 'scheduled') {
+      toast.error('Cannot cancel firing', {
+        description: `Only scheduled firings can be cancelled. This firing is ${schedule.status}.`,
+      });
+      return;
+    }
+
+    const confirmed = confirm(
+      `Are you sure you want to cancel this firing?${schedule.name ? `\n\nFiring: "${schedule.name}"` : ''}\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            status: 'cancelled',
+            actualEnd: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to cancel firing', errorText);
+        toast.error('Failed to cancel firing', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh firings
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing firings', err);
+      }
+
+      toast.success('Firing cancelled', {
+        description: 'The scheduled firing has been cancelled.',
+      });
+    } catch (err) {
+      console.error('Error cancelling firing', err);
+      toast.error('Failed to cancel firing', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
+  const handleBulkCancelSchedules = async () => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot cancel firings', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    if (selectedSchedules.length === 0) {
+      return;
+    }
+
+    // Filter to only scheduled firings
+    const scheduledFiringsToCancel = firingSchedules.filter(
+      (schedule: any) => 
+        selectedSchedules.includes(schedule.id) && 
+        schedule.status === 'scheduled'
+    );
+
+    if (scheduledFiringsToCancel.length === 0) {
+      toast.error('No scheduled firings selected', {
+        description: 'Only scheduled firings can be cancelled.',
+      });
+      return;
+    }
+
+    const confirmed = confirm(
+      `Are you sure you want to cancel ${scheduledFiringsToCancel.length} scheduled firing(s)?\n\nThis will mark them as cancelled but keep them in the database.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      // Cancel all selected scheduled firings
+      const cancelPromises = scheduledFiringsToCancel.map((schedule: any) =>
+        fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              status: 'cancelled',
+              actualEnd: new Date().toISOString(),
+            }),
+          }
+        )
+      );
+
+      const results = await Promise.allSettled(cancelPromises);
+      
+      const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
+      
+      if (failed.length > 0) {
+        toast.error('Some firings could not be cancelled', {
+          description: `${failed.length} of ${scheduledFiringsToCancel.length} firings failed to cancel.`,
+        });
+      } else {
+        toast.success('Firings cancelled', {
+          description: `Successfully cancelled ${scheduledFiringsToCancel.length} scheduled firing(s).`,
+        });
+      }
+
+      // Clear selection
+      setSelectedSchedules([]);
+
+      // Refresh firings
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing firings', err);
+      }
+    } catch (err) {
+      console.error('Error cancelling firings', err);
+      toast.error('Failed to cancel firings', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
+  const handleBulkDeleteSchedules = async () => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot delete firings', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    if (selectedSchedules.length === 0) {
+      return;
+    }
+
+    // Filter to only scheduled or cancelled firings (only these can be deleted)
+    const firingsToDelete = firingSchedules.filter(
+      (schedule: any) => 
+        selectedSchedules.includes(schedule.id) && 
+        (schedule.status === 'scheduled' || schedule.status === 'cancelled')
+    );
+
+    if (firingsToDelete.length === 0) {
+      toast.error('No deletable firings selected', {
+        description: 'Only scheduled or cancelled firings can be permanently deleted.',
+      });
+      return;
+    }
+
+    const confirmed = confirm(
+      `Are you sure you want to permanently delete ${firingsToDelete.length} firing(s)?\n\nThis action cannot be undone. The firings will be completely removed from the database.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      // Delete all selected firings from the database
+      const deletePromises = firingsToDelete.map((schedule: any) =>
+        fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings/${schedule.id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        )
+      );
+
+      const results = await Promise.allSettled(deletePromises);
+      
+      const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
+      
+      if (failed.length > 0) {
+        toast.error('Some firings could not be deleted', {
+          description: `${failed.length} of ${firingsToDelete.length} firings failed to delete.`,
+        });
+      } else {
+        toast.success('Firings deleted', {
+          description: `Successfully deleted ${firingsToDelete.length} firing(s) from the database.`,
+        });
+      }
+
+      // Clear selection
+      setSelectedSchedules([]);
+
+      // Refresh firings
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing firings', err);
+      }
+    } catch (err) {
+      console.error('Error deleting firings', err);
+      toast.error('Failed to delete firings', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
+  const handleUpdateSchedule = async () => {
+    if (!currentStudio?.id || !authToken || !selectedSchedule) {
+      toast.error('Cannot update schedule', {
+        description: 'Missing required information.',
+      });
+      return;
+    }
+
+    if (!scheduleForm.kilnId || !scheduleForm.date || !scheduleForm.startTime) {
+      toast.error('Missing required fields', {
+        description: 'Please fill in kiln, date, and start time.',
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kiln-firings/${selectedSchedule.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name: scheduleForm.name,
+            kilnId: scheduleForm.kilnId,
+            date: scheduleForm.date,
+            startTime: scheduleForm.startTime,
+            firingType: scheduleForm.firingType || null,
+            atmosphere: scheduleForm.atmosphere || null,
+            targetCone: scheduleForm.temperature || null,
+            operatorId: scheduleForm.operatorId || null,
+            notes: scheduleForm.notes || null,
+            rackNumbers: selectedRacks,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to update firing', errorText);
+        toast.error('Failed to update schedule', {
+          description: 'Please check all fields and try again.',
+        });
+        return;
+      }
+
+      // Refresh firings
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kiln-firings`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setFiringSchedules(body.firings ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing firings', err);
+      }
+
+      setShowEditSchedule(false);
+      setSelectedSchedule(null);
+      setScheduleForm({
+        name: '',
+        kilnId: '',
+        date: '',
+        startTime: '',
+        endTime: '',
+        firingType: '',
+        operatorId: '',
+        locationId: currentStudio?.locations?.[0]?.id || '',
+        temperature: '',
+        notes: '',
+        atmosphere: 'oxidation',
+      });
+
+      toast.success('Schedule updated', {
+        description: 'The firing schedule has been updated.',
+      });
+    } catch (err) {
+      console.error('Error updating schedule', err);
+      toast.error('Failed to update schedule', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
   const handleSendNotifications = () => {
     console.log('Sending notifications for schedules:', selectedSchedules);
     setShowNotificationDialog(false);
@@ -713,8 +1101,10 @@ export function KilnManagement() {
   const getScheduleStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled': return 'default';
-      case 'in-progress': return 'secondary';
-      case 'completed': return 'default';
+      case 'loading': return 'secondary';
+      case 'firing': return 'destructive';
+      case 'cooling': return 'blue'; // Blue color
+      case 'completed': return 'green'; // Green color
       case 'cancelled': return 'destructive';
       default: return 'outline';
     }
@@ -754,7 +1144,8 @@ export function KilnManagement() {
             kilnId: scheduleForm.kilnId,
             date: scheduleForm.date,
             startTime: scheduleForm.startTime,
-            atmosphere: null,
+            firingType: scheduleForm.firingType || null,
+            atmosphere: scheduleForm.atmosphere || null,
             targetCone: scheduleForm.temperature || null,
             operatorId: scheduleForm.operatorId || null,
             notes: scheduleForm.notes,
@@ -764,11 +1155,16 @@ export function KilnManagement() {
       );
 
       if (!res.ok) {
-        console.error('Failed to create kiln firing', await res.text());
+        const errorText = await res.text();
+        console.error('Failed to create kiln firing', errorText);
+        toast.error('Failed to schedule firing', {
+          description: 'Please check all fields and try again.',
+        });
         return;
       }
 
-      console.log('Created kiln firing', await res.json());
+      const result = await res.json();
+      console.log('Created kiln firing', result);
       // Refresh firing schedules from backend
       try {
         const refreshRes = await fetch(
@@ -786,7 +1182,9 @@ export function KilnManagement() {
       } catch (err) {
         console.error('Error refreshing kiln firings', err);
       }
+      // Close the appropriate dialog
       setShowCreateScheduleDialog(false);
+      setShowScheduleFiring(false);
       setSelectedRacks([]);
       setScheduleForm({
         name: '',
@@ -799,9 +1197,17 @@ export function KilnManagement() {
         locationId: currentStudio?.locations?.[0]?.id || '',
         temperature: '',
         notes: '',
+        atmosphere: 'oxidation',
+      });
+
+      toast.success('Firing scheduled', {
+        description: `"${scheduleForm.name || 'Unnamed firing'}" has been scheduled.`,
       });
     } catch (err) {
       console.error('Error creating kiln firing', err);
+      toast.error('Failed to schedule firing', {
+        description: 'An error occurred. Please try again.',
+      });
     }
   };
 
@@ -1290,6 +1696,103 @@ export function KilnManagement() {
     }
   };
 
+  const handleDeleteKiln = async (kilnId: string, kilnName: string) => {
+    if (!currentStudio?.id || !authToken) {
+      toast.error('Cannot delete kiln', {
+        description: 'Missing studio or authentication.',
+      });
+      return;
+    }
+
+    // Check if there are any active firings for this kiln
+    const activeFiring = firingSchedules.find(
+      (f: any) => 
+        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+        ['loading', 'firing', 'cooling'].includes(f.status)
+    );
+
+    if (activeFiring) {
+      toast.error('Cannot delete kiln', {
+        description: `This kiln has an active firing: "${activeFiring.name || 'Unnamed'}". Please complete or cancel the firing first.`,
+      });
+      return;
+    }
+
+    // Check for scheduled firings
+    const scheduledFirings = firingSchedules.filter(
+      (f: any) => 
+        (f.kiln_id === kilnId || f.kilnId === kilnId) && 
+        f.status === 'scheduled'
+    );
+
+    let warningMessage = `Are you sure you want to delete "${kilnName}"?`;
+    if (scheduledFirings.length > 0) {
+      warningMessage += `\n\nWarning: This kiln has ${scheduledFirings.length} scheduled firing(s) that will need to be rescheduled or cancelled.`;
+    }
+    warningMessage += '\n\nThis action cannot be undone.';
+
+    const confirmed = confirm(warningMessage);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/admin/studios/${currentStudio.id}/kilns/${kilnId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to delete kiln', errorText);
+        toast.error('Failed to delete kiln', {
+          description: 'Please try again.',
+        });
+        return;
+      }
+
+      // Refresh kilns list
+      try {
+        const refreshRes = await fetch(
+          `/api/admin/studios/${currentStudio.id}/kilns`,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const body = await refreshRes.json();
+          setKilns(body.kilns ?? []);
+        }
+      } catch (err) {
+        console.error('Error refreshing kilns', err);
+      }
+
+      // Close details modal if it's open for this kiln
+      if (editingKiln?.id === kilnId) {
+        setShowKilnDetails(false);
+        setEditingKiln(null);
+        setIsEditingKiln(false);
+      }
+
+      toast.success('Kiln deleted', {
+        description: `"${kilnName}" has been deleted.`,
+      });
+    } catch (err) {
+      console.error('Error deleting kiln', err);
+      toast.error('Failed to delete kiln', {
+        description: 'An error occurred. Please try again.',
+      });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8">
       {/* Header */}
@@ -1337,6 +1840,24 @@ export function KilnManagement() {
                   <SelectItem value="cooling">Cooling</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="out-of-service">Out of Service</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {(currentStudio as any)?.locations?.map((location: any) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                  {(!(currentStudio as any)?.locations || (currentStudio as any)?.locations?.length === 0) && (
+                    <SelectItem value="no-locations" disabled>
+                      No locations available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -2135,19 +2656,31 @@ export function KilnManagement() {
                 ? 'in-use' 
                 : (kiln.status || 'available');
               
+              // Get location name from currentStudio locations
+              const location = (currentStudio as any)?.locations?.find(
+                (loc: any) => loc.id === kiln.locationId
+              );
+              const locationName = location?.name || 'No location';
+              
               return (
               <Card key={kiln.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <CardTitle className="text-lg">{kiln.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap gap-2">
                         <Badge variant="outline" className="capitalize">
                           {kiln.type}
                         </Badge>
                         <Badge variant={getStatusBadge(displayStatus) as any}>
                           {displayStatus}
                         </Badge>
+                        {kiln.locationId && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{locationName}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <DropdownMenu>
@@ -2168,13 +2701,36 @@ export function KilnManagement() {
                           <Edit2 className="w-4 h-4 mr-2" />
                           Edit Kiln
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setScheduleForm({
+                            name: '',
+                            kilnId: kiln.id,
+                            date: '',
+                            startTime: '',
+                            endTime: '',
+                            firingType: '',
+                            operatorId: '',
+                            locationId: currentStudio?.locations?.[0]?.id || '',
+                            temperature: '',
+                            notes: '',
+                            atmosphere: 'oxidation',
+                          });
+                          setSelectedRacks([]);
+                          setShowScheduleFiring(true);
+                        }}>
                           <Calendar className="w-4 h-4 mr-2" />
                           Schedule Firing
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Wrench className="w-4 h-4 mr-2" />
                           Maintenance
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteKiln(kiln.id, kiln.name)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Kiln
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -2219,6 +2775,7 @@ export function KilnManagement() {
                             <Badge variant={
                               activeFiring.status === 'loading' ? 'secondary' :
                               activeFiring.status === 'firing' ? 'destructive' :
+                              activeFiring.status === 'cooling' ? 'blue' : // Blue color
                               'default'
                             }>
                               {activeFiring.status}
@@ -2809,7 +3366,9 @@ export function KilnManagement() {
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="loading">Loading</SelectItem>
+                  <SelectItem value="firing">Firing</SelectItem>
+                  <SelectItem value="cooling">Cooling</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
@@ -2963,7 +3522,7 @@ export function KilnManagement() {
                       <div className="space-y-2">
                         <Label>Firing Type</Label>
                         <Select
-                          value={scheduleForm.firingType}
+                          value={scheduleForm.firingType || undefined}
                           onValueChange={(value) =>
                             setScheduleForm((prev) => ({
                               ...prev,
@@ -2997,6 +3556,30 @@ export function KilnManagement() {
                           }
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Atmosphere</Label>
+                        <Select
+                          value={scheduleForm.atmosphere}
+                          onValueChange={(value) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              atmosphere: value as 'oxidation' | 'reduction' | 'neutral',
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select atmosphere" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="oxidation">Oxidation</SelectItem>
+                            <SelectItem value="reduction">Reduction</SelectItem>
+                            <SelectItem value="neutral">Neutral</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Operator</Label>
                         <Select
@@ -3098,6 +3681,7 @@ export function KilnManagement() {
                           locationId: currentStudio?.locations?.[0]?.id || '',
                           temperature: '',
                           notes: '',
+                          atmosphere: 'oxidation',
                         });
                       }}>
                         Cancel
@@ -3114,8 +3698,28 @@ export function KilnManagement() {
           </div>
 
           {selectedSchedules.length > 0 && (
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span>{selectedSchedules.length} selected</span>
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-accent/20">
+              <span className="text-sm text-muted-foreground">
+                {selectedSchedules.length} firing{selectedSchedules.length !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkCancelSchedules}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel Selected
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDeleteSchedules}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Selected
+                </Button>
+              </div>
             </div>
           )}
 
@@ -3131,6 +3735,7 @@ export function KilnManagement() {
                     />
                   </TableHead>
                   <TableHead>Firing Name</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Kiln</TableHead>
@@ -3165,12 +3770,12 @@ export function KilnManagement() {
                     ? new Date(schedule.date)
                     : null;
 
-                  // Map firing type: from template base_type, or derive from kiln type, or fallback
-                  const firingType = template?.base_type 
+                  // Map firing type: from stored firing_type, template base_type, or derive from kiln type, or fallback
+                  const firingType = schedule.firing_type 
+                    || schedule.firingType
+                    || template?.base_type 
                     || (kiln?.type === 'raku' ? 'raku' : kiln?.type === 'electric' ? 'bisque' : 'glaze')
                     || schedule.type 
-                    || schedule.firing_type 
-                    || schedule.firingType 
                     || '—';
 
                   // Map temperature: from target_cone, or from template temperature curve max, or fallback
@@ -3212,6 +3817,15 @@ export function KilnManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{kiln?.location?.name || "—"}</span>
+                          </div>
+
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
                           <div className="font-medium">
                             {scheduledStart
                               ? scheduledStart.toLocaleDateString()
@@ -3234,7 +3848,16 @@ export function KilnManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">{kiln?.name}</div>
+                          <button
+                            onClick={() => {
+                              if (kiln?.id) {
+                                handleViewKilnDetails(kiln.id);
+                              }
+                            }}
+                            className="font-medium text-primary hover:underline cursor-pointer"
+                          >
+                            {kiln?.name || '—'}
+                          </button>
                           <div className="text-sm text-muted-foreground capitalize">
                             {kiln?.type}
                           </div>
@@ -3307,22 +3930,29 @@ export function KilnManagement() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewScheduleDetails(schedule)}>
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            {schedule.status === 'scheduled' && (
+                              <DropdownMenuItem onClick={() => handleEditSchedule(schedule)}>
                               <Edit2 className="w-4 h-4 mr-2" />
                               Edit Schedule
                             </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem>
                               <Bell className="w-4 h-4 mr-2" />
                               Send Notification
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
+                            {schedule.status === 'scheduled' && (
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleCancelScheduleFiring(schedule)}
+                              >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Cancel Firing
                             </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -4180,32 +4810,44 @@ export function KilnManagement() {
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0 mt-4">
-            {isEditingKiln ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsEditingKiln(false);
-                    // Reset to original kiln data
-                    const kiln = kilns.find((k: any) => k.id === selectedKilnId);
-                    if (kiln) {
-                      setEditingKiln({ ...kiln });
-                    }
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateKiln}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </Button>
-              </>
-            ) : (
+          <div className="flex justify-between items-center pt-4 border-t flex-shrink-0 mt-4">
+            {!isEditingKiln && editingKiln && (
+              <Button
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                onClick={() => handleDeleteKiln(editingKiln.id!, editingKiln.name || 'this kiln')}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Kiln
+              </Button>
+            )}
+            <div className="flex justify-end space-x-3 ml-auto">
+              {isEditingKiln ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditingKiln(false);
+                      // Reset to original kiln data
+                      const kiln = kilns.find((k: any) => k.id === selectedKilnId);
+                      if (kiln) {
+                        setEditingKiln({ ...kiln });
+                      }
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleUpdateKiln}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </>
+              ) : (
               <Button variant="outline" onClick={() => setShowKilnDetails(false)}>
                 Close
               </Button>
-            )}
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -4240,27 +4882,198 @@ export function KilnManagement() {
       </Dialog>
 
       {/* Schedule Firing Dialog */}
-      <Dialog open={showScheduleFiring} onOpenChange={setShowScheduleFiring}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={showScheduleFiring} onOpenChange={(open) => {
+        setShowScheduleFiring(open);
+        if (!open) {
+          // Reset form when closing
+          setScheduleForm({
+            name: '',
+            kilnId: '',
+            date: '',
+            startTime: '',
+            endTime: '',
+            firingType: '',
+            operatorId: '',
+            locationId: currentStudio?.locations?.[0]?.id || '',
+            temperature: '',
+            notes: '',
+            atmosphere: 'oxidation',
+          });
+          setSelectedRacks([]);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Schedule Firing</DialogTitle>
             <DialogDescription>
-              Schedule a new firing session using the selected template
+              Schedule a new firing session for this kiln
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-center py-8">
-              <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold">Firing Schedule Form</h3>
-              <p className="text-muted-foreground">
-                Firing scheduling interface would be here
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Firing Name</Label>
+                <Input
+                  placeholder="e.g., Morning Bisque Load"
+                  value={scheduleForm.name}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Kiln</Label>
+                <Select
+                  value={scheduleForm.kilnId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      kilnId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select kiln" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kilns.map((kiln: any) => (
+                      <SelectItem key={kiln.id} value={kiln.id}>
+                        {kiln.name} ({kiln.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowScheduleFiring(false)}>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={scheduleForm.date}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={scheduleForm.startTime}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      startTime: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Target Cone (Optional)</Label>
+                <Input
+                  placeholder="e.g., 04, 6, 10"
+                  value={scheduleForm.temperature}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      temperature: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Operator (Optional)</Label>
+                <Select
+                  value={scheduleForm.operatorId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      operatorId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select operator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff.map((operator) => (
+                      <SelectItem key={operator.id || operator.userId} value={operator.id || operator.userId}>
+                        {operator.name || operator.email} {operator.role ? `- ${operator.role}` : ''}
+                      </SelectItem>
+                    ))}
+                    {staff.length === 0 && (
+                      <SelectItem value="no-employees" disabled>
+                        No employees available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                placeholder="Add any notes about this firing..."
+                value={scheduleForm.notes}
+                onChange={(e) =>
+                  setScheduleForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowScheduleFiring(false);
+                  setScheduleForm({
+                    name: '',
+                    kilnId: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    firingType: '',
+                    operatorId: '',
+                    locationId: currentStudio?.locations?.[0]?.id || '',
+                    temperature: '',
+                    notes: '',
+                    atmosphere: 'oxidation',
+                  });
+                  setSelectedRacks([]);
+                }}
+              >
                 Cancel
               </Button>
-              <Button>
+              <Button 
+                onClick={async () => {
+                  if (!scheduleForm.kilnId || !scheduleForm.date || !scheduleForm.startTime) {
+                    toast.error('Missing required fields', {
+                      description: 'Please fill in kiln, date, and start time.',
+                    });
+                    return;
+                  }
+
+                  await handleCreateSchedule();
+                  setShowScheduleFiring(false);
+                }}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
                 Schedule Firing
               </Button>
             </div>
@@ -4314,7 +5127,7 @@ export function KilnManagement() {
                                 Cone {firing.target_cone}
                               </Badge>
                             )}
-    </div>
+            </div>
                           <div className="text-sm text-muted-foreground space-y-1">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-3 h-3" />
@@ -4499,6 +5312,353 @@ export function KilnManagement() {
               <Button onClick={handleQuickStartFiring}>
                 <Play className="w-4 h-4 mr-2" />
                 Start Firing
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Details Dialog */}
+      <Dialog open={showScheduleDetails} onOpenChange={(open) => {
+        setShowScheduleDetails(open);
+        if (!open) {
+          setSelectedSchedule(null);
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Firing Schedule Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this firing schedule
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSchedule && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Firing Name</Label>
+                  <p className="text-sm">{selectedSchedule.name || '—'}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Badge variant={getScheduleStatusBadge(selectedSchedule.status) as any}>
+                    {selectedSchedule.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Kiln</Label>
+                  <button
+                    onClick={() => {
+                      const kilnId = selectedSchedule.kiln_id || selectedSchedule.kilnId;
+                      if (kilnId) {
+                        handleViewKilnDetails(kilnId);
+                        setShowScheduleDetails(false);
+                      }
+                    }}
+                    className="text-sm text-primary hover:underline cursor-pointer"
+                  >
+                    {(() => {
+                      const kiln = selectedSchedule.kilns || kilns.find((k: any) => k.id === (selectedSchedule.kiln_id || selectedSchedule.kilnId));
+                      return kiln?.name || '—';
+                    })()}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <Label>Scheduled Date & Time</Label>
+                  <p className="text-sm">
+                    {selectedSchedule.scheduled_start
+                      ? new Date(selectedSchedule.scheduled_start).toLocaleString()
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Target Cone</Label>
+                  <p className="text-sm">{selectedSchedule.target_cone || selectedSchedule.targetCone || '—'}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Atmosphere</Label>
+                  <p className="text-sm capitalize">{selectedSchedule.atmosphere || '—'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Operator</Label>
+                <p className="text-sm">
+                  {(() => {
+                    const operatorProfile = selectedSchedule.operator;
+                    const creator = selectedSchedule.creator;
+                    const operator = operatorProfile
+                      ? staff.find((s) => (s.userId === operatorProfile.id || s.id === operatorProfile.id))
+                      : creator
+                      ? staff.find((s) => s.userId === creator.id || s.id === creator.id)
+                      : staff.find((s) => s.userId === selectedSchedule.created_by || s.id === selectedSchedule.created_by);
+                    return operator?.name || creator?.name || '—';
+                  })()}
+                </p>
+              </div>
+
+              {selectedSchedule.notes && (
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <p className="text-sm whitespace-pre-wrap">{selectedSchedule.notes}</p>
+                </div>
+              )}
+
+              {selectedSchedule.actual_start && (
+                <div className="space-y-2">
+                  <Label>Actual Start</Label>
+                  <p className="text-sm">
+                    {new Date(selectedSchedule.actual_start).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {selectedSchedule.actual_end && (
+                <div className="space-y-2">
+                  <Label>Actual End</Label>
+                  <p className="text-sm">
+                    {new Date(selectedSchedule.actual_end).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
+              {selectedSchedule.completion_notes && (
+                <div className="space-y-2">
+                  <Label>Completion Notes</Label>
+                  <p className="text-sm whitespace-pre-wrap">{selectedSchedule.completion_notes}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowScheduleDetails(false)}>
+                  Close
+                </Button>
+                {selectedSchedule.status === 'scheduled' && (
+                  <Button onClick={() => {
+                    setShowScheduleDetails(false);
+                    handleEditSchedule(selectedSchedule);
+                  }}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Schedule
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Schedule Dialog */}
+      <Dialog open={showEditSchedule} onOpenChange={(open) => {
+        setShowEditSchedule(open);
+        if (!open) {
+          setSelectedSchedule(null);
+          setScheduleForm({
+            name: '',
+            kilnId: '',
+            date: '',
+            startTime: '',
+            endTime: '',
+            firingType: '',
+            operatorId: '',
+            locationId: currentStudio?.locations?.[0]?.id || '',
+            temperature: '',
+            notes: '',
+            atmosphere: 'oxidation',
+          });
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Firing Schedule</DialogTitle>
+            <DialogDescription>
+              Update the details of this firing schedule
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Firing Name</Label>
+                <Input
+                  placeholder="e.g., Morning Bisque Load"
+                  value={scheduleForm.name}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Kiln</Label>
+                <Select
+                  value={scheduleForm.kilnId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      kilnId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select kiln" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kilns.map((kiln: any) => (
+                      <SelectItem key={kiln.id} value={kiln.id}>
+                        {kiln.name} ({kiln.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={scheduleForm.date}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={scheduleForm.startTime}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      startTime: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Target Cone (Optional)</Label>
+                <Input
+                  placeholder="e.g., 04, 6, 10"
+                  value={scheduleForm.temperature}
+                  onChange={(e) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      temperature: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Atmosphere</Label>
+                <Select
+                  value={scheduleForm.atmosphere}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      atmosphere: value as 'oxidation' | 'reduction' | 'neutral',
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select atmosphere" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oxidation">Oxidation</SelectItem>
+                    <SelectItem value="reduction">Reduction</SelectItem>
+                    <SelectItem value="neutral">Neutral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Operator (Optional)</Label>
+                <Select
+                  value={scheduleForm.operatorId}
+                  onValueChange={(value) =>
+                    setScheduleForm((prev) => ({
+                      ...prev,
+                      operatorId: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select operator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staff.map((operator) => (
+                      <SelectItem key={operator.id || operator.userId} value={operator.id || operator.userId}>
+                        {operator.name || operator.email} {operator.role ? `- ${operator.role}` : ''}
+                      </SelectItem>
+                    ))}
+                    {staff.length === 0 && (
+                      <SelectItem value="no-employees" disabled>
+                        No employees available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                placeholder="Add any notes about this firing..."
+                value={scheduleForm.notes}
+                onChange={(e) =>
+                  setScheduleForm((prev) => ({
+                    ...prev,
+                    notes: e.target.value,
+                  }))
+                }
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowEditSchedule(false);
+                  setSelectedSchedule(null);
+                  setScheduleForm({
+                    name: '',
+                    kilnId: '',
+                    date: '',
+                    startTime: '',
+                    endTime: '',
+                    firingType: '',
+                    operatorId: '',
+                    locationId: currentStudio?.locations?.[0]?.id || '',
+                    temperature: '',
+                    notes: '',
+                    atmosphere: 'oxidation',
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateSchedule}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
               </Button>
             </div>
           </div>

@@ -180,7 +180,7 @@ export function MemberManagement() {
       case "active":
         return <Badge variant="secondary">Active</Badge>;
       case "pending":
-        return <Badge className="bg-blue-400">Pending</Badge>;
+        return <Badge variant="blue">Pending</Badge>;
       case "suspended":
         return <Badge variant="destructive">Suspended</Badge>;
       case "expired":
@@ -206,7 +206,7 @@ export function MemberManagement() {
   const getInviteStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return <Badge className="bg-blue-400">Pending</Badge>;
+        return <Badge variant="blue">Pending</Badge>;
       case "accepted":
         return <Badge variant="secondary">Accepted</Badge>;
       case "revoked":
@@ -545,6 +545,44 @@ export function MemberManagement() {
     } catch (e) {
       console.error("Application decision error", e);
       toast.error("Something went wrong updating the application");
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: string) => {
+    if (!context.currentStudio?.id) {
+      toast.error("No studio selected");
+      return;
+    }
+    if (!context.authToken) {
+      toast.error("You must be logged in to cancel invites.");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/studios/${context.currentStudio?.id}/invites/${inviteId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${context.authToken}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Cancel invite error", err);
+        toast.error(err.error || "Failed to cancel invite");
+        return;
+      }
+
+      toast.success("Invite cancelled successfully");
+
+      // Refresh invites list
+      await fetchInvites();
+    } catch (e) {
+      console.error("Cancel invite error", e);
+      toast.error("Something went wrong cancelling the invite");
     }
   };
 
@@ -1387,7 +1425,7 @@ export function MemberManagement() {
                                 className="text-destructive"
                                 onSelect={(e) => {
                                   e.preventDefault();
-                                  toast.info("Cancel invite coming soon");
+                                  handleCancelInvite(invite.id);
                                 }}
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />

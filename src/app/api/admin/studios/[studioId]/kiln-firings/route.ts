@@ -35,7 +35,11 @@ export async function GET(
           id,
           name,
           type,
-          capacity
+          capacity,
+          location:location_id (
+            id,
+            name
+          )
         ),
         templates:template_id (
           id,
@@ -112,11 +116,13 @@ export async function POST(
     kilnId,
     date,
     startTime,
+    firingType,
     atmosphere,
     targetCone,
     targetTemperature,
     operatorId,
     notes,
+    rackNumbers, // Array of rack numbers selected
     status, // Allow setting status directly for quick-start
   } = body ?? {};
 
@@ -153,6 +159,20 @@ export async function POST(
 
     const firingStatus = status || "scheduled";
     
+    // Calculate booked slots from rack numbers or default to 0
+    // If rackNumbers is provided, use its length as booked slots
+    // Otherwise, booked_slots will be null and can be updated later when items are loaded
+    const bookedSlots = Array.isArray(rackNumbers) ? rackNumbers.length : null;
+    
+    // Format rack numbers into notes if provided
+    let formattedNotes = notes || null;
+    if (Array.isArray(rackNumbers) && rackNumbers.length > 0) {
+      const rackInfo = `Racks: ${rackNumbers.join(', ')}`;
+      formattedNotes = formattedNotes 
+        ? `${formattedNotes}\n${rackInfo}` 
+        : rackInfo;
+    }
+    
     const { data, error } = await supabaseAdmin
       .from("kiln_firings")
       .insert({
@@ -162,11 +182,13 @@ export async function POST(
         name: name || null,
         scheduled_start: scheduledStart,
         actual_start: actualStart,
+        firing_type: firingType || null,
         atmosphere: atmosphere || null,
         target_cone: targetCone || null,
         target_temperature: targetTemperature ? parseFloat(targetTemperature) : null,
-        notes: notes || null,
+        notes: formattedNotes,
         operator_id: operatorId || null,
+        booked_slots: bookedSlots,
         status: firingStatus,
         created_by: user.id,
       })

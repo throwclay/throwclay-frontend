@@ -143,6 +143,15 @@ export async function PUT(
     completionNotes,
     notes,
     operatorId,
+    scheduledStart,
+    date,
+    startTime,
+    name,
+    targetCone,
+    atmosphere,
+    firingType,
+    bookedSlots,
+    rackNumbers,
   } = body ?? {};
 
   try {
@@ -188,6 +197,37 @@ export async function PUT(
     }
     if (operatorId !== undefined) {
       updateData.operator_id = operatorId || null;
+    }
+    if (name !== undefined) {
+      updateData.name = name || null;
+    }
+    if (targetCone !== undefined) {
+      updateData.target_cone = targetCone || null;
+    }
+    if (atmosphere !== undefined) {
+      updateData.atmosphere = atmosphere || null;
+    }
+    if (firingType !== undefined) {
+      updateData.firing_type = firingType || null;
+    }
+    if (bookedSlots !== undefined) {
+      updateData.booked_slots = bookedSlots ?? 0;
+    } else if (rackNumbers !== undefined && Array.isArray(rackNumbers)) {
+      // If rackNumbers is provided, calculate booked_slots from it
+      updateData.booked_slots = rackNumbers.length;
+    }
+    if (scheduledStart !== undefined) {
+      updateData.scheduled_start = scheduledStart ? new Date(scheduledStart).toISOString() : null;
+    } else if (date && startTime) {
+      // Combine date and startTime if provided
+      try {
+        const dt = new Date(`${date}T${startTime}`);
+        if (!isNaN(dt.getTime())) {
+          updateData.scheduled_start = dt.toISOString();
+        }
+      } catch {
+        // ignore, will not update scheduled_start
+      }
     }
 
     // If starting a firing (status = "loading" or "firing"), set actual_start if not already set
@@ -285,6 +325,85 @@ export async function PUT(
     console.error("PUT /api/admin/studios/[studioId]/kiln-firings/[firingId]", err);
     return NextResponse.json(
       { error: "Failed to update firing" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { studioId: string; firingId: string } }
+) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { studioId, firingId } = params;
+
+  try {
+    await assertStudioAdmin(user.id, studioId);
+
+    // Verify the firing exists and belongs to this studio
+    const { data: existingFiring, error: fetchError } = await supabaseAdmin
+      .from("kiln_firings")
+      .select("id, studio_id, kiln_id, status")
+      .eq("id", firingId)
+      .eq("studio_id", studioId)
+      .single();
+
+    if (fetchError || !existingFiring) {
+      return NextResponse.json(
+        { error: "Firing not found" },
+        { status: 404 }
+      );
+    }
+
+    // Only allow deleting scheduled or cancelled firings
+    if (existingFiring.status !== 'scheduled' && existingFiring.status !== 'cancelled') {
+      return NextResponse.json(
+        { error: "Only scheduled or cancelled firings can be deleted" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the firing (CASCADE will handle related records like kiln_assignments)
+    const { error } = await supabaseAdmin
+      .from("kiln_firings")
+      .delete()
+      .eq("id", firingId)
+      .eq("studio_id", studioId);
+
+    if (error) {
+      console.error("DELETE /api/admin/studios/[studioId]/kiln-firings/[firingId] delete error", error);
+      return NextResponse.json(
+        { error: "Failed to delete firing" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    if (
+      err?.message?.includes("Not authorized") ||
+      err?.message?.includes("Insufficient")
+    ) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+
+    console.error("DELETE /api/admin/studios/[studioId]/kiln-firings/[firingId]", err);
+    return NextResponse.json(
+      { error: "Failed to delete firing" },
       { status: 500 }
     );
   }
