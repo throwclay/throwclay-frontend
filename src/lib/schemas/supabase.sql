@@ -13,15 +13,27 @@ CREATE TABLE public.kiln_firing_templates (
   estimated_duration integer,
   clay_compatibility ARRAY,
   glaze_compatibility ARRAY,
+  safety_notes text,
+  kiln_specific_instructions text,
+  shelf_configuration jsonb,
   is_default boolean DEFAULT false,
   is_active boolean DEFAULT true,
+  is_shared boolean DEFAULT false,
+  parent_template_id uuid,
+  version text DEFAULT '1.0',
+  change_notes text,
+  last_used timestamp with time zone,
+  usage_count integer DEFAULT 0,
+  average_success_rate numeric,
+  performance_metrics jsonb,
   created_by uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT kiln_firing_templates_pkey PRIMARY KEY (id),
   CONSTRAINT kiln_firing_templates_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id),
   CONSTRAINT kiln_firing_templates_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id),
-  CONSTRAINT kiln_firing_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT kiln_firing_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_firing_templates_parent_template_id_fkey FOREIGN KEY (parent_template_id) REFERENCES public.kiln_firing_templates(id)
 );
 CREATE TABLE public.kiln_firings (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -32,9 +44,15 @@ CREATE TABLE public.kiln_firings (
   scheduled_start timestamp with time zone,
   actual_start timestamp with time zone,
   actual_end timestamp with time zone,
+  firing_type text CHECK (firing_type = ANY (ARRAY['bisque'::text, 'glaze'::text, 'raku'::text, 'crystalline'::text])),
   atmosphere text,
   target_cone text,
+  target_temperature numeric,
+  actual_temperature numeric,
   notes text,
+  completion_notes text,
+  operator_id uuid,
+  booked_slots integer DEFAULT 0,
   status text DEFAULT 'scheduled'::text CHECK (status = ANY (ARRAY['scheduled'::text, 'loading'::text, 'firing'::text, 'cooling'::text, 'completed'::text, 'cancelled'::text])),
   created_by uuid NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
@@ -43,7 +61,8 @@ CREATE TABLE public.kiln_firings (
   CONSTRAINT kiln_firings_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id),
   CONSTRAINT kiln_firings_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id),
   CONSTRAINT kiln_firings_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.kiln_firing_templates(id),
-  CONSTRAINT kiln_firings_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT kiln_firings_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_firings_operator_id_fkey FOREIGN KEY (operator_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.kilns (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -57,11 +76,16 @@ CREATE TABLE public.kilns (
   capacity numeric,
   max_temp numeric,
   shelf_count integer,
+  shelf_configuration jsonb,
   specs jsonb,
   status text DEFAULT 'available'::text CHECK (status = ANY (ARRAY['available'::text, 'loading'::text, 'firing'::text, 'cooling'::text, 'maintenance'::text, 'out-of-service'::text])),
+  last_fired timestamp with time zone,
+  total_firings integer DEFAULT 0,
+  maintenance_schedule jsonb,
   install_date date,
   warranty_expiry date,
   notes text,
+  is_active boolean DEFAULT true,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT kilns_pkey PRIMARY KEY (id),
@@ -192,3 +216,250 @@ CREATE TABLE public.subscriptions (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id)
 );
+
+-- Kiln Loads: Represents a complete kiln load with multiple shelves and items
+CREATE TABLE public.kiln_loads (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_id uuid NOT NULL,
+  firing_id uuid NOT NULL,
+  total_items integer DEFAULT 0,
+  load_started timestamp with time zone DEFAULT now(),
+  load_completed timestamp with time zone,
+  loaded_by uuid NOT NULL,
+  assigned_employee_id uuid,
+  notes text,
+  photos text[],
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_loads_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_loads_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id),
+  CONSTRAINT kiln_loads_firing_id_fkey FOREIGN KEY (firing_id) REFERENCES public.kiln_firings(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_loads_loaded_by_fkey FOREIGN KEY (loaded_by) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_loads_assigned_employee_id_fkey FOREIGN KEY (assigned_employee_id) REFERENCES public.profiles(id)
+);
+
+-- Kiln Shelves: Represents individual shelves within a kiln load
+CREATE TABLE public.kiln_shelves (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_load_id uuid NOT NULL,
+  level integer NOT NULL,
+  capacity integer NOT NULL,
+  used_capacity integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_shelves_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_shelves_kiln_load_id_fkey FOREIGN KEY (kiln_load_id) REFERENCES public.kiln_loads(id) ON DELETE CASCADE
+);
+
+-- Kiln Load Items: Represents individual items (pottery pieces) loaded into a kiln shelf
+CREATE TABLE public.kiln_load_items (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_shelf_id uuid NOT NULL,
+  throw_id uuid,
+  artist_id uuid NOT NULL,
+  artist_name text NOT NULL,
+  item_name text NOT NULL,
+  clay_type text NOT NULL,
+  glazes text[],
+  dimensions text,
+  special_instructions text,
+  shelf_position text,
+  loaded_at timestamp with time zone DEFAULT now(),
+  loaded_by uuid NOT NULL,
+  status text DEFAULT 'loaded'::text CHECK (status = ANY (ARRAY['loaded'::text, 'firing'::text, 'cooling'::text, 'ready-for-pickup'::text, 'picked-up'::text])),
+  pickup_notified timestamp with time zone,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_load_items_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_load_items_kiln_shelf_id_fkey FOREIGN KEY (kiln_shelf_id) REFERENCES public.kiln_shelves(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_load_items_artist_id_fkey FOREIGN KEY (artist_id) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_load_items_loaded_by_fkey FOREIGN KEY (loaded_by) REFERENCES public.profiles(id)
+);
+
+-- Kiln Assignments: Represents employee assignments for kiln operations
+CREATE TABLE public.kiln_assignments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_id uuid NOT NULL,
+  firing_id uuid NOT NULL,
+  assigned_employee_id uuid NOT NULL,
+  assigned_employee_name text NOT NULL,
+  assignment_type text NOT NULL CHECK (assignment_type = ANY (ARRAY['loading'::text, 'monitoring'::text, 'unloading'::text, 'full-cycle'::text])),
+  scheduled_start timestamp with time zone NOT NULL,
+  scheduled_end timestamp with time zone NOT NULL,
+  actual_start timestamp with time zone,
+  actual_end timestamp with time zone,
+  status text DEFAULT 'assigned'::text CHECK (status = ANY (ARRAY['assigned'::text, 'in-progress'::text, 'completed'::text, 'cancelled'::text, 'needs-cover'::text])),
+  special_instructions text,
+  emergency_contact text,
+  assigned_by uuid NOT NULL,
+  assigned_at timestamp with time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_assignments_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_assignments_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id),
+  CONSTRAINT kiln_assignments_firing_id_fkey FOREIGN KEY (firing_id) REFERENCES public.kiln_firings(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_assignments_assigned_employee_id_fkey FOREIGN KEY (assigned_employee_id) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_assignments_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.profiles(id)
+);
+
+-- Kiln Assignment Tasks: Tasks for assignments
+CREATE TABLE public.kiln_assignment_tasks (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  assignment_id uuid NOT NULL,
+  description text NOT NULL,
+  is_completed boolean DEFAULT false,
+  completed_at timestamp with time zone,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_assignment_tasks_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_assignment_tasks_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.kiln_assignments(id) ON DELETE CASCADE
+);
+
+-- Kiln Assignment Notifications: Notifications for assignments
+CREATE TABLE public.kiln_assignment_notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  assignment_id uuid NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['assignment'::text, 'reminder'::text, 'start-alert'::text, 'completion-reminder'::text])),
+  sent_at timestamp with time zone DEFAULT now(),
+  acknowledged boolean DEFAULT false,
+  CONSTRAINT kiln_assignment_notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_assignment_notifications_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.kiln_assignments(id) ON DELETE CASCADE
+);
+
+-- Kiln Assignment Cover Requests: Cover requests for assignments
+CREATE TABLE public.kiln_assignment_cover_requests (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  assignment_id uuid NOT NULL,
+  requested_by uuid NOT NULL,
+  requested_at timestamp with time zone DEFAULT now(),
+  reason text NOT NULL,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'approved'::text, 'denied'::text])),
+  covered_by uuid,
+  covered_at timestamp with time zone,
+  CONSTRAINT kiln_assignment_cover_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_assignment_cover_requests_assignment_id_fkey FOREIGN KEY (assignment_id) REFERENCES public.kiln_assignments(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_assignment_cover_requests_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.profiles(id),
+  CONSTRAINT kiln_assignment_cover_requests_covered_by_fkey FOREIGN KEY (covered_by) REFERENCES public.profiles(id)
+);
+
+-- Kiln Cameras: Camera integrations for kiln monitoring
+CREATE TABLE public.kiln_cameras (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_id uuid NOT NULL,
+  camera_id text NOT NULL,
+  position text NOT NULL CHECK (position = ANY (ARRAY['interior'::text, 'exterior'::text, 'control-panel'::text, 'pyrometer'::text])),
+  is_active boolean DEFAULT true,
+  monitoring_settings jsonb DEFAULT '{}'::jsonb,
+  last_health_check timestamp with time zone,
+  health_status text DEFAULT 'online'::text CHECK (health_status = ANY (ARRAY['online'::text, 'offline'::text, 'error'::text, 'maintenance'::text])),
+  battery_level integer,
+  signal_strength integer,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_cameras_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_cameras_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id) ON DELETE CASCADE
+);
+
+-- Kiln Camera Recordings: Firing recordings from cameras
+CREATE TABLE public.kiln_camera_recordings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  camera_id uuid NOT NULL,
+  firing_id uuid NOT NULL,
+  recording_type text NOT NULL CHECK (recording_type = ANY (ARRAY['live-stream'::text, 'time-lapse'::text, 'temperature-alert'::text, 'motion-detection'::text])),
+  start_time timestamp with time zone NOT NULL,
+  end_time timestamp with time zone,
+  file_url text,
+  thumbnail_url text,
+  duration integer,
+  file_size bigint,
+  metadata jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_camera_recordings_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_camera_recordings_camera_id_fkey FOREIGN KEY (camera_id) REFERENCES public.kiln_cameras(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_camera_recordings_firing_id_fkey FOREIGN KEY (firing_id) REFERENCES public.kiln_firings(id) ON DELETE CASCADE
+);
+
+-- Kiln Performance Logs: Tracks performance metrics during kiln firings
+CREATE TABLE public.kiln_performance_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  kiln_id uuid NOT NULL,
+  firing_id uuid NOT NULL,
+  timestamp timestamp with time zone NOT NULL DEFAULT now(),
+  temperature numeric NOT NULL,
+  target_temperature numeric,
+  phase text CHECK (phase = ANY (ARRAY['heating'::text, 'holding'::text, 'cooling'::text])),
+  gas_usage numeric,
+  electric_usage numeric,
+  notes text,
+  recorded_by uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT kiln_performance_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT kiln_performance_logs_kiln_id_fkey FOREIGN KEY (kiln_id) REFERENCES public.kilns(id),
+  CONSTRAINT kiln_performance_logs_firing_id_fkey FOREIGN KEY (firing_id) REFERENCES public.kiln_firings(id) ON DELETE CASCADE,
+  CONSTRAINT kiln_performance_logs_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.profiles(id)
+);
+
+-- Ring Integrations: Stores Ring camera integration settings for studios
+CREATE TABLE public.ring_integrations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  studio_id uuid NOT NULL,
+  is_enabled boolean DEFAULT false,
+  api_key text,
+  refresh_token text,
+  connected_devices jsonb DEFAULT '[]'::jsonb,
+  settings jsonb DEFAULT '{}'::jsonb,
+  webhook_url text,
+  last_sync timestamp with time zone,
+  sync_status text DEFAULT 'pending'::text CHECK (sync_status = ANY (ARRAY['success'::text, 'error'::text, 'pending'::text])),
+  error_log jsonb DEFAULT '[]'::jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT ring_integrations_pkey PRIMARY KEY (id),
+  CONSTRAINT ring_integrations_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id) ON DELETE CASCADE,
+  CONSTRAINT ring_integrations_studio_id_unique UNIQUE (studio_id)
+);
+
+-- Custom Firing Types: Stores custom firing type definitions
+CREATE TABLE public.custom_firing_types (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  studio_id uuid NOT NULL,
+  name text NOT NULL,
+  description text,
+  base_type text CHECK (base_type = ANY (ARRAY['bisque'::text, 'glaze'::text, 'raku'::text, 'pit'::text, 'saggar'::text, 'crystalline'::text, 'other'::text])),
+  temperature_curve jsonb NOT NULL,
+  atmosphere text CHECK (atmosphere = ANY (ARRAY['oxidation'::text, 'reduction'::text, 'neutral'::text])),
+  estimated_duration integer,
+  special_instructions text,
+  clay_compatibility text[],
+  glaze_compatibility text[],
+  safety_notes text,
+  is_default boolean DEFAULT false,
+  created_by uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  last_used timestamp with time zone,
+  usage_count integer DEFAULT 0,
+  CONSTRAINT custom_firing_types_pkey PRIMARY KEY (id),
+  CONSTRAINT custom_firing_types_studio_id_fkey FOREIGN KEY (studio_id) REFERENCES public.studios(id),
+  CONSTRAINT custom_firing_types_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_kiln_loads_kiln_id ON public.kiln_loads(kiln_id);
+CREATE INDEX idx_kiln_loads_firing_id ON public.kiln_loads(firing_id);
+CREATE INDEX idx_kiln_shelves_kiln_load_id ON public.kiln_shelves(kiln_load_id);
+CREATE INDEX idx_kiln_load_items_kiln_shelf_id ON public.kiln_load_items(kiln_shelf_id);
+CREATE INDEX idx_kiln_load_items_artist_id ON public.kiln_load_items(artist_id);
+CREATE INDEX idx_kiln_load_items_status ON public.kiln_load_items(status);
+CREATE INDEX idx_kiln_assignments_kiln_id ON public.kiln_assignments(kiln_id);
+CREATE INDEX idx_kiln_assignments_firing_id ON public.kiln_assignments(firing_id);
+CREATE INDEX idx_kiln_assignments_assigned_employee_id ON public.kiln_assignments(assigned_employee_id);
+CREATE INDEX idx_kiln_assignments_status ON public.kiln_assignments(status);
+CREATE INDEX idx_kiln_assignments_scheduled_start ON public.kiln_assignments(scheduled_start);
+CREATE INDEX idx_kiln_cameras_kiln_id ON public.kiln_cameras(kiln_id);
+CREATE INDEX idx_kiln_camera_recordings_camera_id ON public.kiln_camera_recordings(camera_id);
+CREATE INDEX idx_kiln_camera_recordings_firing_id ON public.kiln_camera_recordings(firing_id);
+CREATE INDEX idx_kiln_performance_logs_firing_id ON public.kiln_performance_logs(firing_id);
+CREATE INDEX idx_kiln_performance_logs_timestamp ON public.kiln_performance_logs(timestamp);
+CREATE INDEX idx_custom_firing_types_studio_id ON public.custom_firing_types(studio_id);

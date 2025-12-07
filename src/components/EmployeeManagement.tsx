@@ -230,7 +230,7 @@ export function EmployeeManagement() {
       case "employee":
         return <Badge variant="secondary">Employee</Badge>;
       case "instructor":
-        return <Badge className="bg-blue-500">Instructor</Badge>;
+        return <Badge variant="blue">Instructor</Badge>;
       default:
         return <Badge variant="outline">{role}</Badge>;
     }

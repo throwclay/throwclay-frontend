@@ -13,8 +13,7 @@ export function StudioDashboard() {
   const [selectedTab, setSelectedTab] = useState('overview');
 
   // Determine if current user is studio owner/admin
-  const isStudioOwner = currentUser?.type === 'studio' || currentUser?.role === 'owner' || currentUser?.role === 'admin';
-
+  const isStudioOwner = currentUser?.activeMode === 'studio' 
   // Mock kilns data since it's not in the Studio interface
   const mockKilns = [
     {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ArtistProfile } from "@/components/ArtistProfile";
 import { ArtistClasses } from "@/components/ArtistClasses";
@@ -19,6 +20,7 @@ import { LoginForm } from "@/components/LoginForm";
 import { MemberManagement } from "@/components/MemberManagement";
 import { MessagingCenter } from "@/components/MessagingCenter";
 import { MyStudios } from "@/components/MyStudios";
+import { MudlyAI } from "@/components/MudlyAi";
 import { Navigation } from "@/components/Navigation";
 import { PotteryJournal } from "@/components/PotteryJournal";
 import { Products } from "@/components/Products";
@@ -29,6 +31,7 @@ import { StaffManagement } from "@/components/StaffManagement";
 import { StudioDashboard } from "@/components/StudioDashboard";
 import { StudioDocuments } from "@/components/StudioDocuments";
 import { WhiteboardEditor } from "@/components/WhiteboardEditor";
+import { VerifyPhonePage } from "@/components/VerifyPhonePage";
 
 import type {
   User as UserType,
@@ -42,8 +45,8 @@ import { supabase } from "@/lib/apis/supabaseClient";
 
 export default function Home() {
   const context = useAppContext();
-
-  const [currentPage, setCurrentPage] = useState("landing");
+  const router = useRouter();
+  const [currentPage, setCurrentPage] = useState("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const fetchLocationsForStudio = async (
@@ -277,13 +280,20 @@ export default function Home() {
     context.setCurrentUser(appUser);
     context.setCurrentMembership(membershipForState);
     setIsLoggedIn(true);
-    setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
-
+    
     // 7) Fetch user-level invites with the *fresh* token
     await context.refreshInvites({
       status: "pending",
       tokenOverride: accessToken,
     });
+    
+    const userPhone = user?.phone ?? phone ?? null;
+    if (!userPhone) {
+      // No phone on file -> send them to phone verification
+      setCurrentPage("verifyphone");
+      return;
+    }
+    setCurrentPage(appUser.activeMode === "studio" ? "dashboard" : "profile");
   };
 
   const handleLogout = () => {
@@ -382,11 +392,15 @@ export default function Home() {
         return <StudioDocuments />;
       case "feed":
         return <Feed />;
+      case "verifyphone":
+        return <VerifyPhonePage onDone={() => setCurrentPage(context.currentUser?.activeMode === "studio" ? "dashboard" : "profile")} />;
+      case 'mudlyai':
+        return <MudlyAI />;
 
       default:
         return (
           <div className="p-8">
-            <h1>Page not found</h1>
+            <h1>Loading...</h1>
           </div>
         );
     }
@@ -402,6 +416,7 @@ export default function Home() {
         />
       )}
       <main>{renderPage()}</main>
+      {isLoggedIn && context.currentUser && <MudlyAI />}
     </div>
   );
 }

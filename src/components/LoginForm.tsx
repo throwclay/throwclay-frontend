@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 import { supabase } from "../lib/apis/supabaseClient";
-import { SignupFlow, type SignupData } from "./SignupFlow"
+import { SignupFlow, type SignupData } from "./SignupFlow";
 
 interface LoginFormProps {
   onLogin: (userData: { email: string; phone?: string; session: any }) => void;
@@ -19,39 +19,110 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+
+  
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
+
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSignup, setShowSignup] = useState(false);
 
-  const handleSubmit = async () => {
-    setIsLoading(true);
+  const resetStatus = () => {
     setError(null);
     setMessage(null);
+  };
+
+  const handleEmailPasswordLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    if (!data.session) {
+      setMessage("Check your email to verify your account before signing in.");
+      return;
+    }
+
+    onLogin({ email, phone, session: data.session });
+  };
+
+  // Step 1: send OTP
+  const handleSendOtp = async () => {
+    if (!phone) {
+      setError("Please enter your phone number.");
+      return;
+    }
+
+    // NOTE: phone must match what’s stored on the Supabase auth user
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
+      options: {
+        channel: "sms",
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setOtpRequested(true);
+    setMessage("We sent you a code via SMS. Enter it below to sign in.");
+  };
+
+  // Step 2: verify OTP
+  const handleVerifyOtp = async () => {
+    if (!phone || !otpCode) {
+      setError("Please enter both your phone number and the code we sent.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token: otpCode,
+      type: "sms",
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    if (!data.session) {
+      setMessage(
+        "We verified your code but couldn’t create a session. Check your account status or try again."
+      );
+      return;
+    }
+
+    onLogin({ email: data.session.user.email ?? "", phone, session: data.session });
+  };
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    resetStatus();
 
     try {
       if (authMode === "login") {
-        // --- LOGIN FLOW ---
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          setError(error.message);
-          return;
+        if (authMethod === "email") {
+          await handleEmailPasswordLogin();
+        } else {
+          // phone + OTP
+          if (!otpRequested) {
+            await handleSendOtp();
+          } else {
+            await handleVerifyOtp();
+          }
         }
-
-        if (!data.session) {
-          // If email confirmations are enabled and user hasn't confirmed yet
-          setMessage(
-            "Check your email to verify your account before signing in."
-          );
-          return;
-        }
-
-        // Bubble up to parent with session info
-        onLogin({ email, phone, session: data.session });
       }
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");
@@ -69,8 +140,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
 
   const handleSignupComplete = async (signupData: SignupData) => {
     setIsLoading(true);
-    setError(null);
-    setMessage(null);
+    resetStatus();
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -99,7 +169,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         return;
       }
 
-      // If email confirmations are enabled, Supabase won't return a session yet
       if (!data.session) {
         setMessage(
           "Account created! Please check your email and click the verification link to activate your account."
@@ -108,7 +177,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         return;
       }
 
-      // We have a session: for studio accounts, create studio + membership.
       if (signupData.accountType === "studio") {
         try {
           const res = await fetch("/api/studios", {
@@ -139,7 +207,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
         }
       }
 
-      // Auto-login after successful signup
       onLogin({
         email: signupData.email,
         session: data.session,
@@ -152,8 +219,6 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
     }
   };
 
-
-  // Show signup flow if user clicked create account
   if (showSignup) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
@@ -164,6 +229,13 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
       </div>
     );
   }
+
+  const isEmailLoginDisabled =
+    authMethod === "email" && (!email || !password);
+  const isPhoneLoginDisabled =
+    authMethod === "phone" &&
+    (!phone || (otpRequested && !otpCode));
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
       <div className="w-full max-w-md">
@@ -192,7 +264,102 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           </CardHeader>
           <CardContent>
+            {/* Only show auth method toggle on login */}
+            {authMode === "login" && (
+              <div className="mb-4 flex justify-center gap-2 text-sm">
+                <Button
+                  type="button"
+                  variant={authMethod === "email" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setAuthMethod("email");
+                    setOtpRequested(false);
+                    setOtpCode("");
+                    resetStatus();
+                  }}
+                >
+                  Email &amp; password
+                </Button>
+                <Button
+                  type="button"
+                  variant={authMethod === "phone" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setAuthMethod("phone");
+                    setOtpRequested(false);
+                    setOtpCode("");
+                    resetStatus();
+                  }}
+                >
+                  Phone &amp; OTP
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-4">
+              {/* Email/password login fields */}
+              {authMode === "login" && authMethod === "email" && (
+                <>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Phone + OTP login fields */}
+              {authMode === "login" && authMethod === "phone" && (
+                <>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 555 123 4567"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Use the same phone number you registered with.
+                    </p>
+                  </div>
+
+                  {otpRequested && (
+                    <div>
+                      <Label htmlFor="otp">Verification code</Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        placeholder="6-digit code"
+                        required
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Legacy signup fields (if we ever re-enable authMode === "signup") */}
               {authMode === "signup" && (
                 <>
                   <div>
@@ -207,9 +374,9 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone-signup">Phone</Label>
                     <Input
-                      id="phone"
+                      id="phone-signup"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
@@ -217,48 +384,56 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                       required
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="email-signup">Email</Label>
+                    <Input
+                      id="email-signup"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password-signup">Password</Label>
+                    <Input
+                      id="password-signup"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      required
+                    />
+                  </div>
                 </>
               )}
-
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
 
               <Button
                 onClick={handleSubmit}
                 disabled={
                   isLoading ||
-                  !email ||
-                  !password ||
-                  (authMode === "signup" && (!name || !phone))
+                  (authMode === "login" &&
+                    ((authMethod === "email" && isEmailLoginDisabled) ||
+                      (authMethod === "phone" && isPhoneLoginDisabled))) ||
+                  (authMode === "signup" && (!name || !phone || !email || !password))
                 }
                 className="w-full"
               >
                 {isLoading
                   ? authMode === "login"
-                    ? "Signing in..."
+                    ? authMethod === "email"
+                      ? "Signing in..."
+                      : otpRequested
+                      ? "Verifying code..."
+                      : "Sending code..."
                     : "Creating account..."
                   : authMode === "login"
-                  ? "Sign in"
+                  ? authMethod === "email"
+                    ? "Sign in"
+                    : otpRequested
+                    ? "Verify & sign in"
+                    : "Send code"
                   : "Create account"}
               </Button>
             </div>
@@ -281,10 +456,8 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                     variant="link"
                     className="p-0 h-auto"
                     onClick={() => {
-                      // setAuthMode("signup");
-                      setShowSignup(true)
-                      setMessage(null);
-                      setError(null);
+                      setShowSignup(true);
+                      resetStatus();
                     }}
                   >
                     Create an account
@@ -298,8 +471,7 @@ export function LoginForm({ onLogin, onBack }: LoginFormProps) {
                     className="p-0 h-auto"
                     onClick={() => {
                       setAuthMode("login");
-                      setMessage(null);
-                      setError(null);
+                      resetStatus();
                     }}
                   >
                     Sign in
