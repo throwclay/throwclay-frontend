@@ -178,7 +178,7 @@ export function MemberManagement() {
   const getMembershipStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="secondary">Active</Badge>;
+        return <Badge variant="green">Active</Badge>;
       case "pending":
         return <Badge variant="blue">Pending</Badge>;
       case "suspended":

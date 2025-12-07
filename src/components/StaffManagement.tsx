@@ -127,9 +127,10 @@ export function StaffManagement() {
   };
 
   const getInviteStatusBadge = (status: string) => {
+    console.log("getInviteStatusBadge", status);
     switch (status) {
       case 'pending':
-        return <Badge className="bg-blue-400">Pending</Badge>;
+        return <Badge variant="blue">Pending</Badge>;
       case 'accepted':
         return <Badge variant="secondary">Accepted</Badge>;
       case 'revoked':

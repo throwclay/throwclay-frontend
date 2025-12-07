@@ -20,6 +20,7 @@ import { LoginForm } from "@/components/LoginForm";
 import { MemberManagement } from "@/components/MemberManagement";
 import { MessagingCenter } from "@/components/MessagingCenter";
 import { MyStudios } from "@/components/MyStudios";
+import { MudlyAI } from "@/components/MudlyAi";
 import { Navigation } from "@/components/Navigation";
 import { PotteryJournal } from "@/components/PotteryJournal";
 import { Products } from "@/components/Products";
@@ -393,6 +394,8 @@ export default function Home() {
         return <Feed />;
       case "verifyphone":
         return <VerifyPhonePage onDone={() => setCurrentPage(context.currentUser?.activeMode === "studio" ? "dashboard" : "profile")} />;
+      case 'mudlyai':
+        return <MudlyAI />;
 
       default:
         return (
@@ -413,6 +416,7 @@ export default function Home() {
         />
       )}
       <main>{renderPage()}</main>
+      {isLoggedIn && context.currentUser && <MudlyAI />}
     </div>
   );
 }
