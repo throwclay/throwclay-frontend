@@ -457,15 +457,178 @@ export function MyStudios() {
     const selectedStudio = myStudios.find((s) => s.id === selectedStudioId) || myStudios[0];
     const isActiveMember = selectedStudio.status === "Active";
 
-  const getKilnStatusBadge = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return <Badge variant="outline">Scheduled</Badge>;
-      case "loading":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Loading</Badge>;
-      case "firing":
-        return (
-          <Badge className="bg-orange-500 hover:bg-orange-600">Firing</Badge>
+    const glazeRepository = [
+        {
+            id: "1",
+            name: "Celadon Green",
+            code: "CG-101",
+            cone: "Cone 6",
+            finish: "Glossy",
+            color: "#7FB069",
+            available: true,
+            location: "Shelf B-3"
+        },
+        {
+            id: "2",
+            name: "Tenmoku",
+            code: "TM-205",
+            cone: "Cone 10",
+            finish: "Glossy",
+            color: "#3E2723",
+            available: true,
+            location: "Shelf A-5"
+        },
+        {
+            id: "3",
+            name: "Oribe Green",
+            code: "OR-142",
+            cone: "Cone 6",
+            finish: "Glossy",
+            color: "#2D5016",
+            available: true,
+            location: "Shelf B-1"
+        },
+        {
+            id: "4",
+            name: "Shino White",
+            code: "SH-301",
+            cone: "Cone 10",
+            finish: "Matte",
+            color: "#F5E6D3",
+            available: false,
+            location: "Shelf A-2"
+        },
+        {
+            id: "5",
+            name: "Iron Red",
+            code: "IR-188",
+            cone: "Cone 6",
+            finish: "Glossy",
+            color: "#8B4513",
+            available: true,
+            location: "Shelf C-4"
+        },
+        {
+            id: "6",
+            name: "Cobalt Blue",
+            code: "CB-220",
+            cone: "Cone 6",
+            finish: "Glossy",
+            color: "#0047AB",
+            available: true,
+            location: "Shelf B-5"
+        }
+    ];
+
+    const studioBlogs = [
+        {
+            id: "1",
+            title: "New Glazing Workshop Series",
+            author: "Sarah Johnson",
+            date: "2024-11-10",
+            excerpt:
+                "We're excited to announce our new advanced glazing workshop series starting next month...",
+            image: true
+        },
+        {
+            id: "2",
+            title: "Studio Closure Notice - Thanksgiving",
+            author: "Emily Rodriguez",
+            date: "2024-11-08",
+            excerpt:
+                "Please note that the studio will be closed November 28-29 for Thanksgiving...",
+            image: false
+        },
+        {
+            id: "3",
+            title: "Member Showcase: Fall Collection",
+            author: "Mike Chen",
+            date: "2024-11-05",
+            excerpt: "Check out these amazing pieces from our members in our fall showcase...",
+            image: true
+        }
+    ];
+
+    const studioProducts = [
+        {
+            id: "1",
+            name: "Laguna B-Mix 5",
+            category: "Clay",
+            price: "$32.00",
+            unit: "25 lbs",
+            stock: "In Stock",
+            image: true
+        },
+        {
+            id: "2",
+            name: "Porcelain Clay",
+            category: "Clay",
+            price: "$28.00",
+            unit: "25 lbs",
+            stock: "Low Stock",
+            image: true
+        },
+        {
+            id: "3",
+            name: "Wire Clay Cutter Set",
+            category: "Tools",
+            price: "$15.00",
+            unit: "set",
+            stock: "In Stock",
+            image: true
+        },
+        {
+            id: "4",
+            name: "Sponge Set (6pc)",
+            category: "Tools",
+            price: "$12.00",
+            unit: "set",
+            stock: "In Stock",
+            image: true
+        },
+        {
+            id: "5",
+            name: "Rib Tool Set",
+            category: "Tools",
+            price: "$18.00",
+            unit: "set",
+            stock: "In Stock",
+            image: true
+        },
+        {
+            id: "6",
+            name: "Trimming Tool Set",
+            category: "Tools",
+            price: "$24.00",
+            unit: "set",
+            stock: "In Stock",
+            image: true
+        }
+    ];
+
+    const handleSendMessage = () => {
+        if (!currentMessage.trim()) return;
+
+        setChatMessages([...chatMessages, { role: "user", message: currentMessage }]);
+
+        setTimeout(() => {
+            const responses = [
+                "Our studio hours are Monday-Friday 9am-9pm, Saturday-Sunday 10am-6pm.",
+                "You can reserve a kiln spot through the Kiln Schedule tab. Each member can reserve up to 2 shelves per firing.",
+                "All pieces must be labeled with your shelf number and date. Unlabeled pieces will be moved to the lost & found after 7 days.",
+                "Clay purchases can be made at the front desk or through the Studio Products tab. We offer bulk discounts for 100+ lbs.",
+                "Open studio time is included with your membership. You can work anytime during studio hours when a class isn't in session."
+            ];
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            setChatMessages((prev) => [...prev, { role: "bot", message: randomResponse }]);
+        }, 1000);
+
+        setCurrentMessage("");
+    };
+
+    const toggleShelf = (shelf: string) => {
+        setSelectedShelves((prev) =>
+            prev.includes(shelf) ? prev.filter((s) => s !== shelf) : [...prev, shelf]
         );
     };
 

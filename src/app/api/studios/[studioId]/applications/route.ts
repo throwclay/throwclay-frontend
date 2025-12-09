@@ -17,37 +17,40 @@ export async function POST(
   const studioId = params.studioId;
   const token = getBearerToken(req);
 
-    if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const {
-        data: { user },
-        error: userError
-    } = await supabaseAdmin.auth.getUser(token);
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(token);
 
-    if (userError || !user) {
-        console.error("Error verifying token", userError);
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (userError || !user) {
+    console.error("Error verifying token", userError);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const body = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
 
-    const {
-        experience,
-        interests,
-        goals,
-        referralSource,
-        emergencyContact,
-        customFields,
-        locationId,
-        requestedMembershipType
-    } = body ?? {};
+  const {
+    experience,
+    interests,
+    goals,
+    referralSource,
+    emergencyContact,
+    customFields,
+    locationId,
+    requestedMembershipType,
+  } = body ?? {};
 
-    // Basic validation
-    if (!studioId) {
-        return NextResponse.json({ error: "studioId is required" }, { status: 400 });
-    }
+  // Basic validation
+  if (!studioId) {
+    return NextResponse.json(
+      { error: "studioId is required" },
+      { status: 400 }
+    );
+  }
 
   if (!locationId) {
     return NextResponse.json(
@@ -154,12 +157,15 @@ export async function POST(
     .select("*")
     .single();
 
-    if (insertError || !application) {
-        console.error("Error creating application", insertError);
-        return NextResponse.json({ error: "Failed to create application" }, { status: 500 });
-    }
+  if (insertError || !application) {
+    console.error("Error creating application", insertError);
+    return NextResponse.json(
+      { error: "Failed to create application" },
+      { status: 500 }
+    );
+  }
 
-    return NextResponse.json({ application });
+  return NextResponse.json({ application });
 }
 
 // -----------------------------------------------------------------------------
@@ -172,19 +178,19 @@ export async function GET(
   const studioId = params.studioId;
   const token = getBearerToken(req);
 
-    if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    const {
-        data: { user },
-        error: userError
-    } = await supabaseAdmin.auth.getUser(token);
+  const {
+    data: { user },
+    error: userError,
+  } = await supabaseAdmin.auth.getUser(token);
 
-    if (userError || !user) {
-        console.error("Error verifying token", userError);
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (userError || !user) {
+    console.error("Error verifying token", userError);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   // Check they are owner/admin for this studio
   const { data: memberships, error: membershipError } = await supabaseAdmin
@@ -216,13 +222,13 @@ export async function GET(
     );
   }
 
-    const url = new URL(req.url);
-    const status = url.searchParams.get("status") ?? "pending";
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status") ?? "pending";
 
-    const { data: applications, error: appsError } = await supabaseAdmin
-        .from("studio_membership_applications")
-        .select(
-            `
+  const { data: applications, error: appsError } = await supabaseAdmin
+    .from("studio_membership_applications")
+    .select(
+      `
       id,
       studio_id,
       profile_id,
@@ -247,15 +253,18 @@ export async function GET(
         phone
       )
     `
-        )
-        .eq("studio_id", studioId)
-        .eq("status", status as any)
-        .order("submitted_at", { ascending: false });
+    )
+    .eq("studio_id", studioId)
+    .eq("status", status as any)
+    .order("submitted_at", { ascending: false });
 
-    if (appsError) {
-        console.error("Error fetching applications", appsError);
-        return NextResponse.json({ error: "Failed to fetch applications" }, { status: 500 });
-    }
+  if (appsError) {
+    console.error("Error fetching applications", appsError);
+    return NextResponse.json(
+      { error: "Failed to fetch applications" },
+      { status: 500 }
+    );
+  }
 
-    return NextResponse.json({ applications: applications ?? [] });
+  return NextResponse.json({ applications: applications ?? [] });
 }

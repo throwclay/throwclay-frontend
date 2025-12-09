@@ -1,5 +1,5 @@
 import { AppProvider } from "@/app/context/AppContext";
-import {Navigation} from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 import type { Metadata } from "next";

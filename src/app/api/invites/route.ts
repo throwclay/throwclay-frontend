@@ -1,7 +1,14 @@
 // app/api/invites/route.ts
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/apis/supabaseAdmin";
-import { getBearerToken } from "@/lib/server/auth";
+
+function getBearerToken(req: Request): string | null {
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    if (!authHeader) return null;
+    const [scheme, value] = authHeader.split(" ");
+    if (!scheme || scheme.toLowerCase() !== "bearer" || !value) return null;
+    return value;
+}
 
 // GET – list invites for the *current user* (by email)
 export async function GET(req: Request) {

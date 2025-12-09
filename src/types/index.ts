@@ -1163,9 +1163,9 @@ export interface StudioMembership {
   studioHandle?: string;
   locationName?: string | null;
 
-  // Room for whatever else you already have:
-  createdAt?: string;
-  updatedAt?: string;
+    // Room for whatever else you already have:
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export type InvoiceStatus =
@@ -1249,8 +1249,8 @@ export type AppContextType = {
   studioMemberships: StudioMembership[];
   setStudioMemberships: (ms: StudioMembership[]) => void;
 
-  currentThrow: PotteryEntry | null;
-  setCurrentThrow: (t: PotteryEntry | null) => void;
+    currentThrow: PotteryEntry | null;
+    setCurrentThrow: (t: PotteryEntry | null) => void;
 
     authToken: string | null;
     setAuthToken: (token: string | null) => void;
