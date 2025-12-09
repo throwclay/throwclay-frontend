@@ -1,1396 +1,1471 @@
 import { useState, useEffect } from "react";
 import {
-  Plus,
-  Search,
-  UserPlus,
-  UserCog,
-  Shield,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  Eye,
-  Mail,
-  Key,
-  Calendar,
-  MapPin,
-  Flag,
-  Users,
-  Settings as SettingsIcon,
-  FileText,
-  Save,
-  X,
-  ExternalLink,
-  Bell,
-  Phone,
-  Camera,
-  CalendarDays,
-  CalendarClock,
-  Upload,
-  Image as ImageIcon,
-  GraduationCap,
-  Briefcase,
-  Home,
-  Share2,
-  HeartHandshake,
-  Plane,
-  Activity,
-  MessageCircle,
+    Plus,
+    Search,
+    UserPlus,
+    UserCog,
+    Shield,
+    Clock,
+    AlertTriangle,
+    CheckCircle,
+    Edit,
+    Trash2,
+    MoreHorizontal,
+    Eye,
+    Mail,
+    Key,
+    Calendar,
+    MapPin,
+    Flag,
+    Users,
+    Settings as SettingsIcon,
+    FileText,
+    Save,
+    X,
+    ExternalLink,
+    Bell,
+    Phone,
+    Camera,
+    CalendarDays,
+    CalendarClock,
+    Upload,
+    Image as ImageIcon,
+    GraduationCap,
+    Briefcase,
+    Home,
+    Share2,
+    HeartHandshake,
+    Plane,
+    Activity,
+    MessageCircle
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Checkbox } from "./ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
 } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
 } from "./ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
 } from "./ui/alert-dialog";
 import { Separator } from "./ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Calendar as CalendarComponent } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import {
-  type ManagerProfile,
-  type InstructorProfile,
-  type ManagerResponsibility,
-  type WorkLog,
-  type User,
-  type ScheduleEntry,
-  type TimeOffRequest,
-  type EmployeeCredentials,
+    type ManagerProfile,
+    type InstructorProfile,
+    type ManagerResponsibility,
+    type WorkLog,
+    type User,
+    type ScheduleEntry,
+    type TimeOffRequest,
+    type EmployeeCredentials
 } from "@/types";
 import { useAppContext } from "@/app/context/AppContext";
 
 interface EmployeeData extends User {
-  staffMembershipId: string;
-  locationId?: string | null;
-  managerProfile?: ManagerProfile;
-  instructorProfile?: InstructorProfile;
-  workLogs: WorkLog[];
-  scheduleEntries: ScheduleEntry[];
-  timeOffRequests: TimeOffRequest[];
-  unfilledResponsibilities: string[];
-  credentials?: EmployeeCredentials;
-  role?: string;
-  phone: string;
-  studioId?: string;
-  createdAt: string;
-  isActive: boolean;
+    staffMembershipId: string;
+    locationId?: string | null;
+    managerProfile?: ManagerProfile;
+    instructorProfile?: InstructorProfile;
+    workLogs: WorkLog[];
+    scheduleEntries: ScheduleEntry[];
+    timeOffRequests: TimeOffRequest[];
+    unfilledResponsibilities: string[];
+    credentials?: EmployeeCredentials;
+    role?: string;
+    phone: string;
+    studioId?: string;
+    createdAt: string;
+    isActive: boolean;
 }
 
 export function EmployeeManagement() {
-  const context = useAppContext();
-  const [activeTab, setActiveTab] = useState("employees");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [showResponsibilityDialog, setShowResponsibilityDialog] =
-    useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
+    const context = useAppContext();
+    const [activeTab, setActiveTab] = useState("employees");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+    const [showResponsibilityDialog, setShowResponsibilityDialog] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-  const [staff, setStaff] = useState<EmployeeData[]>([]);
-  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+    const [staff, setStaff] = useState<EmployeeData[]>([]);
+    const [isLoadingStaff, setIsLoadingStaff] = useState(false);
 
-  const employees = staff.filter(
-    (emp) => emp.role !== "instructor" // admin/manager/employee
-  );
-  const instructors = staff.filter((emp) => emp.role === "instructor");
+    const employees = staff.filter(
+        (emp) => emp.role !== "instructor" // admin/manager/employee
+    );
+    const instructors = staff.filter((emp) => emp.role === "instructor");
 
-  // Form states
-  const [employeeForm, setEmployeeForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    role: "manager" as "admin" | "manager" | "employee",
-    hiredDate: "",
-    notes: "",
-    responsibilities: [] as string[],
-    permissions: {
-      manageMembers: false,
-      manageClasses: false,
-      manageEvents: false,
-      manageMessages: false,
-      manageInventory: false,
-      manageFiring: false,
-      manageFinances: false,
-      manageSettings: false,
-      deleteProfiles: false,
-      changeSubscription: false,
-      approveTimeCards: false,
-      viewPayroll: false,
-    },
-    maxVacationDays: 15,
-    maxSickDays: 10,
-    profileImage: "",
-  });
+    // Form states
+    const [employeeForm, setEmployeeForm] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        role: "manager" as "admin" | "manager" | "employee",
+        hiredDate: "",
+        notes: "",
+        responsibilities: [] as string[],
+        permissions: {
+            manageMembers: false,
+            manageClasses: false,
+            manageEvents: false,
+            manageMessages: false,
+            manageInventory: false,
+            manageFiring: false,
+            manageFinances: false,
+            manageSettings: false,
+            deleteProfiles: false,
+            changeSubscription: false,
+            approveTimeCards: false,
+            viewPayroll: false
+        },
+        maxVacationDays: 15,
+        maxSickDays: 10,
+        profileImage: ""
+    });
 
-  const [instructorForm, setInstructorForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    bio: "",
-    specialties: [] as string[],
-    certifications: [] as string[],
-    experience: "",
-    hourlyRate: 0,
-    hiredDate: "",
-    profileImage: "",
-    notes: "",
-  });
+    const [instructorForm, setInstructorForm] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        bio: "",
+        specialties: [] as string[],
+        certifications: [] as string[],
+        experience: "",
+        hourlyRate: 0,
+        hiredDate: "",
+        profileImage: "",
+        notes: ""
+    });
 
-  const [scheduleForm, setScheduleForm] = useState({
-    date: "",
-    startTime: "",
-    endTime: "",
-    category: "operations" as ScheduleEntry["category"],
-    description: "",
-    locationId: "",
-    classId: "",
-    coveringForId: "",
-  });
+    const [scheduleForm, setScheduleForm] = useState({
+        date: "",
+        startTime: "",
+        endTime: "",
+        category: "operations" as ScheduleEntry["category"],
+        description: "",
+        locationId: "",
+        classId: "",
+        coveringForId: ""
+    });
 
-  const [responsibilityForm, setResponsibilityForm] = useState({
-    name: "",
-    description: "",
-    category: "custom" as ManagerResponsibility["category"],
-    taskCompletionLink: "",
-    isRequired: false,
-  });
+    const [responsibilityForm, setResponsibilityForm] = useState({
+        name: "",
+        description: "",
+        category: "custom" as ManagerResponsibility["category"],
+        taskCompletionLink: "",
+        isRequired: false
+    });
 
-  const [employeeLocationId, setEmployeeLocationId] = useState<string>("");
-  const [instructorLocationId, setInstructorLocationId] = useState<string>("");
+    const [employeeLocationId, setEmployeeLocationId] = useState<string>("");
+    const [instructorLocationId, setInstructorLocationId] = useState<string>("");
 
-  const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch =
-      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+    const filteredEmployees = employees.filter((emp) => {
+        const matchesSearch =
+            emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            emp.email.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+    });
 
-  const filteredInstructors = instructors.filter((inst) => {
-    const matchesSearch =
-      inst.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inst.email.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+    const filteredInstructors = instructors.filter((inst) => {
+        const matchesSearch =
+            inst.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inst.email.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+    });
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Badge className="bg-purple-500">Admin</Badge>;
-      case "manager":
-        return <Badge variant="default">Manager</Badge>;
-      case "employee":
-        return <Badge variant="secondary">Employee</Badge>;
-      case "instructor":
-        return <Badge variant="blue">Instructor</Badge>;
-      default:
-        return <Badge variant="outline">{role}</Badge>;
-    }
-  };
-
-  const getCategoryIcon = (category: ScheduleEntry["category"]) => {
-    switch (category) {
-      case "operations":
-        return <Briefcase className="w-4 h-4" />;
-      case "classes":
-        return <GraduationCap className="w-4 h-4" />;
-      case "social-media":
-        return <Share2 className="w-4 h-4" />;
-      case "covering-shift":
-        return <HeartHandshake className="w-4 h-4" />;
-      case "sick-leave":
-        return <Activity className="w-4 h-4" />;
-      case "vacation":
-        return <Plane className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getCategoryBadge = (category: ScheduleEntry["category"]) => {
-    const colors = {
-      operations: "bg-blue-500",
-      classes: "bg-green-500",
-      "social-media": "bg-purple-500",
-      "covering-shift": "bg-yellow-500",
-      "sick-leave": "bg-red-500",
-      vacation: "bg-orange-500",
+    const getRoleBadge = (role: string) => {
+        switch (role) {
+            case "admin":
+                return <Badge className="bg-purple-500">Admin</Badge>;
+            case "manager":
+                return <Badge variant="default">Manager</Badge>;
+            case "employee":
+                return <Badge variant="secondary">Employee</Badge>;
+            case "instructor":
+                return <Badge variant="blue">Instructor</Badge>;
+            default:
+                return <Badge variant="outline">{role}</Badge>;
+        }
     };
+
+    const getCategoryIcon = (category: ScheduleEntry["category"]) => {
+        switch (category) {
+            case "operations":
+                return <Briefcase className="w-4 h-4" />;
+            case "classes":
+                return <GraduationCap className="w-4 h-4" />;
+            case "social-media":
+                return <Share2 className="w-4 h-4" />;
+            case "covering-shift":
+                return <HeartHandshake className="w-4 h-4" />;
+            case "sick-leave":
+                return <Activity className="w-4 h-4" />;
+            case "vacation":
+                return <Plane className="w-4 h-4" />;
+            default:
+                return <Clock className="w-4 h-4" />;
+        }
+    };
+
+    const getCategoryBadge = (category: ScheduleEntry["category"]) => {
+        const colors = {
+            operations: "bg-blue-500",
+            classes: "bg-green-500",
+            "social-media": "bg-purple-500",
+            "covering-shift": "bg-yellow-500",
+            "sick-leave": "bg-red-500",
+            vacation: "bg-orange-500"
+        };
+
+        return (
+            <Badge className={colors[category] || "bg-gray-500"}>
+                {getCategoryIcon(category)}
+                <span className="ml-1 capitalize">{category.replace("-", " ")}</span>
+            </Badge>
+        );
+    };
+
+    const getAvailabilityStatus = (employee: EmployeeData) => {
+        const now = new Date();
+        const currentDay = [
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday"
+        ][now.getDay()] as
+            | "sunday"
+            | "monday"
+            | "tuesday"
+            | "wednesday"
+            | "thursday"
+            | "friday"
+            | "saturday";
+        const currentTime = now.getHours() * 100 + now.getMinutes();
+
+        const daySchedule =
+            employee.managerProfile?.standardWorkHours[currentDay] ||
+            employee.instructorProfile?.availability[currentDay];
+
+        if (!daySchedule?.isAvailable) {
+            return { status: "unavailable", text: "Off Today" };
+        }
+
+        const startTime = parseInt(daySchedule.start.replace(":", ""));
+        const endTime = parseInt(daySchedule.end.replace(":", ""));
+
+        if (currentTime >= startTime && currentTime <= endTime) {
+            return { status: "available", text: "Available Now" };
+        } else if (currentTime < startTime) {
+            return { status: "upcoming", text: `Available at ${daySchedule.start}` };
+        } else {
+            return { status: "finished", text: "Finished for Today" };
+        }
+    };
+
+    const openScheduleDialog = (employee: EmployeeData) => {
+        setSelectedEmployee(employee);
+        setShowScheduleDialog(true);
+    };
+
+    const handleAddScheduleEntry = () => {
+        if (
+            !selectedEmployee ||
+            !scheduleForm.date ||
+            !scheduleForm.startTime ||
+            !scheduleForm.endTime
+        ) {
+            return;
+        }
+
+        console.log("Adding schedule entry:", {
+            employeeId: selectedEmployee.id,
+            ...scheduleForm
+        });
+
+        // Reset form
+        setScheduleForm({
+            date: "",
+            startTime: "",
+            endTime: "",
+            category: "operations",
+            description: "",
+            locationId: "",
+            classId: "",
+            coveringForId: ""
+        });
+    };
+
+    const handleCreateEmployee = async () => {
+        if (!context.currentStudio || !context.authToken) return;
+
+        if (!employeeForm.email) {
+            console.error("Email is required to invite an employee");
+            return;
+        }
+
+        if (!employeeLocationId) {
+            console.error("Location is required to invite an employee");
+            // TODO: show a toast in UI instead of console
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/studios/${context.currentStudio.id}/invites`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${context.authToken}`
+                },
+                body: JSON.stringify({
+                    email: employeeForm.email,
+                    role: employeeForm.role, // "admin" | "manager" | "employee"
+                    locationId: employeeLocationId,
+                    membershipType: "unlimited",
+                    name: employeeForm.name,
+                    phone: employeeForm.phone,
+                    notes: employeeForm.notes
+                })
+            });
+
+            if (!res.ok) {
+                console.error("Failed to create employee invite", await res.text());
+                return;
+            }
+
+            const body = await res.json();
+            console.log("Created staff invite", body.invite);
+
+            // TODO: toast "Invite sent"
+            setShowCreateDialog(false);
+        } catch (err) {
+            console.error("Error creating employee invite", err);
+        }
+    };
+
+    const handleCreateInstructor = async () => {
+        if (!context.currentStudio || !context.authToken) return;
+
+        if (!instructorForm.email) {
+            console.error("Email is required to invite an instructor");
+            return;
+        }
+
+        if (!instructorLocationId) {
+            console.error("Location is required to invite an instructor");
+            // TODO: toast
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/studios/${context.currentStudio.id}/invites`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${context.authToken}`
+                },
+                body: JSON.stringify({
+                    email: instructorForm.email,
+                    role: "instructor",
+                    locationId: instructorLocationId,
+                    membershipType: "unlimited",
+                    name: instructorForm.name,
+                    phone: instructorForm.phone,
+                    notes: instructorForm.notes
+                })
+            });
+
+            if (!res.ok) {
+                console.error("Failed to create instructor invite", await res.text());
+                return;
+            }
+
+            const body = await res.json();
+            console.log("Created instructor invite", body.invite);
+
+            // TODO: toast "Invite sent"
+            setShowCreateDialog(false);
+        } catch (err) {
+            console.error("Error creating instructor invite", err);
+        }
+    };
+
+    const adminCount = staff.filter((emp) => emp.role === "admin").length;
+    const maxAdmins = 2;
+
+    useEffect(() => {
+        if (!context.currentStudio || !context.authToken) {
+            setStaff([]);
+            return;
+        }
+
+        let cancelled = false;
+
+        async function loadStaff() {
+            setIsLoadingStaff(true);
+            try {
+                const res = await fetch(`/api/admin/studios/${context.currentStudio?.id}/staff`, {
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to load staff", await res.text());
+                    if (!cancelled) setStaff([]);
+                    return;
+                }
+
+                const body = await res.json();
+                if (!cancelled) {
+                    setStaff(body.staff ?? []);
+                }
+            } catch (err) {
+                console.error("Error loading staff", err);
+                if (!cancelled) setStaff([]);
+            } finally {
+                if (!cancelled) setIsLoadingStaff(false);
+            }
+        }
+
+        loadStaff();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [context.currentStudio?.id, context.authToken]);
 
     return (
-      <Badge className={colors[category] || "bg-gray-500"}>
-        {getCategoryIcon(category)}
-        <span className="ml-1 capitalize">{category.replace("-", " ")}</span>
-      </Badge>
-    );
-  };
-
-  const getAvailabilityStatus = (employee: EmployeeData) => {
-    const now = new Date();
-    const currentDay = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-    ][now.getDay()] as
-      | "sunday"
-      | "monday"
-      | "tuesday"
-      | "wednesday"
-      | "thursday"
-      | "friday"
-      | "saturday";
-    const currentTime = now.getHours() * 100 + now.getMinutes();
-
-    const daySchedule =
-      employee.managerProfile?.standardWorkHours[currentDay] ||
-      employee.instructorProfile?.availability[currentDay];
-
-    if (!daySchedule?.isAvailable) {
-      return { status: "unavailable", text: "Off Today" };
-    }
-
-    const startTime = parseInt(daySchedule.start.replace(":", ""));
-    const endTime = parseInt(daySchedule.end.replace(":", ""));
-
-    if (currentTime >= startTime && currentTime <= endTime) {
-      return { status: "available", text: "Available Now" };
-    } else if (currentTime < startTime) {
-      return { status: "upcoming", text: `Available at ${daySchedule.start}` };
-    } else {
-      return { status: "finished", text: "Finished for Today" };
-    }
-  };
-
-  const openScheduleDialog = (employee: EmployeeData) => {
-    setSelectedEmployee(employee);
-    setShowScheduleDialog(true);
-  };
-
-  const handleAddScheduleEntry = () => {
-    if (
-      !selectedEmployee ||
-      !scheduleForm.date ||
-      !scheduleForm.startTime ||
-      !scheduleForm.endTime
-    ) {
-      return;
-    }
-
-    console.log("Adding schedule entry:", {
-      employeeId: selectedEmployee.id,
-      ...scheduleForm,
-    });
-
-    // Reset form
-    setScheduleForm({
-      date: "",
-      startTime: "",
-      endTime: "",
-      category: "operations",
-      description: "",
-      locationId: "",
-      classId: "",
-      coveringForId: "",
-    });
-  };
-
-  const handleCreateEmployee = async () => {
-    if (!context.currentStudio || !context.authToken) return;
-
-    if (!employeeForm.email) {
-      console.error("Email is required to invite an employee");
-      return;
-    }
-
-    if (!employeeLocationId) {
-      console.error("Location is required to invite an employee");
-      // TODO: show a toast in UI instead of console
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `/api/studios/${context.currentStudio.id}/invites`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${context.authToken}`,
-          },
-          body: JSON.stringify({
-            email: employeeForm.email,
-            role: employeeForm.role, // "admin" | "manager" | "employee"
-            locationId: employeeLocationId,
-            membershipType: "unlimited",
-            name: employeeForm.name,
-            phone: employeeForm.phone,
-            notes: employeeForm.notes,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        console.error("Failed to create employee invite", await res.text());
-        return;
-      }
-
-      const body = await res.json();
-      console.log("Created staff invite", body.invite);
-
-      // TODO: toast "Invite sent"
-      setShowCreateDialog(false);
-    } catch (err) {
-      console.error("Error creating employee invite", err);
-    }
-  };
-
-  const handleCreateInstructor = async () => {
-    if (!context.currentStudio || !context.authToken) return;
-
-    if (!instructorForm.email) {
-      console.error("Email is required to invite an instructor");
-      return;
-    }
-
-    if (!instructorLocationId) {
-      console.error("Location is required to invite an instructor");
-      // TODO: toast
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `/api/studios/${context.currentStudio.id}/invites`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${context.authToken}`,
-          },
-          body: JSON.stringify({
-            email: instructorForm.email,
-            role: "instructor",
-            locationId: instructorLocationId,
-            membershipType: "unlimited",
-            name: instructorForm.name,
-            phone: instructorForm.phone,
-            notes: instructorForm.notes,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        console.error("Failed to create instructor invite", await res.text());
-        return;
-      }
-
-      const body = await res.json();
-      console.log("Created instructor invite", body.invite);
-
-      // TODO: toast "Invite sent"
-      setShowCreateDialog(false);
-    } catch (err) {
-      console.error("Error creating instructor invite", err);
-    }
-  };
-
-  const adminCount = staff.filter((emp) => emp.role === "admin").length;
-  const maxAdmins = 2;
-
-  useEffect(() => {
-    if (!context.currentStudio || !context.authToken) {
-      setStaff([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadStaff() {
-      setIsLoadingStaff(true);
-      try {
-        const res = await fetch(
-          `/api/admin/studios/${context.currentStudio?.id}/staff`,
-          {
-            headers: {
-              Authorization: `Bearer ${context.authToken}`,
-            },
-          }
-        );
-
-        if (!res.ok) {
-          console.error("Failed to load staff", await res.text());
-          if (!cancelled) setStaff([]);
-          return;
-        }
-
-        const body = await res.json();
-        if (!cancelled) {
-          setStaff(body.staff ?? []);
-        }
-      } catch (err) {
-        console.error("Error loading staff", err);
-        if (!cancelled) setStaff([]);
-      } finally {
-        if (!cancelled) setIsLoadingStaff(false);
-      }
-    }
-
-    loadStaff();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [context.currentStudio?.id, context.authToken]);
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1>Staff Management</h1>
-          <p className="text-muted-foreground">
-            Manage employees, instructors, schedules, and responsibilities
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Dialog
-            open={showResponsibilityDialog}
-            onOpenChange={setShowResponsibilityDialog}
-          >
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileText className="w-4 h-4 mr-2" />
-                Add Responsibility
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Custom Responsibility</DialogTitle>
-                <DialogDescription>
-                  Create a custom responsibility that can be assigned to staff
-                  members.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                  <Label htmlFor="respName">Responsibility Name</Label>
-                  <Input
-                    id="respName"
-                    value={responsibilityForm.name}
-                    onChange={(e) =>
-                      setResponsibilityForm((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    placeholder="e.g., Manage Social Media"
-                  />
+                    <h1>Staff Management</h1>
+                    <p className="text-muted-foreground">
+                        Manage employees, instructors, schedules, and responsibilities
+                    </p>
                 </div>
-                <div>
-                  <Label htmlFor="respDescription">Description</Label>
-                  <Textarea
-                    id="respDescription"
-                    value={responsibilityForm.description}
-                    onChange={(e) =>
-                      setResponsibilityForm((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    placeholder="Describe the tasks and expectations..."
-                    rows={3}
-                  />
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowResponsibilityDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      console.log(
-                        "Creating responsibility:",
-                        responsibilityForm
-                      );
-                      setShowResponsibilityDialog(false);
-                    }}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Create
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Staff
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Staff Member</DialogTitle>
-                <DialogDescription>
-                  Create a new employee or instructor profile.
-                </DialogDescription>
-              </DialogHeader>
-
-              <Tabs defaultValue="employee" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="employee">Employee</TabsTrigger>
-                  <TabsTrigger value="instructor">Instructor</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="employee" className="space-y-6">
-                  {/* Employee Form */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative">
-                        <Avatar className="w-20 h-20">
-                          <AvatarImage src={employeeForm.profileImage} />
-                          <AvatarFallback>
-                            <Camera className="w-8 h-8 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute -bottom-2 -right-2"
-                        >
-                          <Upload className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      <div className="flex-1">
-                        <Label>Profile Picture</Label>
-                        <Input
-                          type="url"
-                          placeholder="Image URL"
-                          value={employeeForm.profileImage}
-                          onChange={(e) =>
-                            setEmployeeForm((prev) => ({
-                              ...prev,
-                              profileImage: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Full Name</Label>
-                        <Input
-                          value={employeeForm.name}
-                          onChange={(e) =>
-                            setEmployeeForm((prev) => ({
-                              ...prev,
-                              name: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter full name"
-                        />
-                      </div>
-                      <div>
-                        <Label>Email</Label>
-                        <Input
-                          type="email"
-                          value={employeeForm.email}
-                          onChange={(e) =>
-                            setEmployeeForm((prev) => ({
-                              ...prev,
-                              email: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter email address"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <Label>Role</Label>
-                        <Select
-                          value={employeeForm.role}
-                          onValueChange={(value) =>
-                            setEmployeeForm((prev) => ({
-                              ...prev,
-                              role: value as "admin" | "manager" | "employee",
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="employee">Employee</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Location</Label>
-                        <Select
-                          value={employeeLocationId}
-                          onValueChange={(value) => setEmployeeLocationId(value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a location" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {context.currentStudio?.locations?.map((loc) => (
-                              <SelectItem key={loc.id} value={loc.id}>
-                                {loc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Admin limit warning */}
-                    {employeeForm.role === "admin" &&
-                      adminCount >= maxAdmins && (
-                        <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <AlertTriangle className="w-4 h-4 text-orange-600" />
-                            <span className="text-sm text-orange-800">
-                              Admin limit reached ({adminCount}/{maxAdmins}).
-                              Consider upgrading your plan for more Admin slots.
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCreateDialog(false)}
+                <div className="flex items-center space-x-4">
+                    <Dialog
+                        open={showResponsibilityDialog}
+                        onOpenChange={setShowResponsibilityDialog}
                     >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleCreateEmployee}
-                      disabled={
-                        employeeForm.role === "admin" && adminCount >= maxAdmins
-                      }
+                        <DialogTrigger asChild>
+                            <Button variant="outline">
+                                <FileText className="w-4 h-4 mr-2" />
+                                Add Responsibility
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create Custom Responsibility</DialogTitle>
+                                <DialogDescription>
+                                    Create a custom responsibility that can be assigned to staff
+                                    members.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div>
+                                    <Label htmlFor="respName">Responsibility Name</Label>
+                                    <Input
+                                        id="respName"
+                                        value={responsibilityForm.name}
+                                        onChange={(e) =>
+                                            setResponsibilityForm((prev) => ({
+                                                ...prev,
+                                                name: e.target.value
+                                            }))
+                                        }
+                                        placeholder="e.g., Manage Social Media"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="respDescription">Description</Label>
+                                    <Textarea
+                                        id="respDescription"
+                                        value={responsibilityForm.description}
+                                        onChange={(e) =>
+                                            setResponsibilityForm((prev) => ({
+                                                ...prev,
+                                                description: e.target.value
+                                            }))
+                                        }
+                                        placeholder="Describe the tasks and expectations..."
+                                        rows={3}
+                                    />
+                                </div>
+                                <div className="flex justify-end space-x-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowResponsibilityDialog(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={() => {
+                                            console.log(
+                                                "Creating responsibility:",
+                                                responsibilityForm
+                                            );
+                                            setShowResponsibilityDialog(false);
+                                        }}
+                                    >
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Create
+                                    </Button>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog
+                        open={showCreateDialog}
+                        onOpenChange={setShowCreateDialog}
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      Create Employee
-                    </Button>
-                  </div>
-                </TabsContent>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Add Staff
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Add New Staff Member</DialogTitle>
+                                <DialogDescription>
+                                    Create a new employee or instructor profile.
+                                </DialogDescription>
+                            </DialogHeader>
 
-                <TabsContent value="instructor" className="space-y-6">
-                  {/* Instructor Form */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="relative">
-                        <Avatar className="w-20 h-20">
-                          <AvatarImage src={instructorForm.profileImage} />
-                          <AvatarFallback>
-                            <Camera className="w-8 h-8 text-muted-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="absolute -bottom-2 -right-2"
-                        >
-                          <Upload className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      <div className="flex-1">
-                        <Label>Profile Picture</Label>
-                        <Input
-                          type="url"
-                          placeholder="Image URL"
-                          value={instructorForm.profileImage}
-                          onChange={(e) =>
-                            setInstructorForm((prev) => ({
-                              ...prev,
-                              profileImage: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Full Name</Label>
-                        <Input
-                          value={instructorForm.name}
-                          onChange={(e) =>
-                            setInstructorForm((prev) => ({
-                              ...prev,
-                              name: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter full name"
-                        />
-                      </div>
-                      <div>
-                        <Label>Email</Label>
-                        <Input
-                          type="email"
-                          value={instructorForm.email}
-                          onChange={(e) =>
-                            setInstructorForm((prev) => ({
-                              ...prev,
-                              email: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter email address"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <Label>Location</Label>
-                      <Select
-                        value={instructorLocationId}
-                        onValueChange={(value) =>
-                          setInstructorLocationId(value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {context.currentStudio?.locations?.map((loc) => (
-                            <SelectItem key={loc.id} value={loc.id}>
-                              {loc.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label>Bio</Label>
-                      <Textarea
-                        value={instructorForm.bio}
-                        onChange={(e) =>
-                          setInstructorForm((prev) => ({
-                            ...prev,
-                            bio: e.target.value,
-                          }))
-                        }
-                        placeholder="Brief bio and teaching philosophy..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCreateDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateInstructor}>
-                      <Save className="w-4 h-4 mr-2" />
-                      Create Instructor
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
-      >
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="employees">
-              Employees
-              <Badge variant="secondary" className="ml-2">
-                {employees.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="instructors">
-              Instructors
-              <Badge variant="secondary" className="ml-2">
-                {instructors.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="schedule">Schedule Overview</TabsTrigger>
-            <TabsTrigger value="time-off">Time Off Requests</TabsTrigger>
-          </TabsList>
-
-          {/* Search */}
-          {(activeTab === "employees" || activeTab === "instructors") && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search staff..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Employees Tab */}
-        <TabsContent value="employees" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => {
-              const availability = getAvailabilityStatus(employee);
-              const profile = employee.managerProfile;
-
-              return (
-                <Card
-                  key={employee.id}
-                  className="hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={profile?.profileImage} />
-                          <AvatarFallback>
-                            {employee.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold">{employee.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {employee.email}
-                          </p>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openScheduleDialog(employee)}
-                          >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Schedule
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Key className="w-4 h-4 mr-2" />
-                            Reset Password
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      {getRoleBadge(employee?.role || "employee")}
-                      <div
-                        className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                          availability.status === "available"
-                            ? "bg-green-100 text-green-800"
-                            : availability.status === "upcoming"
-                            ? "bg-blue-100 text-blue-800"
-                            : availability.status === "finished"
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        <Clock className="w-3 h-3" />
-                        <span>{availability.text}</span>
-                      </div>
-                    </div>
-
-                    {profile && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{profile.phone}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <CalendarDays className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Hired:{" "}
-                            {new Date(profile.hiredDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {employee.unfilledResponsibilities.length > 0 && (
-                      <div className="p-2 bg-orange-50 border border-orange-200 rounded">
-                        <div className="flex items-center space-x-1">
-                          <AlertTriangle className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm text-orange-800">
-                            {employee.unfilledResponsibilities.length} unfilled
-                            responsibilities
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        {/* Instructors Tab */}
-        <TabsContent value="instructors" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredInstructors.map((instructor) => {
-              const availability = getAvailabilityStatus(instructor);
-              const profile = instructor.instructorProfile;
-
-              return (
-                <Card
-                  key={instructor.id}
-                  className="hover:shadow-lg transition-shadow"
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={profile?.profileImage} />
-                          <AvatarFallback>
-                            {instructor.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold">{instructor.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {instructor.email}
-                          </p>
-                        </div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => openScheduleDialog(instructor)}
-                          >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Schedule
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <GraduationCap className="w-4 h-4 mr-2" />
-                            Assign Classes
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      {getRoleBadge("instructor")}
-                      <div
-                        className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
-                          availability.status === "available"
-                            ? "bg-green-100 text-green-800"
-                            : availability.status === "upcoming"
-                            ? "bg-blue-100 text-blue-800"
-                            : availability.status === "finished"
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        <Clock className="w-3 h-3" />
-                        <span>{availability.text}</span>
-                      </div>
-                    </div>
-
-                    {profile && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{profile.phone}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <CalendarDays className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Hired:{" "}
-                            {new Date(profile.hiredDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {profile.assignedClasses.length} assigned classes
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {profile.specialties.slice(0, 2).map((specialty) => (
-                            <Badge
-                              key={specialty}
-                              variant="outline"
-                              className="text-xs"
+                            <Tabs
+                                defaultValue="employee"
+                                className="space-y-4"
                             >
-                              {specialty}
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="employee">Employee</TabsTrigger>
+                                    <TabsTrigger value="instructor">Instructor</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent
+                                    value="employee"
+                                    className="space-y-6"
+                                >
+                                    {/* Employee Form */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="relative">
+                                                <Avatar className="w-20 h-20">
+                                                    <AvatarImage src={employeeForm.profileImage} />
+                                                    <AvatarFallback>
+                                                        <Camera className="w-8 h-8 text-muted-foreground" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="absolute -bottom-2 -right-2"
+                                                >
+                                                    <Upload className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                            <div className="flex-1">
+                                                <Label>Profile Picture</Label>
+                                                <Input
+                                                    type="url"
+                                                    placeholder="Image URL"
+                                                    value={employeeForm.profileImage}
+                                                    onChange={(e) =>
+                                                        setEmployeeForm((prev) => ({
+                                                            ...prev,
+                                                            profileImage: e.target.value
+                                                        }))
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label>Full Name</Label>
+                                                <Input
+                                                    value={employeeForm.name}
+                                                    onChange={(e) =>
+                                                        setEmployeeForm((prev) => ({
+                                                            ...prev,
+                                                            name: e.target.value
+                                                        }))
+                                                    }
+                                                    placeholder="Enter full name"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>Email</Label>
+                                                <Input
+                                                    type="email"
+                                                    value={employeeForm.email}
+                                                    onChange={(e) =>
+                                                        setEmployeeForm((prev) => ({
+                                                            ...prev,
+                                                            email: e.target.value
+                                                        }))
+                                                    }
+                                                    placeholder="Enter email address"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mt-4">
+                                            <div>
+                                                <Label>Role</Label>
+                                                <Select
+                                                    value={employeeForm.role}
+                                                    onValueChange={(value) =>
+                                                        setEmployeeForm((prev) => ({
+                                                            ...prev,
+                                                            role: value as
+                                                                | "admin"
+                                                                | "manager"
+                                                                | "employee"
+                                                        }))
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a role" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="admin">Admin</SelectItem>
+                                                        <SelectItem value="manager">
+                                                            Manager
+                                                        </SelectItem>
+                                                        <SelectItem value="employee">
+                                                            Employee
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div>
+                                                <Label>Location</Label>
+                                                <Select
+                                                    value={employeeLocationId}
+                                                    onValueChange={(value) =>
+                                                        setEmployeeLocationId(value)
+                                                    }
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a location" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {context.currentStudio?.locations?.map(
+                                                            (loc) => (
+                                                                <SelectItem
+                                                                    key={loc.id}
+                                                                    value={loc.id}
+                                                                >
+                                                                    {loc.name}
+                                                                </SelectItem>
+                                                            )
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* Admin limit warning */}
+                                        {employeeForm.role === "admin" &&
+                                            adminCount >= maxAdmins && (
+                                                <div className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                                                    <div className="flex items-center space-x-2">
+                                                        <AlertTriangle className="w-4 h-4 text-orange-600" />
+                                                        <span className="text-sm text-orange-800">
+                                                            Admin limit reached ({adminCount}/
+                                                            {maxAdmins}). Consider upgrading your
+                                                            plan for more Admin slots.
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                    </div>
+
+                                    <div className="flex justify-end space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowCreateDialog(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={handleCreateEmployee}
+                                            disabled={
+                                                employeeForm.role === "admin" &&
+                                                adminCount >= maxAdmins
+                                            }
+                                        >
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Create Employee
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent
+                                    value="instructor"
+                                    className="space-y-6"
+                                >
+                                    {/* Instructor Form */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="relative">
+                                                <Avatar className="w-20 h-20">
+                                                    <AvatarImage
+                                                        src={instructorForm.profileImage}
+                                                    />
+                                                    <AvatarFallback>
+                                                        <Camera className="w-8 h-8 text-muted-foreground" />
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="absolute -bottom-2 -right-2"
+                                                >
+                                                    <Upload className="w-3 h-3" />
+                                                </Button>
+                                            </div>
+                                            <div className="flex-1">
+                                                <Label>Profile Picture</Label>
+                                                <Input
+                                                    type="url"
+                                                    placeholder="Image URL"
+                                                    value={instructorForm.profileImage}
+                                                    onChange={(e) =>
+                                                        setInstructorForm((prev) => ({
+                                                            ...prev,
+                                                            profileImage: e.target.value
+                                                        }))
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label>Full Name</Label>
+                                                <Input
+                                                    value={instructorForm.name}
+                                                    onChange={(e) =>
+                                                        setInstructorForm((prev) => ({
+                                                            ...prev,
+                                                            name: e.target.value
+                                                        }))
+                                                    }
+                                                    placeholder="Enter full name"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>Email</Label>
+                                                <Input
+                                                    type="email"
+                                                    value={instructorForm.email}
+                                                    onChange={(e) =>
+                                                        setInstructorForm((prev) => ({
+                                                            ...prev,
+                                                            email: e.target.value
+                                                        }))
+                                                    }
+                                                    placeholder="Enter email address"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <Label>Location</Label>
+                                            <Select
+                                                value={instructorLocationId}
+                                                onValueChange={(value) =>
+                                                    setInstructorLocationId(value)
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a location" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {context.currentStudio?.locations?.map(
+                                                        (loc) => (
+                                                            <SelectItem
+                                                                key={loc.id}
+                                                                value={loc.id}
+                                                            >
+                                                                {loc.name}
+                                                            </SelectItem>
+                                                        )
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div>
+                                            <Label>Bio</Label>
+                                            <Textarea
+                                                value={instructorForm.bio}
+                                                onChange={(e) =>
+                                                    setInstructorForm((prev) => ({
+                                                        ...prev,
+                                                        bio: e.target.value
+                                                    }))
+                                                }
+                                                placeholder="Brief bio and teaching philosophy..."
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowCreateDialog(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button onClick={handleCreateInstructor}>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Create Instructor
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="space-y-6"
+            >
+                <div className="flex items-center justify-between">
+                    <TabsList>
+                        <TabsTrigger value="employees">
+                            Employees
+                            <Badge
+                                variant="secondary"
+                                className="ml-2"
+                            >
+                                {employees.length}
                             </Badge>
-                          ))}
-                          {profile.specialties.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{profile.specialties.length - 2} more
+                        </TabsTrigger>
+                        <TabsTrigger value="instructors">
+                            Instructors
+                            <Badge
+                                variant="secondary"
+                                className="ml-2"
+                            >
+                                {instructors.length}
                             </Badge>
-                          )}
+                        </TabsTrigger>
+                        <TabsTrigger value="schedule">Schedule Overview</TabsTrigger>
+                        <TabsTrigger value="time-off">Time Off Requests</TabsTrigger>
+                    </TabsList>
+
+                    {/* Search */}
+                    {(activeTab === "employees" || activeTab === "instructors") && (
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <Input
+                                placeholder="Search staff..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 w-64"
+                            />
                         </div>
-                      </div>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
+                </div>
 
-        {/* Schedule Overview Tab */}
-        <TabsContent value="schedule" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Today's Schedule</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[...employees, ...instructors]
-                  .filter((emp) =>
-                    emp.scheduleEntries.some(
-                      (entry) =>
-                        new Date(entry.date).toDateString() ===
-                        new Date().toDateString()
-                    )
-                  )
-                  .map((employee) => {
-                    const todayEntries = employee.scheduleEntries.filter(
-                      (entry) =>
-                        new Date(entry.date).toDateString() ===
-                        new Date().toDateString()
-                    );
-
-                    return todayEntries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage
-                              src={
-                                employee.managerProfile?.profileImage ||
-                                employee.instructorProfile?.profileImage
-                              }
-                            />
-                            <AvatarFallback>
-                              {employee.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{employee.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {entry.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {entry.startTime} - {entry.endTime}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {context.currentStudio?.locations.find(
-                                (loc) => loc.id === entry.locationId
-                              )?.name || "Main Studio"}
-                            </p>
-                          </div>
-                          {getCategoryBadge(entry.category)}
-                        </div>
-                      </div>
-                    ));
-                  })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Time Off Requests Tab */}
-        <TabsContent value="time-off" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Time Off Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[...employees, ...instructors]
-                  .filter((emp) =>
-                    emp.timeOffRequests.some((req) => req.status === "pending")
-                  )
-                  .map((employee) => {
-                    const pendingRequests = employee.timeOffRequests.filter(
-                      (req) => req.status === "pending"
-                    );
-
-                    return pendingRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage
-                              src={
-                                employee.managerProfile?.profileImage ||
-                                employee.instructorProfile?.profileImage
-                              }
-                            />
-                            <AvatarFallback>
-                              {employee.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{employee.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(request.startDate).toLocaleDateString()}{" "}
-                              - {new Date(request.endDate).toLocaleDateString()}
-                            </p>
-                            {request.reason && (
-                              <p className="text-xs text-muted-foreground">
-                                {request.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="capitalize">
-                            {request.type.replace("-", " ")}
-                          </Badge>
-                          <Button size="sm" variant="outline">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <X className="w-4 h-4 mr-2" />
-                            Deny
-                          </Button>
-                        </div>
-                      </div>
-                    ));
-                  })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Schedule Dialog */}
-      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Schedule for {selectedEmployee?.name}</DialogTitle>
-            <DialogDescription>
-              Add a new schedule entry for this staff member.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="scheduleDate">Date</Label>
-                <Input
-                  id="scheduleDate"
-                  type="date"
-                  value={scheduleForm.date}
-                  onChange={(e) =>
-                    setScheduleForm((prev) => ({
-                      ...prev,
-                      date: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="scheduleCategory">Category</Label>
-                <Select
-                  value={scheduleForm.category}
-                  onValueChange={(value: ScheduleEntry["category"]) =>
-                    setScheduleForm((prev) => ({ ...prev, category: value }))
-                  }
+                {/* Employees Tab */}
+                <TabsContent
+                    value="employees"
+                    className="space-y-6"
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="operations">Operations</SelectItem>
-                    <SelectItem value="classes">Classes</SelectItem>
-                    <SelectItem value="social-media">Social Media</SelectItem>
-                    <SelectItem value="covering-shift">
-                      Covering Shift
-                    </SelectItem>
-                    <SelectItem value="sick-leave">Sick Leave</SelectItem>
-                    <SelectItem value="vacation">Vacation</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={scheduleForm.startTime}
-                  onChange={(e) =>
-                    setScheduleForm((prev) => ({
-                      ...prev,
-                      startTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={scheduleForm.endTime}
-                  onChange={(e) =>
-                    setScheduleForm((prev) => ({
-                      ...prev,
-                      endTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={scheduleForm.description}
-                onChange={(e) =>
-                  setScheduleForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Brief description of the task/assignment"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowScheduleDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleAddScheduleEntry}>
-                <Save className="w-4 h-4 mr-2" />
-                Add to Schedule
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredEmployees.map((employee) => {
+                            const availability = getAvailabilityStatus(employee);
+                            const profile = employee.managerProfile;
+
+                            return (
+                                <Card
+                                    key={employee.id}
+                                    className="hover:shadow-lg transition-shadow"
+                                >
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center space-x-3">
+                                                <Avatar className="w-12 h-12">
+                                                    <AvatarImage src={profile?.profileImage} />
+                                                    <AvatarFallback>
+                                                        {employee.name
+                                                            .split(" ")
+                                                            .map((n) => n[0])
+                                                            .join("")}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <h3 className="font-semibold">
+                                                        {employee.name}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {employee.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem
+                                                        onClick={() => openScheduleDialog(employee)}
+                                                    >
+                                                        <Calendar className="w-4 h-4 mr-2" />
+                                                        Schedule
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <Edit className="w-4 h-4 mr-2" />
+                                                        Edit Profile
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <Key className="w-4 h-4 mr-2" />
+                                                        Reset Password
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-destructive">
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Remove
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            {getRoleBadge(employee?.role || "employee")}
+                                            <div
+                                                className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
+                                                    availability.status === "available"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : availability.status === "upcoming"
+                                                          ? "bg-blue-100 text-blue-800"
+                                                          : availability.status === "finished"
+                                                            ? "bg-gray-100 text-gray-800"
+                                                            : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                <Clock className="w-3 h-3" />
+                                                <span>{availability.text}</span>
+                                            </div>
+                                        </div>
+
+                                        {profile && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <Phone className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm">{profile.phone}</span>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm">
+                                                        Hired:{" "}
+                                                        {new Date(
+                                                            profile.hiredDate
+                                                        ).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {employee.unfilledResponsibilities.length > 0 && (
+                                            <div className="p-2 bg-orange-50 border border-orange-200 rounded">
+                                                <div className="flex items-center space-x-1">
+                                                    <AlertTriangle className="w-4 h-4 text-orange-600" />
+                                                    <span className="text-sm text-orange-800">
+                                                        {employee.unfilledResponsibilities.length}{" "}
+                                                        unfilled responsibilities
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </TabsContent>
+
+                {/* Instructors Tab */}
+                <TabsContent
+                    value="instructors"
+                    className="space-y-6"
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredInstructors.map((instructor) => {
+                            const availability = getAvailabilityStatus(instructor);
+                            const profile = instructor.instructorProfile;
+
+                            return (
+                                <Card
+                                    key={instructor.id}
+                                    className="hover:shadow-lg transition-shadow"
+                                >
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center space-x-3">
+                                                <Avatar className="w-12 h-12">
+                                                    <AvatarImage src={profile?.profileImage} />
+                                                    <AvatarFallback>
+                                                        {instructor.name
+                                                            .split(" ")
+                                                            .map((n) => n[0])
+                                                            .join("")}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <h3 className="font-semibold">
+                                                        {instructor.name}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {instructor.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        <MoreHorizontal className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem
+                                                        onClick={() =>
+                                                            openScheduleDialog(instructor)
+                                                        }
+                                                    >
+                                                        <Calendar className="w-4 h-4 mr-2" />
+                                                        Schedule
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <Edit className="w-4 h-4 mr-2" />
+                                                        Edit Profile
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <GraduationCap className="w-4 h-4 mr-2" />
+                                                        Assign Classes
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-destructive">
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Remove
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </CardHeader>
+
+                                    <CardContent className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            {getRoleBadge("instructor")}
+                                            <div
+                                                className={`flex items-center space-x-1 text-xs px-2 py-1 rounded-full ${
+                                                    availability.status === "available"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : availability.status === "upcoming"
+                                                          ? "bg-blue-100 text-blue-800"
+                                                          : availability.status === "finished"
+                                                            ? "bg-gray-100 text-gray-800"
+                                                            : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                <Clock className="w-3 h-3" />
+                                                <span>{availability.text}</span>
+                                            </div>
+                                        </div>
+
+                                        {profile && (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <Phone className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm">{profile.phone}</span>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm">
+                                                        Hired:{" "}
+                                                        {new Date(
+                                                            profile.hiredDate
+                                                        ).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                                                    <span className="text-sm">
+                                                        {profile.assignedClasses.length} assigned
+                                                        classes
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {profile.specialties
+                                                        .slice(0, 2)
+                                                        .map((specialty) => (
+                                                            <Badge
+                                                                key={specialty}
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
+                                                                {specialty}
+                                                            </Badge>
+                                                        ))}
+                                                    {profile.specialties.length > 2 && (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            +{profile.specialties.length - 2} more
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </TabsContent>
+
+                {/* Schedule Overview Tab */}
+                <TabsContent
+                    value="schedule"
+                    className="space-y-6"
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Today's Schedule</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {[...employees, ...instructors]
+                                    .filter((emp) =>
+                                        emp.scheduleEntries.some(
+                                            (entry) =>
+                                                new Date(entry.date).toDateString() ===
+                                                new Date().toDateString()
+                                        )
+                                    )
+                                    .map((employee) => {
+                                        const todayEntries = employee.scheduleEntries.filter(
+                                            (entry) =>
+                                                new Date(entry.date).toDateString() ===
+                                                new Date().toDateString()
+                                        );
+
+                                        return todayEntries.map((entry) => (
+                                            <div
+                                                key={entry.id}
+                                                className="flex items-center justify-between p-4 border rounded-lg"
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    <Avatar className="w-10 h-10">
+                                                        <AvatarImage
+                                                            src={
+                                                                employee.managerProfile
+                                                                    ?.profileImage ||
+                                                                employee.instructorProfile
+                                                                    ?.profileImage
+                                                            }
+                                                        />
+                                                        <AvatarFallback>
+                                                            {employee.name
+                                                                .split(" ")
+                                                                .map((n) => n[0])
+                                                                .join("")}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {employee.name}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {entry.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="text-right">
+                                                        <p className="text-sm font-medium">
+                                                            {entry.startTime} - {entry.endTime}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {context.currentStudio?.locations.find(
+                                                                (loc) => loc.id === entry.locationId
+                                                            )?.name || "Main Studio"}
+                                                        </p>
+                                                    </div>
+                                                    {getCategoryBadge(entry.category)}
+                                                </div>
+                                            </div>
+                                        ));
+                                    })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Time Off Requests Tab */}
+                <TabsContent
+                    value="time-off"
+                    className="space-y-6"
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pending Time Off Requests</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {[...employees, ...instructors]
+                                    .filter((emp) =>
+                                        emp.timeOffRequests.some((req) => req.status === "pending")
+                                    )
+                                    .map((employee) => {
+                                        const pendingRequests = employee.timeOffRequests.filter(
+                                            (req) => req.status === "pending"
+                                        );
+
+                                        return pendingRequests.map((request) => (
+                                            <div
+                                                key={request.id}
+                                                className="flex items-center justify-between p-4 border rounded-lg"
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    <Avatar className="w-10 h-10">
+                                                        <AvatarImage
+                                                            src={
+                                                                employee.managerProfile
+                                                                    ?.profileImage ||
+                                                                employee.instructorProfile
+                                                                    ?.profileImage
+                                                            }
+                                                        />
+                                                        <AvatarFallback>
+                                                            {employee.name
+                                                                .split(" ")
+                                                                .map((n) => n[0])
+                                                                .join("")}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {employee.name}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {new Date(
+                                                                request.startDate
+                                                            ).toLocaleDateString()}{" "}
+                                                            -{" "}
+                                                            {new Date(
+                                                                request.endDate
+                                                            ).toLocaleDateString()}
+                                                        </p>
+                                                        {request.reason && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {request.reason}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="capitalize"
+                                                    >
+                                                        {request.type.replace("-", " ")}
+                                                    </Badge>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                    >
+                                                        <X className="w-4 h-4 mr-2" />
+                                                        Deny
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ));
+                                    })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* Schedule Dialog */}
+            <Dialog
+                open={showScheduleDialog}
+                onOpenChange={setShowScheduleDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Schedule for {selectedEmployee?.name}</DialogTitle>
+                        <DialogDescription>
+                            Add a new schedule entry for this staff member.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="scheduleDate">Date</Label>
+                                <Input
+                                    id="scheduleDate"
+                                    type="date"
+                                    value={scheduleForm.date}
+                                    onChange={(e) =>
+                                        setScheduleForm((prev) => ({
+                                            ...prev,
+                                            date: e.target.value
+                                        }))
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="scheduleCategory">Category</Label>
+                                <Select
+                                    value={scheduleForm.category}
+                                    onValueChange={(value: ScheduleEntry["category"]) =>
+                                        setScheduleForm((prev) => ({ ...prev, category: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="operations">Operations</SelectItem>
+                                        <SelectItem value="classes">Classes</SelectItem>
+                                        <SelectItem value="social-media">Social Media</SelectItem>
+                                        <SelectItem value="covering-shift">
+                                            Covering Shift
+                                        </SelectItem>
+                                        <SelectItem value="sick-leave">Sick Leave</SelectItem>
+                                        <SelectItem value="vacation">Vacation</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="startTime">Start Time</Label>
+                                <Input
+                                    id="startTime"
+                                    type="time"
+                                    value={scheduleForm.startTime}
+                                    onChange={(e) =>
+                                        setScheduleForm((prev) => ({
+                                            ...prev,
+                                            startTime: e.target.value
+                                        }))
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="endTime">End Time</Label>
+                                <Input
+                                    id="endTime"
+                                    type="time"
+                                    value={scheduleForm.endTime}
+                                    onChange={(e) =>
+                                        setScheduleForm((prev) => ({
+                                            ...prev,
+                                            endTime: e.target.value
+                                        }))
+                                    }
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <Label htmlFor="description">Description</Label>
+                            <Input
+                                id="description"
+                                value={scheduleForm.description}
+                                onChange={(e) =>
+                                    setScheduleForm((prev) => ({
+                                        ...prev,
+                                        description: e.target.value
+                                    }))
+                                }
+                                placeholder="Brief description of the task/assignment"
+                            />
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowScheduleDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddScheduleEntry}>
+                                <Save className="w-4 h-4 mr-2" />
+                                Add to Schedule
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 }
