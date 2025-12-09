@@ -1,95 +1,77 @@
-import { useState, useRef, useCallback, useEffect } from "react";
 import {
+    useAppContext,
+    type PhotoEntry,
+    type PotteryEntry,
+    type WhiteboardPage
+} from "@/app/context/AppContext";
+import {
+    AlertCircle,
     ArrowLeft,
-    Share2,
-    FileDown,
-    Save,
-    Plus,
-    Minus,
-    ZoomIn,
-    ZoomOut,
-    MousePointer,
-    Pen,
-    Eraser,
-    Highlighter,
-    StickyNote,
-    Image,
-    Type,
-    Grid,
-    Upload,
-    PlusSquare,
+    BookOpen,
+    Calendar,
+    CheckCircle,
     ChevronLeft,
     ChevronRight,
-    Layers,
-    Settings,
-    Flame,
-    Palette as PaletteIcon,
-    Scissors,
-    Paintbrush,
-    Thermometer,
     Clock,
-    CheckCircle,
-    AlertCircle,
-    Star,
-    Users,
-    Send,
-    Eye,
-    MessageSquare,
     Edit3,
-    MoreHorizontal,
-    Trash2,
-    Copy,
-    RotateCcw,
-    Move,
-    BookOpen,
-    Camera,
-    Beaker,
+    Eraser,
+    Eye,
+    FileDown,
     FileText,
-    Calendar,
+    Flame,
+    Grid,
+    Highlighter,
+    Image,
+    Lightbulb,
+    Loader2,
+    MessageSquare,
+    MoreHorizontal,
+    MousePointer,
+    Paintbrush,
+    Palette as PaletteIcon,
+    Pen,
+    Plus,
+    PlusSquare,
+    Save,
+    Scissors,
+    Send,
+    Settings,
+    Share2,
+    Sparkles,
+    Star,
+    StickyNote,
     Tag,
     Target,
-    Zap,
-    Workflow,
-    Sparkles,
+    Type,
+    Upload,
     Wand2,
-    Lightbulb,
-    ChevronDown,
-    X,
-    ArrowRight,
-    Loader2
+    Workflow,
+    Zap,
+    ZoomIn,
+    ZoomOut
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getSubscriptionLimits } from "../utils/subscriptions";
 import { Badge } from "./ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Progress } from "./ui/progress";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Switch } from "./ui/switch";
-import { Separator } from "./ui/separator";
-import { Slider } from "./ui/slider";
-import { Toggle } from "./ui/toggle";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "./ui/dropdown-menu";
-import { Checkbox } from "./ui/checkbox";
-import {
-    useAppContext,
-    type PotteryEntry,
-    type WhiteboardPage,
-    type StickyNote,
-    type TextBox,
-    type PhotoEntry,
-    type DrawingStroke
-} from "@/app/context/AppContext";
-import { getSubscriptionLimits } from "../utils/subscriptions";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Separator } from "./ui/separator";
+import { Slider } from "./ui/slider";
+import { Switch } from "./ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Textarea } from "./ui/textarea";
+import { Toggle } from "./ui/toggle";
 
 export function WhiteboardEditor() {
     const {

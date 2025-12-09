@@ -1,85 +1,51 @@
-import { useState, useRef, useCallback } from "react";
 import {
-    Plus,
-    Search,
-    Filter,
-    Calendar,
-    BookOpen,
-    FolderOpen,
-    Share2,
-    Users,
-    Edit3,
-    MessageSquare,
-    Eye,
-    Copy,
-    Settings,
-    MoreHorizontal,
-    Star,
-    Trash2,
-    Archive,
-    Tag,
-    Clock,
-    CheckCircle,
+    useAppContext,
+    type PotteryEntry,
+    type Project,
+    type UsageStats,
+    type WhiteboardPage
+} from "@/app/context/AppContext";
+import {
     AlertCircle,
-    Crown,
-    Lock,
-    Unlock,
-    UserPlus,
-    Send,
-    Check,
-    X,
-    Camera,
-    Save,
-    Palette,
-    Image,
-    Type,
-    Thermometer,
-    Flame,
-    Beaker,
-    FileText,
     BarChart3,
-    Upload,
-    MousePointer,
-    Pen,
-    Eraser,
-    Highlighter,
-    Shapes,
-    StickyNote,
-    Move,
-    ZoomIn,
-    ZoomOut,
-    RotateCcw,
-    Download,
+    BookOpen,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Edit3,
     FileDown,
-    ChevronLeft,
-    ChevronRight,
+    FileText,
+    Flame,
+    FolderOpen,
     Layers,
-    Grid,
-    AlignLeft,
-    AlignCenter,
-    AlignRight,
-    Bold,
-    Italic,
-    Underline,
-    PlusSquare,
-    Minus,
-    ArrowUp,
-    ArrowDown
+    MessageSquare,
+    MoreHorizontal,
+    Palette,
+    Pen,
+    Plus,
+    Save,
+    Search,
+    Send,
+    Settings,
+    Share2,
+    Star,
+    StickyNote,
+    Trash2,
+    Type,
+    Upload,
+    Users
 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { useState } from "react";
+import { getSubscriptionLimits } from "../utils/subscriptions";
 import { Badge } from "./ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
-    DialogTitle,
-    DialogTrigger
+    DialogTitle
 } from "./ui/dialog";
 import {
     DropdownMenu,
@@ -88,29 +54,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "./ui/dropdown-menu";
-import { Progress } from "./ui/progress";
+import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
+import { Progress } from "./ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Switch } from "./ui/switch";
-import { Separator } from "./ui/separator";
-import { ScrollArea } from "./ui/scroll-area";
-import { Slider } from "./ui/slider";
-import { Toggle } from "./ui/toggle";
-import {
-    useAppContext,
-    type Project,
-    type PotteryEntry,
-    type WhiteboardPage,
-    type StickyNote,
-    type TextBox,
-    type PhotoEntry,
-    type DrawingStroke,
-    type CollaborationPermission,
-    type CollaborationComment,
-    type SubscriptionLimits,
-    type UsageStats
-} from "@/app/context/AppContext";
-import { getSubscriptionLimits } from "../utils/subscriptions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Textarea } from "./ui/textarea";
 
 export function PotteryJournal() {
     const { currentUser, currentStudio, setCurrentThrow, navigateToPage } = useAppContext();
