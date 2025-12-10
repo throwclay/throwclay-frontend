@@ -8,24 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAppContext } from "@/app/context/AppContext";
 
-interface VerifyPhoneScreenProps {
-    onDone: () => void; // what to do after verify/skip
-}
-
-export function VerifyPhonePage({ onDone }: VerifyPhoneScreenProps) {
+export default function VerifyPhonePage() {
     const router = useRouter();
+    const context = useAppContext();
     const [initialPhone, setInitialPhone] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState("landing");
 
     useEffect(() => {
         const loadUser = async () => {
             const { data, error } = await supabase.auth.getUser();
 
             if (error || !data.user) {
-                // Not logged in, bounce to login
-                // router.replace("/");  // for future
-                setCurrentPage("login"); // leaving this for now
+                router.push("/login");
                 return;
             }
 
@@ -37,8 +31,9 @@ export function VerifyPhonePage({ onDone }: VerifyPhoneScreenProps) {
     }, []);
 
     const handleVerified = () => {
-        // router.replace("/"); // will route to homepage in future
-        onDone();
+        const nextRoute = context.currentUser?.activeMode === "studio" ? "/dashboard" : "/profile";
+
+        router.push(nextRoute);
     };
 
     if (loading) {
@@ -73,7 +68,6 @@ export function VerifyPhonePage({ onDone }: VerifyPhoneScreenProps) {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                // onClick={() => router.replace("/")}
                                 onClick={handleVerified}
                             >
                                 Skip for now
