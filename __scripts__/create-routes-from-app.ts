@@ -26,14 +26,24 @@ const basicRoutes = {
     mudlyai: "MudlyAI"
 };
 
+const specialRoutes = ["dashboard", "classes", "profile", "verifyphone"];
+
 const j = jscodeshift.withParser("tsx");
 
-for (const [route, component] of Object.entries(basicRoutes)) {
-    const componentFile = path.join("src", "components", component + ".tsx");
+for (const route of specialRoutes) {
     const routeFile = path.join("src", "app", route, "page.tsx");
 
-    moveFile(component, route, componentFile, routeFile);
+    // create route, make all subdirs
+    fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+    fs.writeFileSync(routeFile, "", "utf-8");
 }
+
+// for (const [route, component] of Object.entries(basicRoutes)) {
+//     const componentFile = path.join("src", "components", component + ".tsx");
+//     const routeFile = path.join("src", "app", route, "page.tsx");
+
+//     // moveFile(component, route, componentFile, routeFile);
+// }
 
 function moveFile(
     componentName: string,
