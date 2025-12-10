@@ -85,7 +85,7 @@ interface ContentBlock {
     };
 }
 
-export function StudioDocuments() {
+export default function StudioDocuments() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategory, setFilterCategory] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
@@ -770,7 +770,6 @@ export function StudioDocuments() {
                     </Dialog>
                 </div>
             </div>
-
             {/* Filters and Search */}
             <Card>
                 <CardContent className="pt-6">
@@ -821,7 +820,6 @@ export function StudioDocuments() {
                     </div>
                 </CardContent>
             </Card>
-
             {/* Document List */}
             {!editingDocument ? (
                 <div className="grid gap-4">
@@ -982,7 +980,7 @@ export function StudioDocuments() {
                 </div>
             ) : (
                 /* Document Editor */
-                <Card>
+                (<Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -1292,7 +1290,7 @@ export function StudioDocuments() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card>)
             )}
         </div>
     );

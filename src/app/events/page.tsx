@@ -37,7 +37,7 @@ import {
 import { useAppContext, type Event } from "@/app/context/AppContext";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
-export function EventsManagement() {
+export default function EventsManagement() {
     const { currentUser, currentStudio } = useAppContext();
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");

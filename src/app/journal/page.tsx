@@ -62,7 +62,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-export function PotteryJournal() {
+export default function PotteryJournal() {
     const { currentUser, currentStudio, setCurrentThrow, navigateToPage } = useAppContext();
     const [activeTab, setActiveTab] = useState("throws");
     const [selectedProject, setSelectedProject] = useState<string | null>(null);

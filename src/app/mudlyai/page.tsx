@@ -61,7 +61,7 @@ interface MudlySettings {
     conversationHistory: boolean;
 }
 
-export function MudlyAI() {
+export default function MudlyAI() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [showSettings, setShowSettings] = useState(false);

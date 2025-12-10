@@ -125,7 +125,7 @@ export interface BlogPost {
     isFeatured: boolean;
 }
 
-export function BlogManagement() {
+export default function BlogManagement() {
     const { currentUser } = useAppContext();
     const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
     const [isEditing, setIsEditing] = useState(false);

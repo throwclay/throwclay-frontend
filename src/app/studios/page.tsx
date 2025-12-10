@@ -1,5 +1,4 @@
-"use client";
-
+"use client";;
 import { useState, useEffect } from "react";
 import { MapPin, Star, Users, Phone, Globe, Instagram, Search } from "lucide-react";
 
@@ -18,7 +17,7 @@ import { supabase } from "@/lib/apis/supabaseClient";
 import { toast } from "sonner";
 import { PriceRange, PublicStudioLocationCard } from "@/types";
 
-export function PublicStudiosDirectory({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export default function PublicStudiosDirectory({ onNavigate }: { onNavigate?: (page: string) => void }) {
     const context = useAppContext();
 
     const [locations, setLocations] = useState<PublicStudioLocationCard[]>([]);
@@ -298,11 +297,12 @@ export function PublicStudiosDirectory({ onNavigate }: { onNavigate?: (page: str
             | undefined;
 
         return (
-            role === "owner" //||
+            //||
             // role === "admin" ||
             // role === "manager" ||
             // role === "instructor" ||
             // role === "employee"
+            (role === "owner")
         );
     };
 

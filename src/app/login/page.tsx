@@ -13,7 +13,7 @@ interface LoginFormProps {
     onBack: () => void;
 }
 
-export function LoginForm({ onLogin, onBack }: LoginFormProps) {
+export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");

@@ -49,7 +49,7 @@ interface CeramicPiece {
     distance?: number;
 }
 
-export function PublicCeramicsMarketplace() {
+export default function PublicCeramicsMarketplace() {
     const [ceramics] = useState<CeramicPiece[]>([
         {
             id: "1",

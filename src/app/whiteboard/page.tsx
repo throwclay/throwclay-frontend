@@ -73,7 +73,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
 
-export function WhiteboardEditor() {
+export default function WhiteboardEditor() {
     const {
         currentUser,
         currentStudio,

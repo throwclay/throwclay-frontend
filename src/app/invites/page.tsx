@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import type { StudioInvite, User } from "@/types";
 
-export function InvitesPanel() {
+export default function InvitesPanel() {
     const context = useAppContext();
     const [invites, setInvites] = useState<StudioInvite[]>([]);
     const [isLoading, setIsLoading] = useState(false);

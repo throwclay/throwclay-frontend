@@ -73,7 +73,7 @@ interface CustomDomain {
     addedDate: string;
 }
 
-export function Settings() {
+export default function Settings() {
     const { currentUser, currentStudio } = useAppContext();
     const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
     const [showDomainDialog, setShowDomainDialog] = useState(false);
@@ -583,7 +583,6 @@ export function Settings() {
                     settings and preferences
                 </p>
             </div>
-
             <Tabs
                 defaultValue={currentUser.activeMode === "studio" ? "studio" : "profile"}
                 className="space-y-6"
@@ -3274,7 +3273,6 @@ export function Settings() {
                     </div>
                 </TabsContent>
             </Tabs>
-
             {/* Upgrade Dialog */}
             <Dialog
                 open={showUpgradeDialog}
@@ -3329,7 +3327,6 @@ export function Settings() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Add Domain Dialog */}
             <Dialog
                 open={showDomainDialog}
@@ -3375,7 +3372,6 @@ export function Settings() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Role Dialog */}
             <Dialog
                 open={showRoleDialog}

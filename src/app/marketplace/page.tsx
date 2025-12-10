@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAppContext, type PotteryEntry } from "@/app/context/AppContext";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
-export function CommerceMarketplace() {
+export default function CommerceMarketplace() {
     const { currentUser, currentStudio } = useAppContext();
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("newest");

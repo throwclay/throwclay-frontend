@@ -8,7 +8,7 @@ import { EmployeeManagement } from "@/components/EmployeeManagement";
 import { useAppContext } from "@/app/context/AppContext";
 import type { StudioInvite } from "@/types";
 
-export function StaffManagement() {
+export default function StaffManagement() {
     const context = useAppContext();
     const [activeTab, setActiveTab] = useState("employees");
 

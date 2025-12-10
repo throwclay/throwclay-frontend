@@ -48,7 +48,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppContext } from "@/app/context/AppContext";
 
-export function MyStudios() {
+export default function MyStudios() {
     const { currentUser, currentStudio } = useAppContext();
     const [activeTab, setActiveTab] = useState("overview");
     const [selectedStudioId, setSelectedStudioId] = useState("studio1");
@@ -661,7 +661,6 @@ export function MyStudios() {
                     </CardContent>
                 </Card>
             </div>
-
             {/* Main Tabs */}
             <Tabs
                 value={activeTab}

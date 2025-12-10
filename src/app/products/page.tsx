@@ -67,7 +67,7 @@ const PRODUCT_CATEGORIES = [
     "Other"
 ];
 
-export function Products() {
+export default function Products() {
     const { currentStudio } = useAppContext();
     const [searchQuery, setSearchQuery] = useState("");
     const [categoryFilter, setCategoryFilter] = useState<string>("all");

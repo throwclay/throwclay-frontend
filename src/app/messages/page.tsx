@@ -81,7 +81,7 @@ interface ExtendedMessage extends Message {
     attachments?: FileAttachment[];
 }
 
-export function MessagingCenter() {
+export default function MessagingCenter() {
     const { currentUser, currentStudio } = useAppContext();
     const [activeChat, setActiveChat] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");

@@ -107,7 +107,7 @@ import {
 } from "@/lib/utils/kilnCalculations";
 import { toast } from "sonner";
 
-export function KilnManagement() {
+export default function KilnManagement() {
     const { currentStudio, authToken } = useAppContext();
     const [selectedTab, setSelectedTab] = useState("kilns");
     const [selectedKilns, setSelectedKilns] = useState<string[]>([]);
@@ -1867,7 +1867,6 @@ export function KilnManagement() {
                     </p>
                 </div>
             </div>
-
             {/* Main Content */}
             <Tabs
                 value={selectedTab}
@@ -5064,7 +5063,6 @@ export function KilnManagement() {
                     </div>
                 </TabsContent>
             </Tabs>
-
             {/* Kiln Details/Edit Dialog */}
             <Dialog
                 open={showKilnDetails}
@@ -6530,7 +6528,6 @@ export function KilnManagement() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Template Details Dialog */}
             <Dialog
                 open={showTemplateDetails}
@@ -6563,7 +6560,6 @@ export function KilnManagement() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Schedule Firing Dialog */}
             <Dialog
                 open={showScheduleFiring}
@@ -6781,7 +6777,6 @@ export function KilnManagement() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Scheduled Firing Selection Dialog */}
             <Dialog
                 open={showScheduledFiringSelection}
@@ -6900,7 +6895,6 @@ export function KilnManagement() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Quick Start Firing Dialog */}
             <Dialog
                 open={showQuickStartFiring}
@@ -7077,7 +7071,6 @@ export function KilnManagement() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Schedule Details Dialog */}
             <Dialog
                 open={showScheduleDetails}
@@ -7257,7 +7250,6 @@ export function KilnManagement() {
                     )}
                 </DialogContent>
             </Dialog>
-
             {/* Edit Schedule Dialog */}
             <Dialog
                 open={showEditSchedule}

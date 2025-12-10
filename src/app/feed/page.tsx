@@ -77,7 +77,7 @@ interface Comment {
     likes: number;
 }
 
-export function Feed() {
+export default function Feed() {
     const [posts, setPosts] = useState<Post[]>([
         {
             id: "1",

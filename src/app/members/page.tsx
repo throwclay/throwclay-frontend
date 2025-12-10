@@ -1,5 +1,4 @@
-"use client";
-
+"use client";;
 import { useState, useEffect } from "react";
 import {
     Search,
@@ -59,7 +58,7 @@ import type {
 import { MemberIntakeFormBuilder } from "@/components/MemberIntakeFormBuilder";
 import { toast } from "sonner";
 
-export function MemberManagement() {
+export default function MemberManagement() {
     const [activeTab, setActiveTab] = useState("active");
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);

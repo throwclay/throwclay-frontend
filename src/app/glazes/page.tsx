@@ -83,7 +83,7 @@ interface GlazeEntry {
     photos?: PhotoEntry[];
 }
 
-export function GlazeManagement() {
+export default function GlazeManagement() {
     const { currentUser, currentStudio } = useAppContext();
     const [activeTab, setActiveTab] = useState("all-glazes");
     const [selectedItems, setSelectedItems] = useState<string[]>([]);

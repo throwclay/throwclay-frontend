@@ -32,29 +32,7 @@ for (const [route, component] of Object.entries(basicRoutes)) {
     const componentFile = path.join("src", "components", component + ".tsx");
     const routeFile = path.join("src", "app", route, "page.tsx");
 
-    updateImports(componentFile);
-    // moveFile(component, route, componentFile, routeFile);
-}
-
-/**
- *
- * "./ui/...." to "@/components/ui/..."
- */
-function updateImports(componentFile: string) {
-    const updatedContent = j(fs.readFileSync(componentFile, "utf-8"))
-        .find(j.ImportDeclaration, {
-            source: {
-                value: (value: string) => value.startsWith(".")
-            }
-        })
-        .forEach((p) => {
-            const oldImport = p.node.source.value;
-            const newImport =
-            console.log(`updating import in ${componentFile}: ${p.node.source.value}`);
-        })
-        .toSource();
-
-    // fs.writeFileSync(componentFile, updatedContent, "utf-8");
+    moveFile(component, route, componentFile, routeFile);
 }
 
 function moveFile(

@@ -73,7 +73,7 @@ interface CalendarItem {
 
 type CalendarView = "month" | "week" | "day";
 
-export function CalendarPage() {
+export default function CalendarPage() {
     const { currentUser } = useAppContext();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<CalendarView>("month");
