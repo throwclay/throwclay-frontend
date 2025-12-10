@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Users, UserCog, Users2, Mail, MapPin } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Badge } from "./ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
-import { EmployeeManagement } from "./EmployeeManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EmployeeManagement } from "@/components/EmployeeManagement";
 import { useAppContext } from "@/app/context/AppContext";
 import type { StudioInvite } from "@/types";
 
