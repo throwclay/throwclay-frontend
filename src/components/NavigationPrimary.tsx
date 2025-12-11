@@ -142,7 +142,7 @@ const AppGridIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export function Navigation({ currentPage, onPageChange, onLogout }: NavigationProps) {
+export function NavigationPrimary({ currentPage, onPageChange, onLogout }: NavigationProps) {
     const { currentUser, setCurrentUser, currentStudio, pendingInvites } = useAppContext();
     const pendingInvitesCount = pendingInvites.filter((i) => i.status === "pending").length;
 
