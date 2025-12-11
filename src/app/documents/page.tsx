@@ -36,7 +36,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import {
     Dialog,
     DialogContent,
@@ -58,6 +64,8 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { DocumentContentBlock } from "@/components/DocumentContentBlock";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 interface Document {
     id: string;
@@ -504,795 +512,790 @@ export default function StudioDocuments() {
     };
 
     return (
-        <div className="container max-w-7xl mx-auto p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1>Studio Documents</h1>
-                    <p className="text-muted-foreground">
-                        Manage policies, guidelines, and instructional materials for your studio
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    {/* Google Docs Import */}
-                    <Dialog
-                        open={showGoogleDocsDialog}
-                        onOpenChange={setShowGoogleDocsDialog}
-                    >
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <Link className="w-4 h-4 mr-2" />
-                                Import from Google Docs
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Import from Google Docs</DialogTitle>
-                                <DialogDescription>
-                                    Paste a link to your Google Doc to import and sync content
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Google Docs URL</Label>
-                                    <Input
-                                        placeholder="https://docs.google.com/document/d/..."
-                                        value={googleDocsUrl}
-                                        onChange={(e) => setGoogleDocsUrl(e.target.value)}
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Make sure the document is set to "Anyone with the link can
-                                        view"
-                                    </p>
+        <DefaultLayout>
+            <div className="container max-w-7xl mx-auto p-6 space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1>Studio Documents</h1>
+                        <p className="text-muted-foreground">
+                            Manage policies, guidelines, and instructional materials for your studio
+                        </p>
+                    </div>
+                    <div className="flex gap-2">
+                        {/* Google Docs Import */}
+                        <Dialog
+                            open={showGoogleDocsDialog}
+                            onOpenChange={setShowGoogleDocsDialog}
+                        >
+                            <DialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Link className="w-4 h-4 mr-2" />
+                                    Import from Google Docs
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Import from Google Docs</DialogTitle>
+                                    <DialogDescription>
+                                        Paste a link to your Google Doc to import and sync content
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label>Google Docs URL</Label>
+                                        <Input
+                                            placeholder="https://docs.google.com/document/d/..."
+                                            value={googleDocsUrl}
+                                            onChange={(e) => setGoogleDocsUrl(e.target.value)}
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Make sure the document is set to "Anyone with the link can
+                                            view"
+                                        </p>
+                                    </div>
+                                    <Alert>
+                                        <ExternalLinkIcon className="w-4 h-4" />
+                                        <AlertDescription>
+                                            Imported documents will sync automatically when changes are
+                                            made in Google Docs
+                                        </AlertDescription>
+                                    </Alert>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowGoogleDocsDialog(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={handleGoogleDocsImport}
+                                            disabled={!googleDocsUrl}
+                                        >
+                                            <Link className="w-4 h-4 mr-2" />
+                                            Import & Sync
+                                        </Button>
+                                    </div>
                                 </div>
-                                <Alert>
-                                    <ExternalLinkIcon className="w-4 h-4" />
-                                    <AlertDescription>
-                                        Imported documents will sync automatically when changes are
-                                        made in Google Docs
-                                    </AlertDescription>
-                                </Alert>
-                                <div className="flex justify-end gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setShowGoogleDocsDialog(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={handleGoogleDocsImport}
-                                        disabled={!googleDocsUrl}
-                                    >
-                                        <Link className="w-4 h-4 mr-2" />
-                                        Import & Sync
-                                    </Button>
+                            </DialogContent>
+                        </Dialog>
+                        {/* Create New Document */}
+                        <Dialog
+                            open={showCreateDialog}
+                            onOpenChange={setShowCreateDialog}
+                        >
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    New Document
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Create New Document</DialogTitle>
+                                    <DialogDescription>
+                                        Set up the basic information for your document
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label>Document Title</Label>
+                                        <Input
+                                            placeholder="e.g., Studio Safety Guidelines"
+                                            value={newDocument.title}
+                                            onChange={(e) =>
+                                                setNewDocument({
+                                                    ...newDocument,
+                                                    title: e.target.value
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <Label>Category</Label>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setShowCategoryDialog(true)}
+                                            >
+                                                <Plus className="w-3 h-3 mr-1" />
+                                                Add Custom
+                                            </Button>
+                                        </div>
+                                        <Select
+                                            value={newDocument.category}
+                                            onValueChange={(value) =>
+                                                setNewDocument({ ...newDocument, category: value })
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {allCategories.map((cat) => (
+                                                    <SelectItem
+                                                        key={cat.value}
+                                                        value={cat.value}
+                                                    >
+                                                        {cat.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="mb-2 block">Target Audience</Label>
+                                        <ScrollArea className="h-[200px] border rounded-md p-3">
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <p className="text-sm font-medium mb-2">
+                                                        Membership Types
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {membershipTypes.map((type) => (
+                                                            <div
+                                                                key={type.id}
+                                                                className="flex items-center space-x-2"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={newDocument.audience?.includes(
+                                                                        type.id
+                                                                    )}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const current =
+                                                                            newDocument.audience || [];
+                                                                        setNewDocument({
+                                                                            ...newDocument,
+                                                                            audience: checked
+                                                                                ? [...current, type.id]
+                                                                                : current.filter(
+                                                                                      (a) =>
+                                                                                          a !== type.id
+                                                                                  )
+                                                                        });
+                                                                    }}
+                                                                />
+                                                                <label className="text-sm">
+                                                                    {type.label}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium mb-2">
+                                                        Staff Roles
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {staffRoles.map((role) => (
+                                                            <div
+                                                                key={role.id}
+                                                                className="flex items-center space-x-2"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={newDocument.audience?.includes(
+                                                                        role.id
+                                                                    )}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const current =
+                                                                            newDocument.audience || [];
+                                                                        setNewDocument({
+                                                                            ...newDocument,
+                                                                            audience: checked
+                                                                                ? [...current, role.id]
+                                                                                : current.filter(
+                                                                                      (a) =>
+                                                                                          a !== role.id
+                                                                                  )
+                                                                        });
+                                                                    }}
+                                                                />
+                                                                <label className="text-sm">
+                                                                    {role.label}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </ScrollArea>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowCreateDialog(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={handleCreateDocument}
+                                            disabled={!newDocument.title}
+                                        >
+                                            Create & Edit
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                        {/* Custom Category Dialog */}
+                        <Dialog
+                            open={showCategoryDialog}
+                            onOpenChange={setShowCategoryDialog}
+                        >
+                            <DialogContent className="max-w-sm">
+                                <DialogHeader>
+                                    <DialogTitle>Add Custom Category</DialogTitle>
+                                    <DialogDescription>
+                                        Create a new document category for your studio
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label>Category Name</Label>
+                                        <Input
+                                            placeholder="e.g., Equipment Manuals"
+                                            value={newCategory}
+                                            onChange={(e) => setNewCategory(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowCategoryDialog(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            onClick={handleAddCategory}
+                                            disabled={!newCategory}
+                                        >
+                                            Add Category
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </div>
+                {/* Filters and Search */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search documents..."
+                                        className="pl-9"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
                                 </div>
                             </div>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Create New Document */}
-                    <Dialog
-                        open={showCreateDialog}
-                        onOpenChange={setShowCreateDialog}
-                    >
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="w-4 h-4 mr-2" />
-                                New Document
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Create New Document</DialogTitle>
-                                <DialogDescription>
-                                    Set up the basic information for your document
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Document Title</Label>
+                            <Select
+                                value={filterCategory}
+                                onValueChange={setFilterCategory}
+                            >
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    {allCategories.map((cat) => (
+                                        <SelectItem
+                                            key={cat.value}
+                                            value={cat.value}
+                                        >
+                                            {cat.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={filterStatus}
+                                onValueChange={setFilterStatus}
+                            >
+                                <SelectTrigger className="w-[150px]">
+                                    <SelectValue placeholder="All Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="published">Published</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                </Card>
+                {/* Document List */}
+                {!editingDocument ? (
+                    <div className="grid gap-4">
+                        {filteredDocuments.map((doc) => (
+                            <Card key={doc.id}>
+                                <CardContent className="pt-6">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                    {getCategoryIcon(doc.category)}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <h3 className="text-lg">{doc.title}</h3>
+                                                        <Badge
+                                                            variant={
+                                                                doc.status === "published"
+                                                                    ? "default"
+                                                                    : "secondary"
+                                                            }
+                                                        >
+                                                            {doc.status === "published" ? (
+                                                                <>
+                                                                    <CheckCircle className="w-3 h-3 mr-1" />{" "}
+                                                                    Published
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Clock className="w-3 h-3 mr-1" />{" "}
+                                                                    Draft
+                                                                </>
+                                                            )}
+                                                        </Badge>
+                                                        {doc.googleDocsUrl && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
+                                                                <Link className="w-3 h-3 mr-1" />
+                                                                Synced{" "}
+                                                                {doc.lastSyncedAt &&
+                                                                    `${new Date(
+                                                                        doc.lastSyncedAt
+                                                                    ).toLocaleDateString()}`}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                                        <span>{getCategoryLabel(doc.category)}</span>
+                                                        <span>•</span>
+                                                        <span>
+                                                            Updated{" "}
+                                                            {new Date(
+                                                                doc.updatedAt
+                                                            ).toLocaleDateString()}
+                                                        </span>
+                                                        <span>•</span>
+                                                        <span>By {doc.author}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 mt-3 flex-wrap">
+                                                {doc.audience.map((aud) => (
+                                                    <Badge
+                                                        key={aud}
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                    >
+                                                        <Users className="w-3 h-3 mr-1" />
+                                                        {getAudienceLabel(aud)}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {doc.googleDocsUrl && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleSyncGoogleDocs(doc.id)}
+                                                >
+                                                    <RefreshCw className="w-4 h-4" />
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setEditingDocument(doc)}
+                                            >
+                                                <Edit className="w-4 h-4 mr-2" />
+                                                Edit
+                                            </Button>
+                                            {doc.status === "draft" ? (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handlePublishDocument(doc.id)}
+                                                >
+                                                    <Send className="w-4 h-4 mr-2" />
+                                                    Publish
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleUnpublishDocument(doc.id)}
+                                                >
+                                                    <EyeOff className="w-4 h-4 mr-2" />
+                                                    Unpublish
+                                                </Button>
+                                            )}
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        <MoreVertical className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem>
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        Preview
+                                                    </DropdownMenuItem>
+                                                    {doc.googleDocsUrl && (
+                                                        <DropdownMenuItem
+                                                            onClick={() =>
+                                                                window.open(doc.googleDocsUrl, "_blank")
+                                                            }
+                                                        >
+                                                            <ExternalLinkIcon className="w-4 h-4 mr-2" />
+                                                            Open in Google Docs
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem>
+                                                        <Copy className="w-4 h-4 mr-2" />
+                                                        Duplicate
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <Download className="w-4 h-4 mr-2" />
+                                                        Export PDF
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() => handleDeleteDocument(doc.id)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    /* Document Editor */
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
                                     <Input
-                                        placeholder="e.g., Studio Safety Guidelines"
-                                        value={newDocument.title}
+                                        value={editingDocument.title}
                                         onChange={(e) =>
-                                            setNewDocument({
-                                                ...newDocument,
+                                            setEditingDocument({
+                                                ...editingDocument,
                                                 title: e.target.value
                                             })
                                         }
+                                        className="text-2xl border-0 px-0 focus-visible:ring-0"
+                                        placeholder="Document Title"
                                     />
-                                </div>
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Label>Category</Label>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setShowCategoryDialog(true)}
+                                    <div className="flex items-center gap-3 mt-2">
+                                        <Select
+                                            value={editingDocument.category}
+                                            onValueChange={(value) =>
+                                                setEditingDocument({
+                                                    ...editingDocument,
+                                                    category: value
+                                                })
+                                            }
                                         >
-                                            <Plus className="w-3 h-3 mr-1" />
-                                            Add Custom
-                                        </Button>
+                                            <SelectTrigger className="w-[200px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {allCategories.map((cat) => (
+                                                    <SelectItem
+                                                        key={cat.value}
+                                                        value={cat.value}
+                                                    >
+                                                        {cat.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Badge
+                                            variant={
+                                                editingDocument.status === "published"
+                                                    ? "default"
+                                                    : "secondary"
+                                            }
+                                        >
+                                            {editingDocument.status}
+                                        </Badge>
+                                        {editingDocument.googleDocsUrl && (
+                                            <Badge variant="outline">
+                                                <Link className="w-3 h-3 mr-1" />
+                                                Google Docs Sync
+                                            </Badge>
+                                        )}
                                     </div>
-                                    <Select
-                                        value={newDocument.category}
-                                        onValueChange={(value) =>
-                                            setNewDocument({ ...newDocument, category: value })
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {allCategories.map((cat) => (
-                                                <SelectItem
-                                                    key={cat.value}
-                                                    value={cat.value}
-                                                >
-                                                    {cat.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
                                 </div>
-                                <div>
-                                    <Label className="mb-2 block">Target Audience</Label>
-                                    <ScrollArea className="h-[200px] border rounded-md p-3">
-                                        <div className="space-y-3">
-                                            <div>
-                                                <p className="text-sm font-medium mb-2">
+                                <div className="flex gap-2">
+                                    {editingDocument.googleDocsUrl && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleSyncGoogleDocs(editingDocument.id)}
+                                        >
+                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                            Sync Now
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setShowAIAssistant(!showAIAssistant);
+                                        }}
+                                    >
+                                        <Sparkles className="w-4 h-4 mr-2" />
+                                        AI Assist
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setEditingDocument(null)}
+                                    >
+                                        <X className="w-4 h-4 mr-2" />
+                                        Close
+                                    </Button>
+                                    <Button onClick={saveDocument}>
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-3 gap-6">
+                                {/* Main Editor */}
+                                <div className="col-span-2 space-y-4">
+                                    {/* Audience Selection */}
+                                    <div className="p-4 bg-muted rounded-lg">
+                                        <Label className="mb-3 block">Target Audience</Label>
+                                        <Tabs
+                                            defaultValue="members"
+                                            className="w-full"
+                                        >
+                                            <TabsList className="grid w-full grid-cols-2">
+                                                <TabsTrigger value="members">
                                                     Membership Types
-                                                </p>
-                                                <div className="space-y-2">
-                                                    {membershipTypes.map((type) => (
-                                                        <div
-                                                            key={type.id}
-                                                            className="flex items-center space-x-2"
-                                                        >
-                                                            <Checkbox
-                                                                checked={newDocument.audience?.includes(
-                                                                    type.id
-                                                                )}
-                                                                onCheckedChange={(checked) => {
-                                                                    const current =
-                                                                        newDocument.audience || [];
-                                                                    setNewDocument({
-                                                                        ...newDocument,
-                                                                        audience: checked
-                                                                            ? [...current, type.id]
-                                                                            : current.filter(
-                                                                                  (a) =>
-                                                                                      a !== type.id
-                                                                              )
-                                                                    });
-                                                                }}
-                                                            />
-                                                            <label className="text-sm">
-                                                                {type.label}
-                                                            </label>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium mb-2">
-                                                    Staff Roles
-                                                </p>
-                                                <div className="space-y-2">
-                                                    {staffRoles.map((role) => (
-                                                        <div
-                                                            key={role.id}
-                                                            className="flex items-center space-x-2"
-                                                        >
-                                                            <Checkbox
-                                                                checked={newDocument.audience?.includes(
-                                                                    role.id
-                                                                )}
-                                                                onCheckedChange={(checked) => {
-                                                                    const current =
-                                                                        newDocument.audience || [];
-                                                                    setNewDocument({
-                                                                        ...newDocument,
-                                                                        audience: checked
-                                                                            ? [...current, role.id]
-                                                                            : current.filter(
-                                                                                  (a) =>
-                                                                                      a !== role.id
-                                                                              )
-                                                                    });
-                                                                }}
-                                                            />
-                                                            <label className="text-sm">
-                                                                {role.label}
-                                                            </label>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                </TabsTrigger>
+                                                <TabsTrigger value="staff">Staff Roles</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent
+                                                value="members"
+                                                className="space-y-2 mt-3"
+                                            >
+                                                {membershipTypes.map((type) => (
+                                                    <div
+                                                        key={type.id}
+                                                        className="flex items-center space-x-2"
+                                                    >
+                                                        <Checkbox
+                                                            checked={editingDocument.audience.includes(
+                                                                type.id
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                toggleAudience(type.id)
+                                                            }
+                                                        />
+                                                        <label className="text-sm">{type.label}</label>
+                                                    </div>
+                                                ))}
+                                            </TabsContent>
+                                            <TabsContent
+                                                value="staff"
+                                                className="space-y-2 mt-3"
+                                            >
+                                                {staffRoles.map((role) => (
+                                                    <div
+                                                        key={role.id}
+                                                        className="flex items-center space-x-2"
+                                                    >
+                                                        <Checkbox
+                                                            checked={editingDocument.audience.includes(
+                                                                role.id
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                toggleAudience(role.id)
+                                                            }
+                                                        />
+                                                        <label className="text-sm">{role.label}</label>
+                                                    </div>
+                                                ))}
+                                            </TabsContent>
+                                        </Tabs>
+                                    </div>
+                                    {/* Content Blocks */}
+                                    <ScrollArea className="h-[600px] pr-4">
+                                        <div className="space-y-3">
+                                            {editingDocument.content.map((block) => (
+                                                <DocumentContentBlock
+                                                    key={block.id}
+                                                    block={block}
+                                                    onUpdate={updateContentBlock}
+                                                    onUpdateMetadata={updateBlockMetadata}
+                                                    onRemove={removeContentBlock}
+                                                />
+                                            ))}
+                                            {/* Add Content Buttons */}
+                                            <div className="flex flex-wrap gap-2 pt-4 border-t mt-4">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addContentBlock("heading")}
+                                                >
+                                                    <Type className="w-4 h-4 mr-2" />
+                                                    Add Heading
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addContentBlock("text")}
+                                                >
+                                                    <FileText className="w-4 h-4 mr-2" />
+                                                    Add Text
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addContentBlock("image")}
+                                                >
+                                                    <ImageIcon className="w-4 h-4 mr-2" />
+                                                    Add Image
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addContentBlock("video")}
+                                                >
+                                                    <Video className="w-4 h-4 mr-2" />
+                                                    Add Video
+                                                </Button>
                                             </div>
                                         </div>
                                     </ScrollArea>
                                 </div>
-                                <div className="flex justify-end gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setShowCreateDialog(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={handleCreateDocument}
-                                        disabled={!newDocument.title}
-                                    >
-                                        Create & Edit
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Custom Category Dialog */}
-                    <Dialog
-                        open={showCategoryDialog}
-                        onOpenChange={setShowCategoryDialog}
-                    >
-                        <DialogContent className="max-w-sm">
-                            <DialogHeader>
-                                <DialogTitle>Add Custom Category</DialogTitle>
-                                <DialogDescription>
-                                    Create a new document category for your studio
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Category Name</Label>
-                                    <Input
-                                        placeholder="e.g., Equipment Manuals"
-                                        value={newCategory}
-                                        onChange={(e) => setNewCategory(e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setShowCategoryDialog(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        onClick={handleAddCategory}
-                                        disabled={!newCategory}
-                                    >
-                                        Add Category
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
-            {/* Filters and Search */}
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search documents..."
-                                    className="pl-9"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <Select
-                            value={filterCategory}
-                            onValueChange={setFilterCategory}
-                        >
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="All Categories" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
-                                {allCategories.map((cat) => (
-                                    <SelectItem
-                                        key={cat.value}
-                                        value={cat.value}
-                                    >
-                                        {cat.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select
-                            value={filterStatus}
-                            onValueChange={setFilterStatus}
-                        >
-                            <SelectTrigger className="w-[150px]">
-                                <SelectValue placeholder="All Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="published">Published</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
-            {/* Document List */}
-            {!editingDocument ? (
-                <div className="grid gap-4">
-                    {filteredDocuments.map((doc) => (
-                        <Card key={doc.id}>
-                            <CardContent className="pt-6">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                                {getCategoryIcon(doc.category)}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="text-lg">{doc.title}</h3>
-                                                    <Badge
-                                                        variant={
-                                                            doc.status === "published"
-                                                                ? "default"
-                                                                : "secondary"
-                                                        }
-                                                    >
-                                                        {doc.status === "published" ? (
-                                                            <>
-                                                                <CheckCircle className="w-3 h-3 mr-1" />{" "}
-                                                                Published
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Clock className="w-3 h-3 mr-1" />{" "}
-                                                                Draft
-                                                            </>
-                                                        )}
-                                                    </Badge>
-                                                    {doc.googleDocsUrl && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="text-xs"
-                                                        >
-                                                            <Link className="w-3 h-3 mr-1" />
-                                                            Synced{" "}
-                                                            {doc.lastSyncedAt &&
-                                                                `${new Date(
-                                                                    doc.lastSyncedAt
-                                                                ).toLocaleDateString()}`}
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                                                    <span>{getCategoryLabel(doc.category)}</span>
-                                                    <span>•</span>
-                                                    <span>
-                                                        Updated{" "}
-                                                        {new Date(
-                                                            doc.updatedAt
-                                                        ).toLocaleDateString()}
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span>By {doc.author}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2 mt-3 flex-wrap">
-                                            {doc.audience.map((aud) => (
-                                                <Badge
-                                                    key={aud}
-                                                    variant="outline"
-                                                    className="text-xs"
-                                                >
-                                                    <Users className="w-3 h-3 mr-1" />
-                                                    {getAudienceLabel(aud)}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        {doc.googleDocsUrl && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleSyncGoogleDocs(doc.id)}
-                                            >
-                                                <RefreshCw className="w-4 h-4" />
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setEditingDocument(doc)}
-                                        >
-                                            <Edit className="w-4 h-4 mr-2" />
-                                            Edit
-                                        </Button>
-                                        {doc.status === "draft" ? (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handlePublishDocument(doc.id)}
-                                            >
-                                                <Send className="w-4 h-4 mr-2" />
-                                                Publish
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleUnpublishDocument(doc.id)}
-                                            >
-                                                <EyeOff className="w-4 h-4 mr-2" />
-                                                Unpublish
-                                            </Button>
-                                        )}
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
+                                {/* AI Assistant Sidebar */}
+                                <div className="space-y-4">
+                                    {showAIAssistant && (
+                                        <Card>
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <Sparkles className="w-4 h-4" />
+                                                    AI Writing Assistant
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-3">
+                                                <Textarea
+                                                    placeholder="Describe what you want to write... (e.g., 'Write a safety policy about kiln usage')"
+                                                    value={aiPrompt}
+                                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                                    rows={3}
+                                                />
                                                 <Button
-                                                    variant="ghost"
-                                                    size="sm"
+                                                    className="w-full"
+                                                    onClick={handleAIAssist}
                                                 >
-                                                    <MoreVertical className="w-4 h-4" />
+                                                    <Sparkles className="w-4 h-4 mr-2" />
+                                                    Generate
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>
-                                                    <Eye className="w-4 h-4 mr-2" />
-                                                    Preview
-                                                </DropdownMenuItem>
-                                                {doc.googleDocsUrl && (
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            window.open(doc.googleDocsUrl, "_blank")
-                                                        }
-                                                    >
-                                                        <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                                                        Open in Google Docs
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem>
-                                                    <Copy className="w-4 h-4 mr-2" />
-                                                    Duplicate
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    <Download className="w-4 h-4 mr-2" />
-                                                    Export PDF
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-destructive"
-                                                    onClick={() => handleDeleteDocument(doc.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                /* Document Editor */
-                (<Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                                <Input
-                                    value={editingDocument.title}
-                                    onChange={(e) =>
-                                        setEditingDocument({
-                                            ...editingDocument,
-                                            title: e.target.value
-                                        })
-                                    }
-                                    className="text-2xl border-0 px-0 focus-visible:ring-0"
-                                    placeholder="Document Title"
-                                />
-                                <div className="flex items-center gap-3 mt-2">
-                                    <Select
-                                        value={editingDocument.category}
-                                        onValueChange={(value) =>
-                                            setEditingDocument({
-                                                ...editingDocument,
-                                                category: value
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger className="w-[200px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {allCategories.map((cat) => (
-                                                <SelectItem
-                                                    key={cat.value}
-                                                    value={cat.value}
-                                                >
-                                                    {cat.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Badge
-                                        variant={
-                                            editingDocument.status === "published"
-                                                ? "default"
-                                                : "secondary"
-                                        }
-                                    >
-                                        {editingDocument.status}
-                                    </Badge>
-                                    {editingDocument.googleDocsUrl && (
-                                        <Badge variant="outline">
-                                            <Link className="w-3 h-3 mr-1" />
-                                            Google Docs Sync
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                {editingDocument.googleDocsUrl && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleSyncGoogleDocs(editingDocument.id)}
-                                    >
-                                        <RefreshCw className="w-4 h-4 mr-2" />
-                                        Sync Now
-                                    </Button>
-                                )}
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setShowAIAssistant(!showAIAssistant);
-                                    }}
-                                >
-                                    <Sparkles className="w-4 h-4 mr-2" />
-                                    AI Assist
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setEditingDocument(null)}
-                                >
-                                    <X className="w-4 h-4 mr-2" />
-                                    Close
-                                </Button>
-                                <Button onClick={saveDocument}>
-                                    <Save className="w-4 h-4 mr-2" />
-                                    Save
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-3 gap-6">
-                            {/* Main Editor */}
-                            <div className="col-span-2 space-y-4">
-                                {/* Audience Selection */}
-                                <div className="p-4 bg-muted rounded-lg">
-                                    <Label className="mb-3 block">Target Audience</Label>
-                                    <Tabs
-                                        defaultValue="members"
-                                        className="w-full"
-                                    >
-                                        <TabsList className="grid w-full grid-cols-2">
-                                            <TabsTrigger value="members">
-                                                Membership Types
-                                            </TabsTrigger>
-                                            <TabsTrigger value="staff">Staff Roles</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent
-                                            value="members"
-                                            className="space-y-2 mt-3"
-                                        >
-                                            {membershipTypes.map((type) => (
-                                                <div
-                                                    key={type.id}
-                                                    className="flex items-center space-x-2"
-                                                >
-                                                    <Checkbox
-                                                        checked={editingDocument.audience.includes(
-                                                            type.id
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleAudience(type.id)
-                                                        }
-                                                    />
-                                                    <label className="text-sm">{type.label}</label>
-                                                </div>
-                                            ))}
-                                        </TabsContent>
-                                        <TabsContent
-                                            value="staff"
-                                            className="space-y-2 mt-3"
-                                        >
-                                            {staffRoles.map((role) => (
-                                                <div
-                                                    key={role.id}
-                                                    className="flex items-center space-x-2"
-                                                >
-                                                    <Checkbox
-                                                        checked={editingDocument.audience.includes(
-                                                            role.id
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleAudience(role.id)
-                                                        }
-                                                    />
-                                                    <label className="text-sm">{role.label}</label>
-                                                </div>
-                                            ))}
-                                        </TabsContent>
-                                    </Tabs>
-                                </div>
-
-                                {/* Content Blocks */}
-                                <ScrollArea className="h-[600px] pr-4">
-                                    <div className="space-y-3">
-                                        {editingDocument.content.map((block) => (
-                                            <DocumentContentBlock
-                                                key={block.id}
-                                                block={block}
-                                                onUpdate={updateContentBlock}
-                                                onUpdateMetadata={updateBlockMetadata}
-                                                onRemove={removeContentBlock}
-                                            />
-                                        ))}
-
-                                        {/* Add Content Buttons */}
-                                        <div className="flex flex-wrap gap-2 pt-4 border-t mt-4">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => addContentBlock("heading")}
-                                            >
-                                                <Type className="w-4 h-4 mr-2" />
-                                                Add Heading
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => addContentBlock("text")}
-                                            >
-                                                <FileText className="w-4 h-4 mr-2" />
-                                                Add Text
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => addContentBlock("image")}
-                                            >
-                                                <ImageIcon className="w-4 h-4 mr-2" />
-                                                Add Image
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => addContentBlock("video")}
-                                            >
-                                                <Video className="w-4 h-4 mr-2" />
-                                                Add Video
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </ScrollArea>
-                            </div>
-
-                            {/* AI Assistant Sidebar */}
-                            <div className="space-y-4">
-                                {showAIAssistant && (
-                                    <Card>
-                                        <CardHeader className="pb-3">
-                                            <CardTitle className="text-base flex items-center gap-2">
-                                                <Sparkles className="w-4 h-4" />
-                                                AI Writing Assistant
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            <Textarea
-                                                placeholder="Describe what you want to write... (e.g., 'Write a safety policy about kiln usage')"
-                                                value={aiPrompt}
-                                                onChange={(e) => setAiPrompt(e.target.value)}
-                                                rows={3}
-                                            />
-                                            <Button
-                                                className="w-full"
-                                                onClick={handleAIAssist}
-                                            >
-                                                <Sparkles className="w-4 h-4 mr-2" />
-                                                Generate
-                                            </Button>
-                                            {aiSuggestion && (
-                                                <div className="p-3 bg-muted rounded-lg space-y-2">
-                                                    <p className="text-sm whitespace-pre-line">
-                                                        {aiSuggestion}
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="flex-1"
-                                                        >
-                                                            <Copy className="w-3 h-3 mr-1" />
-                                                            Copy
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            className="flex-1"
-                                                        >
-                                                            Insert
-                                                        </Button>
+                                                {aiSuggestion && (
+                                                    <div className="p-3 bg-muted rounded-lg space-y-2">
+                                                        <p className="text-sm whitespace-pre-line">
+                                                            {aiSuggestion}
+                                                        </p>
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="flex-1"
+                                                            >
+                                                                <Copy className="w-3 h-3 mr-1" />
+                                                                Copy
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="flex-1"
+                                                            >
+                                                                Insert
+                                                            </Button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )}
-
-                                {/* Google Docs Info */}
-                                {editingDocument.googleDocsUrl && (
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                    {/* Google Docs Info */}
+                                    {editingDocument.googleDocsUrl && (
+                                        <Card>
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <Link className="w-4 h-4" />
+                                                    Google Docs Sync
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-2 text-sm">
+                                                <p className="text-muted-foreground">
+                                                    This document syncs with Google Docs
+                                                </p>
+                                                {editingDocument.lastSyncedAt && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Last synced:{" "}
+                                                        {new Date(
+                                                            editingDocument.lastSyncedAt
+                                                        ).toLocaleString()}
+                                                    </p>
+                                                )}
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full"
+                                                    onClick={() =>
+                                                        window.open(
+                                                            editingDocument.googleDocsUrl,
+                                                            "_blank"
+                                                        )
+                                                    }
+                                                >
+                                                    <ExternalLinkIcon className="w-3 h-3 mr-2" />
+                                                    Open in Google Docs
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                    {/* Quick Tips */}
                                     <Card>
                                         <CardHeader className="pb-3">
-                                            <CardTitle className="text-base flex items-center gap-2">
-                                                <Link className="w-4 h-4" />
-                                                Google Docs Sync
-                                            </CardTitle>
+                                            <CardTitle className="text-base">Quick Tips</CardTitle>
                                         </CardHeader>
-                                        <CardContent className="space-y-2 text-sm">
-                                            <p className="text-muted-foreground">
-                                                This document syncs with Google Docs
-                                            </p>
-                                            {editingDocument.lastSyncedAt && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    Last synced:{" "}
-                                                    {new Date(
-                                                        editingDocument.lastSyncedAt
-                                                    ).toLocaleString()}
-                                                </p>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full"
-                                                onClick={() =>
-                                                    window.open(
-                                                        editingDocument.googleDocsUrl,
-                                                        "_blank"
-                                                    )
-                                                }
-                                            >
-                                                <ExternalLinkIcon className="w-3 h-3 mr-2" />
-                                                Open in Google Docs
-                                            </Button>
+                                        <CardContent className="space-y-2 text-sm text-muted-foreground">
+                                            <p>• Use headings to organize your content</p>
+                                            <p>• Add images for visual clarity</p>
+                                            <p>• Embed videos for demonstrations</p>
+                                            <p>• Save as draft to preview before publishing</p>
+                                            <p>• Target specific member types and staff roles</p>
                                         </CardContent>
                                     </Card>
-                                )}
-
-                                {/* Quick Tips */}
-                                <Card>
-                                    <CardHeader className="pb-3">
-                                        <CardTitle className="text-base">Quick Tips</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2 text-sm text-muted-foreground">
-                                        <p>• Use headings to organize your content</p>
-                                        <p>• Add images for visual clarity</p>
-                                        <p>• Embed videos for demonstrations</p>
-                                        <p>• Save as draft to preview before publishing</p>
-                                        <p>• Target specific member types and staff roles</p>
-                                    </CardContent>
-                                </Card>
+                                </div>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>)
-            )}
-        </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </DefaultLayout>
     );
 }

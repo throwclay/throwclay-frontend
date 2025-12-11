@@ -41,7 +41,13 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { toast } from "sonner";

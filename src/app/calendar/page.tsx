@@ -33,7 +33,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -44,6 +50,8 @@ import {
     DropdownMenuContent,
     DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 type CalendarItemType =
     | "kiln"
@@ -393,298 +401,310 @@ export default function CalendarPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1>Calendar</h1>
-                    <p className="text-muted-foreground">
-                        {currentUser?.type === "studio"
-                            ? "Manage schedules, events, and studio operations"
-                            : "Track your classes, studio time, and pottery journey"}
-                    </p>
-                </div>
-
-                {/* Quick Create Dropdown */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button className="flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            Quick Create
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        align="end"
-                        className="w-56"
-                    >
-                        {getCreatableTypes().map((type) => {
-                            const config = getTypeConfig(type);
-                            const Icon = config.icon;
-                            return (
-                                <DropdownMenuItem
-                                    key={type}
-                                    onClick={() => openCreateDialog(type)}
-                                    className="cursor-pointer"
-                                >
-                                    <Icon className="mr-3 h-4 w-4" />
-                                    <div>
-                                        <p>{config.label}</p>
-                                    </div>
-                                </DropdownMenuItem>
-                            );
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-
-            <div className="flex gap-6">
-                {/* Main Calendar Area */}
-                <div className="flex-1 space-y-6">
-                    {/* Calendar Controls */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={previousPeriod}
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={goToToday}
-                            >
-                                Today
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={nextPeriod}
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </Button>
-                            <h3 className="ml-4">{getViewTitle()}</h3>
-                        </div>
-
-                        <Tabs
-                            value={view}
-                            onValueChange={(v) => setView(v as CalendarView)}
-                        >
-                            <TabsList>
-                                <TabsTrigger value="month">Month</TabsTrigger>
-                                <TabsTrigger value="week">Week</TabsTrigger>
-                                <TabsTrigger value="day">Day</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+        <DefaultLayout>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1>Calendar</h1>
+                        <p className="text-muted-foreground">
+                            {currentUser?.type === "studio"
+                                ? "Manage schedules, events, and studio operations"
+                                : "Track your classes, studio time, and pottery journey"}
+                        </p>
                     </div>
 
-                    {/* Calendar Views */}
-                    {view === "month" && (
-                        <MonthView
-                            currentDate={currentDate}
-                            items={getFilteredItems()}
-                            getTypeConfig={getTypeConfig}
-                            onDateClick={setSelectedDate}
-                        />
-                    )}
-                    {view === "week" && (
-                        <WeekView
-                            currentDate={currentDate}
-                            items={getFilteredItems()}
-                            getTypeConfig={getTypeConfig}
-                        />
-                    )}
-                    {view === "day" && (
-                        <DayView
-                            currentDate={currentDate}
-                            items={getFilteredItems()}
-                            getTypeConfig={getTypeConfig}
-                        />
-                    )}
-                </div>
-
-                {/* Filters Sidebar */}
-                <Card className="w-64 h-fit sticky top-24">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Filter className="w-4 h-4" />
-                            Filters
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-3">
-                            {(Object.keys(filters) as CalendarItemType[]).map((type) => {
+                    {/* Quick Create Dropdown */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button className="flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                Quick Create
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-56"
+                        >
+                            {getCreatableTypes().map((type) => {
                                 const config = getTypeConfig(type);
                                 const Icon = config.icon;
                                 return (
-                                    <div
+                                    <DropdownMenuItem
                                         key={type}
-                                        className="flex items-center space-x-2"
+                                        onClick={() => openCreateDialog(type)}
+                                        className="cursor-pointer"
                                     >
-                                        <Checkbox
-                                            id={`filter-${type}`}
-                                            checked={filters[type]}
-                                            onCheckedChange={() => toggleFilter(type)}
-                                        />
-                                        <Label
-                                            htmlFor={`filter-${type}`}
-                                            className="flex items-center gap-2 cursor-pointer text-sm flex-1"
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                            {config.label}
-                                        </Label>
-                                    </div>
+                                        <Icon className="mr-3 h-4 w-4" />
+                                        <div>
+                                            <p>{config.label}</p>
+                                        </div>
+                                    </DropdownMenuItem>
                                 );
                             })}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                <div className="flex gap-6">
+                    {/* Main Calendar Area */}
+                    <div className="flex-1 space-y-6">
+                        {/* Calendar Controls */}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={previousPeriod}
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={goToToday}
+                                >
+                                    Today
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={nextPeriod}
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                                <h3 className="ml-4">{getViewTitle()}</h3>
+                            </div>
 
-            {/* Create Item Dialog */}
-            <Dialog
-                open={showCreateDialog}
-                onOpenChange={setShowCreateDialog}
-            >
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>
-                            Create {selectedItemType && getTypeConfig(selectedItemType).label}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Add a new{" "}
-                            {selectedItemType &&
-                                getTypeConfig(selectedItemType).label.toLowerCase()}{" "}
-                            to the calendar.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label htmlFor="item-title">Title *</Label>
-                            <Input
-                                id="item-title"
-                                value={newItem.title}
-                                onChange={(e) =>
-                                    setNewItem((prev) => ({ ...prev, title: e.target.value }))
-                                }
-                                placeholder="Enter title"
+                            <Tabs
+                                value={view}
+                                onValueChange={(v) => setView(v as CalendarView)}
+                            >
+                                <TabsList>
+                                    <TabsTrigger value="month">Month</TabsTrigger>
+                                    <TabsTrigger value="week">Week</TabsTrigger>
+                                    <TabsTrigger value="day">Day</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
+                        {/* Calendar Views */}
+                        {view === "month" && (
+                            <MonthView
+                                currentDate={currentDate}
+                                items={getFilteredItems()}
+                                getTypeConfig={getTypeConfig}
+                                onDateClick={setSelectedDate}
                             />
-                        </div>
-
-                        <div>
-                            <Label htmlFor="item-description">Description</Label>
-                            <Textarea
-                                id="item-description"
-                                value={newItem.description}
-                                onChange={(e) =>
-                                    setNewItem((prev) => ({
-                                        ...prev,
-                                        description: e.target.value
-                                    }))
-                                }
-                                placeholder="Add details..."
-                                rows={3}
+                        )}
+                        {view === "week" && (
+                            <WeekView
+                                currentDate={currentDate}
+                                items={getFilteredItems()}
+                                getTypeConfig={getTypeConfig}
                             />
-                        </div>
+                        )}
+                        {view === "day" && (
+                            <DayView
+                                currentDate={currentDate}
+                                items={getFilteredItems()}
+                                getTypeConfig={getTypeConfig}
+                            />
+                        )}
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                    {/* Filters Sidebar */}
+                    <Card className="w-64 h-fit sticky top-24">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Filter className="w-4 h-4" />
+                                Filters
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {(Object.keys(filters) as CalendarItemType[]).map((type) => {
+                                    const config = getTypeConfig(type);
+                                    const Icon = config.icon;
+                                    return (
+                                        <div
+                                            key={type}
+                                            className="flex items-center space-x-2"
+                                        >
+                                            <Checkbox
+                                                id={`filter-${type}`}
+                                                checked={filters[type]}
+                                                onCheckedChange={() => toggleFilter(type)}
+                                            />
+                                            <Label
+                                                htmlFor={`filter-${type}`}
+                                                className="flex items-center gap-2 cursor-pointer text-sm flex-1"
+                                            >
+                                                <Icon className="w-4 h-4" />
+                                                {config.label}
+                                            </Label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                {/* Create Item Dialog */}
+                <Dialog
+                    open={showCreateDialog}
+                    onOpenChange={setShowCreateDialog}
+                >
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>
+                                Create {selectedItemType && getTypeConfig(selectedItemType).label}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Add a new{" "}
+                                {selectedItemType &&
+                                    getTypeConfig(selectedItemType).label.toLowerCase()}{" "}
+                                to the calendar.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
                             <div>
-                                <Label htmlFor="item-date">Start Date *</Label>
+                                <Label htmlFor="item-title">Title *</Label>
                                 <Input
-                                    id="item-date"
-                                    type="date"
-                                    value={newItem.date}
+                                    id="item-title"
+                                    value={newItem.title}
                                     onChange={(e) =>
-                                        setNewItem((prev) => ({ ...prev, date: e.target.value }))
+                                        setNewItem((prev) => ({ ...prev, title: e.target.value }))
                                     }
+                                    placeholder="Enter title"
                                 />
                             </div>
-                            <div>
-                                <Label htmlFor="item-end-date">End Date (optional)</Label>
-                                <Input
-                                    id="item-end-date"
-                                    type="date"
-                                    value={newItem.endDate}
-                                    onChange={(e) =>
-                                        setNewItem((prev) => ({ ...prev, endDate: e.target.value }))
-                                    }
-                                />
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <Label htmlFor="item-time">Start Time</Label>
-                                <Input
-                                    id="item-time"
-                                    type="time"
-                                    value={newItem.time}
-                                    onChange={(e) =>
-                                        setNewItem((prev) => ({ ...prev, time: e.target.value }))
-                                    }
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="item-end-time">End Time</Label>
-                                <Input
-                                    id="item-end-time"
-                                    type="time"
-                                    value={newItem.endTime}
-                                    onChange={(e) =>
-                                        setNewItem((prev) => ({ ...prev, endTime: e.target.value }))
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {(selectedItemType === "kiln" ||
-                            selectedItemType === "class" ||
-                            selectedItemType === "event" ||
-                            selectedItemType === "cleanup") && (
-                            <div>
-                                <Label htmlFor="item-location">Location</Label>
-                                <Input
-                                    id="item-location"
-                                    value={newItem.location}
+                                <Label htmlFor="item-description">Description</Label>
+                                <Textarea
+                                    id="item-description"
+                                    value={newItem.description}
                                     onChange={(e) =>
                                         setNewItem((prev) => ({
                                             ...prev,
-                                            location: e.target.value
+                                            description: e.target.value
                                         }))
                                     }
-                                    placeholder="Enter location"
+                                    placeholder="Add details..."
+                                    rows={3}
                                 />
                             </div>
-                        )}
 
-                        {selectedItemType === "vacation" && currentUser?.type !== "studio" && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <p className="text-sm text-blue-800">
-                                    <strong>Note:</strong> Vacation requests require studio
-                                    approval. You'll be notified once your request is reviewed.
-                                </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="item-date">Start Date *</Label>
+                                    <Input
+                                        id="item-date"
+                                        type="date"
+                                        value={newItem.date}
+                                        onChange={(e) =>
+                                            setNewItem((prev) => ({
+                                                ...prev,
+                                                date: e.target.value
+                                            }))
+                                        }
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="item-end-date">End Date (optional)</Label>
+                                    <Input
+                                        id="item-end-date"
+                                        type="date"
+                                        value={newItem.endDate}
+                                        onChange={(e) =>
+                                            setNewItem((prev) => ({
+                                                ...prev,
+                                                endDate: e.target.value
+                                            }))
+                                        }
+                                    />
+                                </div>
                             </div>
-                        )}
 
-                        <div className="flex justify-end gap-2 pt-4">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowCreateDialog(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleCreateItem}
-                                disabled={!newItem.title || !newItem.date}
-                            >
-                                Create
-                            </Button>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="item-time">Start Time</Label>
+                                    <Input
+                                        id="item-time"
+                                        type="time"
+                                        value={newItem.time}
+                                        onChange={(e) =>
+                                            setNewItem((prev) => ({
+                                                ...prev,
+                                                time: e.target.value
+                                            }))
+                                        }
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="item-end-time">End Time</Label>
+                                    <Input
+                                        id="item-end-time"
+                                        type="time"
+                                        value={newItem.endTime}
+                                        onChange={(e) =>
+                                            setNewItem((prev) => ({
+                                                ...prev,
+                                                endTime: e.target.value
+                                            }))
+                                        }
+                                    />
+                                </div>
+                            </div>
+
+                            {(selectedItemType === "kiln" ||
+                                selectedItemType === "class" ||
+                                selectedItemType === "event" ||
+                                selectedItemType === "cleanup") && (
+                                <div>
+                                    <Label htmlFor="item-location">Location</Label>
+                                    <Input
+                                        id="item-location"
+                                        value={newItem.location}
+                                        onChange={(e) =>
+                                            setNewItem((prev) => ({
+                                                ...prev,
+                                                location: e.target.value
+                                            }))
+                                        }
+                                        placeholder="Enter location"
+                                    />
+                                </div>
+                            )}
+
+                            {selectedItemType === "vacation" && currentUser?.type !== "studio" && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Note:</strong> Vacation requests require studio
+                                        approval. You'll be notified once your request is reviewed.
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowCreateDialog(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleCreateItem}
+                                    disabled={!newItem.title || !newItem.date}
+                                >
+                                    Create
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </DefaultLayout>
     );
 }
 

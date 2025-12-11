@@ -31,14 +31,28 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { MudlyLogo } from "@/components/MudlyLogo";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 interface Message {
     id: string;
@@ -268,7 +282,7 @@ export default function MudlyAI() {
     };
 
     return (
-        <>
+        <DefaultLayout>
             {/* Floating Mudly Button */}
             {!isOpen && (
                 <div className={`fixed ${getPositionClasses()} z-50`}>
@@ -284,7 +298,6 @@ export default function MudlyAI() {
                             <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
                         )}
                     </Button>
-
                     <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="bg-foreground text-background text-xs px-3 py-1 rounded-lg whitespace-nowrap">
                             Chat with Mudly AI
@@ -292,7 +305,6 @@ export default function MudlyAI() {
                     </div>
                 </div>
             )}
-
             {/* Chat Window */}
             {isOpen && (
                 <div className={`fixed ${getPositionClasses()} z-50`}>
@@ -557,7 +569,6 @@ export default function MudlyAI() {
                     </Card>
                 </div>
             )}
-
             {/* Settings Dialog */}
             <Dialog
                 open={showSettings}
@@ -864,7 +875,6 @@ export default function MudlyAI() {
                     </div>
                 </DialogContent>
             </Dialog>
-
             {/* Feedback Dialog */}
             <Dialog
                 open={showFeedbackDialog}
@@ -953,6 +963,6 @@ export default function MudlyAI() {
                     </div>
                 </DialogContent>
             </Dialog>
-        </>
+        </DefaultLayout>
     );
 }

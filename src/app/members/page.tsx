@@ -1,4 +1,4 @@
-"use client";;
+"use client";
 import { useState, useEffect } from "react";
 import {
     Search,
@@ -27,8 +27,21 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from "@/components/ui/table";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import {
     Dialog,
     DialogContent,
@@ -57,6 +70,8 @@ import type {
 
 import { MemberIntakeFormBuilder } from "@/components/MemberIntakeFormBuilder";
 import { toast } from "sonner";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function MemberManagement() {
     const [activeTab, setActiveTab] = useState("active");
@@ -93,10 +108,12 @@ export default function MemberManagement() {
     // Guard: only studios should see this
     if (!context.currentStudio) {
         return (
-            <div className="max-w-3xl mx-auto p-8 text-center">
-                <h1 className="text-2xl font-semibold mb-2">Member Management</h1>
-                <p className="text-muted-foreground">Select a studio to manage members.</p>
-            </div>
+            <DefaultLayout>
+                <div className="max-w-3xl mx-auto p-8 text-center">
+                    <h1 className="text-2xl font-semibold mb-2">Member Management</h1>
+                    <p className="text-muted-foreground">Select a studio to manage members.</p>
+                </div>
+            </DefaultLayout>
         );
     }
 
@@ -597,845 +614,445 @@ export default function MemberManagement() {
     }, [context.currentStudio?.id, context.authToken]);
 
     return (
-        <div className="max-w-7xl mx-auto p-8 space-y-8">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                    <h1 className="text-3xl font-semibold">Member Management</h1>
-                    <p className="text-muted-foreground text-lg">
-                        Manage studio memberships, applications, and member information
-                    </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <Button variant="outline">
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
-                    </Button>
-                    <Button variant="outline">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Import
-                    </Button>
-
-                    {/* Invite dialog */}
-                    <Dialog
-                        open={inviteDialogOpen}
-                        onOpenChange={setInviteDialogOpen}
-                    >
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Invite Member
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Invite a New Member</DialogTitle>
-                                <DialogDescription>
-                                    Send an invite to join{" "}
-                                    <span className="font-medium">
-                                        @{context.currentStudio?.handle}
-                                    </span>
-                                    . They&apos;ll be added as a member after accepting.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-6">
-                                {/* Email */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="inviteEmail">Email</Label>
-                                    <Input
-                                        id="inviteEmail"
-                                        type="email"
-                                        placeholder="artist@example.com"
-                                        value={inviteEmail}
-                                        onChange={(e) => setInviteEmail(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Role */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="inviteRole">Role</Label>
-                                    <Select
-                                        value={inviteRole}
-                                        onValueChange={(value) =>
-                                            setInviteRole(value as InviteRole)
-                                        }
-                                        disabled
-                                    >
-                                        <SelectTrigger id="inviteRole">
-                                            <SelectValue placeholder="Select role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="member">Member</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Location */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="inviteLocation">
-                                        Location <span className="text-red-500">*</span>
-                                    </Label>
-
-                                    <Select
-                                        value={inviteLocationId}
-                                        onValueChange={(value) => setInviteLocationId(value)}
-                                        disabled={studioLocations.length === 0}
-                                    >
-                                        <SelectTrigger id="inviteLocation">
-                                            <SelectValue
-                                                placeholder={
-                                                    studioLocations.length === 0
-                                                        ? "No locations available"
-                                                        : "Select location"
-                                                }
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {studioLocations.map((loc) => (
-                                                <SelectItem
-                                                    key={loc.id}
-                                                    value={loc.id}
-                                                >
-                                                    {loc.name}
-                                                    {loc.city && loc.state
-                                                        ? ` – ${loc.city}, ${loc.state}`
-                                                        : ""}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">
-                                        Location is required. The member will be associated with +
-                                        this studio location when they accept.
-                                    </p>
-                                </div>
-
-                                {/* Membership type */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="inviteMembershipType">Membership Type</Label>
-                                    <Select
-                                        value={inviteMembershipType}
-                                        onValueChange={(value) =>
-                                            setInviteMembershipType(
-                                                value as typeof inviteMembershipType
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger id="inviteMembershipType">
-                                            <SelectValue placeholder="Select membership type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="basic">Basic</SelectItem>
-                                            <SelectItem value="premium">Premium</SelectItem>
-                                            <SelectItem value="unlimited">Unlimited</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex justify-end space-x-3">
-                                    <Button
-                                        variant="outline"
-                                        type="button"
-                                        onClick={() => {
-                                            setInviteEmail("");
-                                            setInviteRole("member");
-                                            setInviteLocationId("");
-                                            setInviteMembershipType("basic");
-                                        }}
-                                    >
-                                        Clear
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={handleSendInvite}
-                                        disabled={isInviting || !inviteEmail || !inviteLocationId}
-                                    >
-                                        {isInviting ? "Sending..." : "Send Invite"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
-
-            <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="space-y-8"
-            >
+        <DefaultLayout>
+            <div className="max-w-7xl mx-auto p-8 space-y-8">
+                {/* Header */}
                 <div className="flex items-center justify-between">
-                    <TabsList>
-                        <TabsTrigger value="active">Active Members</TabsTrigger>
-                        <TabsTrigger value="pending">
-                            Pending Applications
-                            {applications.length > 0 && (
-                                <Badge
-                                    variant="destructive"
-                                    className="ml-2"
-                                >
-                                    {applications.length}
-                                </Badge>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="invites">
-                            Pending Invites
-                            {invites.length > 0 && (
-                                <Badge
-                                    variant="destructive"
-                                    className="ml-2"
-                                >
-                                    {invites.length}
-                                </Badge>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="suspended">Suspended</TabsTrigger>
-                        <TabsTrigger value="expired">Expired</TabsTrigger>
-                        <TabsTrigger value="intake-form">
-                            <FormInput className="w-4 h-4 mr-2" />
-                            Intake Form
-                        </TabsTrigger>
-                    </TabsList>
-
-                    {/* Search and Filters */}
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-semibold">Member Management</h1>
+                        <p className="text-muted-foreground text-lg">
+                            Manage studio memberships, applications, and member information
+                        </p>
+                    </div>
                     <div className="flex items-center space-x-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                            <Input
-                                placeholder="Search members..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 w-64"
-                            />
-                        </div>
-                        <Select
-                            value={selectedLocation}
-                            onValueChange={setSelectedLocation}
-                        >
-                            <SelectTrigger className="w-48">
-                                <SelectValue placeholder="All Locations" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Locations</SelectItem>
-                                {studioLocations?.map((location) => (
-                                    <SelectItem
-                                        key={location.id}
-                                        value={location.id}
-                                    >
-                                        {location.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                {/* Active Members */}
-                <TabsContent
-                    value="active"
-                    className="space-y-8"
-                >
-                    {/* Bulk Actions */}
-                    {selectedMembers.length > 0 && (
-                        <div className="flex items-center justify-between p-4 border rounded-lg bg-accent/20">
-                            <span className="text-sm text-muted-foreground">
-                                {selectedMembers.length} member
-                                {selectedMembers.length !== 1 ? "s" : ""} selected
-                            </span>
-                            <div className="flex items-center space-x-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    <Mail className="w-4 h-4 mr-2" />
-                                    Send Message
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Bulk Edit
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Change Status
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold">Active Members</h2>
-                            {/* <p className="text-sm text-muted-foreground">
-                These invites haven&apos;t been accepted yet.
-              </p> */}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={fetchMembers}
-                            disabled={isLoadingMembers}
-                        >
-                            Refresh
+                        <Button variant="outline">
+                            <Download className="w-4 h-4 mr-2" />
+                            Export
                         </Button>
-                    </div>
+                        <Button variant="outline">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Import
+                        </Button>
 
-                    {/* Members Table */}
-                    <div className="border rounded-lg">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-12">
-                                        <Checkbox
-                                            checked={
-                                                selectedMembers.length === filteredMembers.length &&
-                                                filteredMembers.length > 0
-                                            }
-                                            onCheckedChange={handleSelectAll}
+                        {/* Invite dialog */}
+                        <Dialog
+                            open={inviteDialogOpen}
+                            onOpenChange={setInviteDialogOpen}
+                        >
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Invite Member
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Invite a New Member</DialogTitle>
+                                    <DialogDescription>
+                                        Send an invite to join{" "}
+                                        <span className="font-medium">
+                                            @{context.currentStudio?.handle}
+                                        </span>
+                                        . They&apos;ll be added as a member after accepting.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                    {/* Email */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="inviteEmail">Email</Label>
+                                        <Input
+                                            id="inviteEmail"
+                                            type="email"
+                                            placeholder="artist@example.com"
+                                            value={inviteEmail}
+                                            onChange={(e) => setInviteEmail(e.target.value)}
                                         />
-                                    </TableHead>
-                                    <TableHead>Member</TableHead>
-                                    <TableHead>Contact</TableHead>
-                                    <TableHead>Location</TableHead>
-                                    <TableHead>Membership</TableHead>
-                                    <TableHead>Shelf</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Member Since</TableHead>
-                                    <TableHead>Last Active</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoadingMembers ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={9}
-                                            className="py-8 text-center text-sm text-muted-foreground"
+                                    </div>
+
+                                    {/* Role */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="inviteRole">Role</Label>
+                                        <Select
+                                            value={inviteRole}
+                                            onValueChange={(value) =>
+                                                setInviteRole(value as InviteRole)
+                                            }
+                                            disabled
                                         >
-                                            Loading members…
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredMembers.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={9}
-                                            className="py-8 text-center text-sm text-muted-foreground"
+                                            <SelectTrigger id="inviteRole">
+                                                <SelectValue placeholder="Select role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="member">Member</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Location */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="inviteLocation">
+                                            Location <span className="text-red-500">*</span>
+                                        </Label>
+
+                                        <Select
+                                            value={inviteLocationId}
+                                            onValueChange={(value) => setInviteLocationId(value)}
+                                            disabled={studioLocations.length === 0}
                                         >
-                                            No members found for this studio.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredMembers.map((member) => (
-                                        <TableRow key={member.membership.id}>
-                                            <TableCell>
-                                                <Checkbox
-                                                    checked={selectedMembers.includes(member.id)}
-                                                    onCheckedChange={(checked) =>
-                                                        handleMemberSelect(
-                                                            member.membership.id,
-                                                            checked as boolean
-                                                        )
+                                            <SelectTrigger id="inviteLocation">
+                                                <SelectValue
+                                                    placeholder={
+                                                        studioLocations.length === 0
+                                                            ? "No locations available"
+                                                            : "Select location"
                                                     }
                                                 />
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-3">
-                                                    <Users2 className="w-8 h-8 text-muted-foreground" />
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium">
-                                                            {member.name}
-                                                        </div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            @{member.handle}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center text-sm">
-                                                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                        {member.email}
-                                                    </div>
-                                                    {member.phone && (
-                                                        <div className="flex items-center text-sm text-muted-foreground">
-                                                            <Phone className="w-4 h-4 mr-2" />
-                                                            {member.phone}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center">
-                                                    <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                    {getLocationName(member.membership.locationId)}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <div className="font-medium capitalize">
-                                                        {member.membership.membershipType}
-                                                    </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        ${member.membership.monthlyRate}/month
-                                                    </div>
-                                                    {member.membership.passionProjectsUpgrade && (
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-xs"
-                                                        >
-                                                            +Passion Projects
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">
-                                                    {member.membership.shelfNumber || "Unassigned"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {getMembershipStatusBadge(
-                                                    member.membership.status ?? "inactive"
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {member.membership.startDate
-                                                        ? new Date(
-                                                              member.membership.startDate
-                                                          ).toLocaleDateString()
-                                                        : "Never"}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm text-muted-foreground">
-                                                    {member.membership.lastActivity
-                                                        ? new Date(
-                                                              member.membership.lastActivity
-                                                          ).toLocaleDateString()
-                                                        : "Never"}
-                                                </div>
-                                            </TableCell>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {studioLocations.map((loc) => (
+                                                    <SelectItem
+                                                        key={loc.id}
+                                                        value={loc.id}
+                                                    >
+                                                        {loc.name}
+                                                        {loc.city && loc.state
+                                                            ? ` – ${loc.city}, ${loc.state}`
+                                                            : ""}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Location is required. The member will be associated with
+                                            + this studio location when they accept.
+                                        </p>
+                                    </div>
 
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <MoreHorizontal className="w-4 h-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem>
-                                                            <Eye className="w-4 h-4 mr-2" />
-                                                            View Details
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <Edit className="w-4 h-4 mr-2" />
-                                                            Edit Member
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <MessageCircle className="w-4 h-4 mr-2" />
-                                                            Send Message
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <FileText className="w-4 h-4 mr-2" />
-                                                            View Invoices
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem>
-                                                            <DollarSign className="w-4 h-4 mr-2" />
-                                                            Payment History
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive">
-                                                            <Trash2 className="w-4 h-4 mr-2" />
-                                                            Remove Member
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    {/* Membership type */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="inviteMembershipType">
+                                            Membership Type
+                                        </Label>
+                                        <Select
+                                            value={inviteMembershipType}
+                                            onValueChange={(value) =>
+                                                setInviteMembershipType(
+                                                    value as typeof inviteMembershipType
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger id="inviteMembershipType">
+                                                <SelectValue placeholder="Select membership type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="basic">Basic</SelectItem>
+                                                <SelectItem value="premium">Premium</SelectItem>
+                                                <SelectItem value="unlimited">Unlimited</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="flex justify-end space-x-3">
+                                        <Button
+                                            variant="outline"
+                                            type="button"
+                                            onClick={() => {
+                                                setInviteEmail("");
+                                                setInviteRole("member");
+                                                setInviteLocationId("");
+                                                setInviteMembershipType("basic");
+                                            }}
+                                        >
+                                            Clear
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={handleSendInvite}
+                                            disabled={
+                                                isInviting || !inviteEmail || !inviteLocationId
+                                            }
+                                        >
+                                            {isInviting ? "Sending..." : "Send Invite"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </div>
+
+                <Tabs
+                    value={activeTab}
+                    onValueChange={setActiveTab}
+                    className="space-y-8"
+                >
+                    <div className="flex items-center justify-between">
+                        <TabsList>
+                            <TabsTrigger value="active">Active Members</TabsTrigger>
+                            <TabsTrigger value="pending">
+                                Pending Applications
+                                {applications.length > 0 && (
+                                    <Badge
+                                        variant="destructive"
+                                        className="ml-2"
+                                    >
+                                        {applications.length}
+                                    </Badge>
                                 )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TabsContent>
+                            </TabsTrigger>
+                            <TabsTrigger value="invites">
+                                Pending Invites
+                                {invites.length > 0 && (
+                                    <Badge
+                                        variant="destructive"
+                                        className="ml-2"
+                                    >
+                                        {invites.length}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger value="suspended">Suspended</TabsTrigger>
+                            <TabsTrigger value="expired">Expired</TabsTrigger>
+                            <TabsTrigger value="intake-form">
+                                <FormInput className="w-4 h-4 mr-2" />
+                                Intake Form
+                            </TabsTrigger>
+                        </TabsList>
 
-                {/* Pending Applications */}
-                <TabsContent
-                    value="pending"
-                    className="space-y-6"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold">Pending Applications</h2>
-                            <p className="text-sm text-muted-foreground">
-                                Review and approve new member applications for this studio.
-                            </p>
+                        {/* Search and Filters */}
+                        <div className="flex items-center space-x-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                                <Input
+                                    placeholder="Search members..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 w-64"
+                                />
+                            </div>
+                            <Select
+                                value={selectedLocation}
+                                onValueChange={setSelectedLocation}
+                            >
+                                <SelectTrigger className="w-48">
+                                    <SelectValue placeholder="All Locations" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Locations</SelectItem>
+                                    {studioLocations?.map((location) => (
+                                        <SelectItem
+                                            key={location.id}
+                                            value={location.id}
+                                        >
+                                            {location.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={fetchApplications}
-                            disabled={isLoadingApplications}
-                        >
-                            Refresh
-                        </Button>
-                    </div>
-
-                    {isLoadingApplications ? (
-                        <div className="border rounded-lg p-6 text-center text-muted-foreground">
-                            Loading applications…
-                        </div>
-                    ) : applicationsError ? (
-                        <div className="border rounded-lg p-6 text-center text-sm text-red-500">
-                            {applicationsError}
-                        </div>
-                    ) : applications.length === 0 ? (
-                        <div className="border rounded-lg p-10 text-center space-y-2">
-                            <p className="font-medium">No pending applications</p>
-                            <p className="text-sm text-muted-foreground">
-                                When artists apply to join your studio, their applications will
-                                appear here.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {applications.map((application) => (
-                                <Card
-                                    key={application.id}
-                                    className="border rounded-lg"
-                                >
-                                    <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                        <div className="space-y-1">
-                                            <h3 className="text-lg font-semibold">
-                                                {application.applicantName}
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                @{application.applicantHandle}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Applied{" "}
-                                                {new Date(
-                                                    application.submittedAt
-                                                ).toLocaleDateString()}{" "}
-                                                • {application.membershipType || "membership"}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleApplicationDecision(
-                                                        application.id,
-                                                        "reject"
-                                                    )
-                                                }
-                                            >
-                                                <X className="w-4 h-4 mr-2" />
-                                                Reject
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleApplicationDecision(
-                                                        application.id,
-                                                        "approve"
-                                                    )
-                                                }
-                                            >
-                                                <CheckCircle className="w-4 h-4 mr-2" />
-                                                Approve
-                                            </Button>
-                                        </div>
-                                    </CardHeader>
-
-                                    <CardContent className="space-y-6">
-                                        {/* Core details grid */}
-                                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                                            {/* Contact Info */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                    Contact Information
-                                                </Label>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex items-center">
-                                                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                        {application.applicantEmail}
-                                                    </div>
-                                                    {application.applicantPhone && (
-                                                        <div className="flex items-center">
-                                                            <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                            {application.applicantPhone}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Preferred Location */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                    Preferred Location
-                                                </Label>
-                                                <div className="flex items-center text-sm">
-                                                    <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                    {getLocationName(
-                                                        application.locationId || undefined
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Experience Level */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                    Experience Level
-                                                </Label>
-                                                <p className="text-sm">
-                                                    {typeof application.experience === "string"
-                                                        ? application.experience
-                                                        : !application.experience
-                                                          ? "Not specified"
-                                                          : application.experience}
-                                                </p>
-                                            </div>
-
-                                            {/* Emergency Contact */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                    Emergency Contact
-                                                </Label>
-                                                <div className="space-y-1 text-sm">
-                                                    <div>
-                                                        {application.emergencyContact?.name ||
-                                                            "Not provided"}
-                                                    </div>
-                                                    {application.emergencyContact?.phone && (
-                                                        <div className="text-muted-foreground">
-                                                            {application.emergencyContact.phone}
-                                                            {application.emergencyContact
-                                                                .relationship
-                                                                ? ` (${application.emergencyContact.relationship})`
-                                                                : ""}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Additional details */}
-                                        <div className="border-t pt-4 space-y-4">
-                                            {application.interests &&
-                                                application.interests.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                            Interests
-                                                        </Label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {application.interests.map(
-                                                                (interest, index) => (
-                                                                    <Badge
-                                                                        key={index}
-                                                                        variant="secondary"
-                                                                    >
-                                                                        {interest}
-                                                                    </Badge>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                            {application.goals && (
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                        Goals
-                                                    </Label>
-                                                    <p className="text-sm">{application.goals}</p>
-                                                </div>
-                                            )}
-
-                                            {application.notes && (
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                                        Notes
-                                                    </Label>
-                                                    <p className="text-sm whitespace-pre-line">
-                                                        {application.notes}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* Pending Invites */}
-                <TabsContent
-                    value="invites"
-                    className="space-y-6"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold">Pending Invites</h2>
-                            <p className="text-sm text-muted-foreground">
-                                These invites haven&apos;t been accepted yet.
-                            </p>
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={fetchInvites}
-                            disabled={isLoadingInvites}
-                        >
-                            Refresh
-                        </Button>
                     </div>
 
-                    {isLoadingInvites ? (
-                        <div className="border rounded-lg p-6 text-center text-muted-foreground">
-                            Loading invites…
+                    {/* Active Members */}
+                    <TabsContent
+                        value="active"
+                        className="space-y-8"
+                    >
+                        {/* Bulk Actions */}
+                        {selectedMembers.length > 0 && (
+                            <div className="flex items-center justify-between p-4 border rounded-lg bg-accent/20">
+                                <span className="text-sm text-muted-foreground">
+                                    {selectedMembers.length} member
+                                    {selectedMembers.length !== 1 ? "s" : ""} selected
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <Mail className="w-4 h-4 mr-2" />
+                                        Send Message
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Bulk Edit
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                    >
+                                        <Settings className="w-4 h-4 mr-2" />
+                                        Change Status
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold">Active Members</h2>
+                                {/* <p className="text-sm text-muted-foreground">
+                These invites haven&apos;t been accepted yet.
+              </p> */}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchMembers}
+                                disabled={isLoadingMembers}
+                            >
+                                Refresh
+                            </Button>
                         </div>
-                    ) : invitesError ? (
-                        <div className="border rounded-lg p-6 text-center text-red-500 text-sm">
-                            {invitesError}
-                        </div>
-                    ) : invites.length === 0 ? (
-                        <div className="border rounded-lg p-10 text-center space-y-2">
-                            <p className="font-medium">No pending invites</p>
-                            <p className="text-sm text-muted-foreground">
-                                Send an invite from the Member Management header to add new members.
-                            </p>
-                        </div>
-                    ) : (
+
+                        {/* Members Table */}
                         <div className="border rounded-lg">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Invitee</TableHead>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={
+                                                    selectedMembers.length ===
+                                                        filteredMembers.length &&
+                                                    filteredMembers.length > 0
+                                                }
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
+                                        <TableHead>Member</TableHead>
                                         <TableHead>Contact</TableHead>
                                         <TableHead>Location</TableHead>
                                         <TableHead>Membership</TableHead>
-                                        <TableHead>Invited</TableHead>
+                                        <TableHead>Shelf</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead className="w-[80px] text-right">
-                                            Actions
-                                        </TableHead>
+                                        <TableHead>Member Since</TableHead>
+                                        <TableHead>Last Active</TableHead>
+                                        <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredInvites.map((invite) => {
-                                        const membershipType =
-                                            (invite.membership_type as
-                                                | "basic"
-                                                | "premium"
-                                                | "unlimited"
-                                                | null) ?? null;
-
-                                        let membershipLabel = "—";
-                                        let membershipPrice: string | null = null;
-
-                                        if (membershipType === "basic") {
-                                            membershipLabel = "Basic";
-                                            membershipPrice = "$85/month";
-                                        } else if (membershipType === "premium") {
-                                            membershipLabel = "Premium";
-                                            membershipPrice = "$125/month";
-                                        } else if (membershipType === "unlimited") {
-                                            membershipLabel = "Unlimited";
-                                            membershipPrice = "$185/month";
-                                        }
-
-                                        return (
-                                            <TableRow key={invite.id}>
-                                                {/* Invitee */}
+                                    {isLoadingMembers ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={9}
+                                                className="py-8 text-center text-sm text-muted-foreground"
+                                            >
+                                                Loading members…
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : filteredMembers.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={9}
+                                                className="py-8 text-center text-sm text-muted-foreground"
+                                            >
+                                                No members found for this studio.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredMembers.map((member) => (
+                                            <TableRow key={member.membership.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedMembers.includes(
+                                                            member.id
+                                                        )}
+                                                        onCheckedChange={(checked) =>
+                                                            handleMemberSelect(
+                                                                member.membership.id,
+                                                                checked as boolean
+                                                            )
+                                                        }
+                                                    />
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center space-x-3">
                                                         <Users2 className="w-8 h-8 text-muted-foreground" />
                                                         <div className="space-y-1">
                                                             <div className="font-medium">
-                                                                {invite.name}
+                                                                {member.name}
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {invite.email.split("@")[0] ||
-                                                                    "New member"}
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {invite.role}
+                                                            <div className="text-sm text-muted-foreground">
+                                                                @{member.handle}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </TableCell>
-
-                                                {/* Contact */}
                                                 <TableCell>
-                                                    <div className="flex items-center text-sm">
-                                                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                        {invite.email}
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center text-sm">
+                                                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                            {member.email}
+                                                        </div>
+                                                        {member.phone && (
+                                                            <div className="flex items-center text-sm text-muted-foreground">
+                                                                <Phone className="w-4 h-4 mr-2" />
+                                                                {member.phone}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </TableCell>
-
-                                                {/* Location */}
                                                 <TableCell>
-                                                    <div className="flex items-center text-sm">
+                                                    <div className="flex items-center">
                                                         <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                        {getLocationName(invite.location_id)}
+                                                        {getLocationName(
+                                                            member.membership.locationId
+                                                        )}
                                                     </div>
                                                 </TableCell>
-
-                                                {/* Membership */}
                                                 <TableCell>
-                                                    {membershipType ? (
-                                                        <div className="space-y-1">
-                                                            <div className="font-medium capitalize">
-                                                                {membershipLabel}
-                                                            </div>
-                                                            {/* {membershipPrice && (
-                                <div className="text-xs text-muted-foreground">
-                                  {membershipPrice}
-                                </div>
-                              )} */}
+                                                    <div className="space-y-2">
+                                                        <div className="font-medium capitalize">
+                                                            {member.membership.membershipType}
                                                         </div>
-                                                    ) : (
-                                                        <span className="text-sm text-muted-foreground">
-                                                            Not specified
-                                                        </span>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            ${member.membership.monthlyRate}/month
+                                                        </div>
+                                                        {member.membership
+                                                            .passionProjectsUpgrade && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
+                                                                +Passion Projects
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">
+                                                        {member.membership.shelfNumber ||
+                                                            "Unassigned"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {getMembershipStatusBadge(
+                                                        member.membership.status ?? "inactive"
                                                     )}
                                                 </TableCell>
-
-                                                {/* Invited At */}
                                                 <TableCell>
                                                     <div className="text-sm text-muted-foreground">
-                                                        {invite.invited_at
+                                                        {member.membership.startDate
                                                             ? new Date(
-                                                                  invite.invited_at
-                                                              ).toLocaleDateString(undefined, {
-                                                                  month: "short",
-                                                                  day: "numeric",
-                                                                  year: "numeric"
-                                                              })
-                                                            : "—"}
+                                                                  member.membership.startDate
+                                                              ).toLocaleDateString()
+                                                            : "Never"}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {member.membership.lastActivity
+                                                            ? new Date(
+                                                                  member.membership.lastActivity
+                                                              ).toLocaleDateString()
+                                                            : "Never"}
                                                     </div>
                                                 </TableCell>
 
-                                                {/* Status */}
                                                 <TableCell>
-                                                    {getInviteStatusBadge(invite.status)}
-                                                </TableCell>
-
-                                                {/* Actions */}
-                                                <TableCell className="text-right">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button
@@ -1446,69 +1063,487 @@ export default function MemberManagement() {
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    toast.info(
-                                                                        "Resend invite coming soon"
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Mail className="w-4 h-4 mr-2" />
-                                                                Resend Invite
+                                                            <DropdownMenuItem>
+                                                                <Eye className="w-4 h-4 mr-2" />
+                                                                View Details
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                className="text-destructive"
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    handleCancelInvite(invite.id);
-                                                                }}
-                                                            >
+                                                            <DropdownMenuItem>
+                                                                <Edit className="w-4 h-4 mr-2" />
+                                                                Edit Member
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem>
+                                                                <MessageCircle className="w-4 h-4 mr-2" />
+                                                                Send Message
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem>
+                                                                <FileText className="w-4 h-4 mr-2" />
+                                                                View Invoices
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem>
+                                                                <DollarSign className="w-4 h-4 mr-2" />
+                                                                Payment History
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive">
                                                                 <Trash2 className="w-4 h-4 mr-2" />
-                                                                Cancel Invite
+                                                                Remove Member
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
-                                        );
-                                    })}
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </div>
-                    )}
-                </TabsContent>
+                    </TabsContent>
 
-                {/* Other status tabs */}
-                <TabsContent value="suspended">
-                    <div className="text-center py-16 space-y-4">
-                        <Users2 className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
-                        <div className="space-y-2">
-                            <h3 className="text-xl font-semibold">No Suspended Members</h3>
-                            <p className="text-muted-foreground">
-                                All members are currently in good standing.
-                            </p>
+                    {/* Pending Applications */}
+                    <TabsContent
+                        value="pending"
+                        className="space-y-6"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold">Pending Applications</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Review and approve new member applications for this studio.
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchApplications}
+                                disabled={isLoadingApplications}
+                            >
+                                Refresh
+                            </Button>
                         </div>
-                    </div>
-                </TabsContent>
 
-                <TabsContent value="expired">
-                    <div className="text-center py-16 space-y-4">
-                        <Users2 className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
-                        <div className="space-y-2">
-                            <h3 className="text-xl font-semibold">No Expired Memberships</h3>
-                            <p className="text-muted-foreground">
-                                All current memberships are active.
-                            </p>
+                        {isLoadingApplications ? (
+                            <div className="border rounded-lg p-6 text-center text-muted-foreground">
+                                Loading applications…
+                            </div>
+                        ) : applicationsError ? (
+                            <div className="border rounded-lg p-6 text-center text-sm text-red-500">
+                                {applicationsError}
+                            </div>
+                        ) : applications.length === 0 ? (
+                            <div className="border rounded-lg p-10 text-center space-y-2">
+                                <p className="font-medium">No pending applications</p>
+                                <p className="text-sm text-muted-foreground">
+                                    When artists apply to join your studio, their applications will
+                                    appear here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {applications.map((application) => (
+                                    <Card
+                                        key={application.id}
+                                        className="border rounded-lg"
+                                    >
+                                        <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                            <div className="space-y-1">
+                                                <h3 className="text-lg font-semibold">
+                                                    {application.applicantName}
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    @{application.applicantHandle}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Applied{" "}
+                                                    {new Date(
+                                                        application.submittedAt
+                                                    ).toLocaleDateString()}{" "}
+                                                    • {application.membershipType || "membership"}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleApplicationDecision(
+                                                            application.id,
+                                                            "reject"
+                                                        )
+                                                    }
+                                                >
+                                                    <X className="w-4 h-4 mr-2" />
+                                                    Reject
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleApplicationDecision(
+                                                            application.id,
+                                                            "approve"
+                                                        )
+                                                    }
+                                                >
+                                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                                    Approve
+                                                </Button>
+                                            </div>
+                                        </CardHeader>
+
+                                        <CardContent className="space-y-6">
+                                            {/* Core details grid */}
+                                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                                                {/* Contact Info */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                        Contact Information
+                                                    </Label>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex items-center">
+                                                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                            {application.applicantEmail}
+                                                        </div>
+                                                        {application.applicantPhone && (
+                                                            <div className="flex items-center">
+                                                                <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                                {application.applicantPhone}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Preferred Location */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                        Preferred Location
+                                                    </Label>
+                                                    <div className="flex items-center text-sm">
+                                                        <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                        {getLocationName(
+                                                            application.locationId || undefined
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Experience Level */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                        Experience Level
+                                                    </Label>
+                                                    <p className="text-sm">
+                                                        {typeof application.experience === "string"
+                                                            ? application.experience
+                                                            : !application.experience
+                                                              ? "Not specified"
+                                                              : application.experience}
+                                                    </p>
+                                                </div>
+
+                                                {/* Emergency Contact */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                        Emergency Contact
+                                                    </Label>
+                                                    <div className="space-y-1 text-sm">
+                                                        <div>
+                                                            {application.emergencyContact?.name ||
+                                                                "Not provided"}
+                                                        </div>
+                                                        {application.emergencyContact?.phone && (
+                                                            <div className="text-muted-foreground">
+                                                                {application.emergencyContact.phone}
+                                                                {application.emergencyContact
+                                                                    .relationship
+                                                                    ? ` (${application.emergencyContact.relationship})`
+                                                                    : ""}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Additional details */}
+                                            <div className="border-t pt-4 space-y-4">
+                                                {application.interests &&
+                                                    application.interests.length > 0 && (
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                                Interests
+                                                            </Label>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {application.interests.map(
+                                                                    (interest, index) => (
+                                                                        <Badge
+                                                                            key={index}
+                                                                            variant="secondary"
+                                                                        >
+                                                                            {interest}
+                                                                        </Badge>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                {application.goals && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                            Goals
+                                                        </Label>
+                                                        <p className="text-sm">
+                                                            {application.goals}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {application.notes && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                                                            Notes
+                                                        </Label>
+                                                        <p className="text-sm whitespace-pre-line">
+                                                            {application.notes}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    {/* Pending Invites */}
+                    <TabsContent
+                        value="invites"
+                        className="space-y-6"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold">Pending Invites</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    These invites haven&apos;t been accepted yet.
+                                </p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchInvites}
+                                disabled={isLoadingInvites}
+                            >
+                                Refresh
+                            </Button>
                         </div>
-                    </div>
-                </TabsContent>
 
-                {/* Intake Form Tab */}
-                <TabsContent value="intake-form">
-                    <MemberIntakeFormBuilder />
-                </TabsContent>
-            </Tabs>
-        </div>
+                        {isLoadingInvites ? (
+                            <div className="border rounded-lg p-6 text-center text-muted-foreground">
+                                Loading invites…
+                            </div>
+                        ) : invitesError ? (
+                            <div className="border rounded-lg p-6 text-center text-red-500 text-sm">
+                                {invitesError}
+                            </div>
+                        ) : invites.length === 0 ? (
+                            <div className="border rounded-lg p-10 text-center space-y-2">
+                                <p className="font-medium">No pending invites</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Send an invite from the Member Management header to add new
+                                    members.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="border rounded-lg">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Invitee</TableHead>
+                                            <TableHead>Contact</TableHead>
+                                            <TableHead>Location</TableHead>
+                                            <TableHead>Membership</TableHead>
+                                            <TableHead>Invited</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="w-[80px] text-right">
+                                                Actions
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredInvites.map((invite) => {
+                                            const membershipType =
+                                                (invite.membership_type as
+                                                    | "basic"
+                                                    | "premium"
+                                                    | "unlimited"
+                                                    | null) ?? null;
+
+                                            let membershipLabel = "—";
+                                            let membershipPrice: string | null = null;
+
+                                            if (membershipType === "basic") {
+                                                membershipLabel = "Basic";
+                                                membershipPrice = "$85/month";
+                                            } else if (membershipType === "premium") {
+                                                membershipLabel = "Premium";
+                                                membershipPrice = "$125/month";
+                                            } else if (membershipType === "unlimited") {
+                                                membershipLabel = "Unlimited";
+                                                membershipPrice = "$185/month";
+                                            }
+
+                                            return (
+                                                <TableRow key={invite.id}>
+                                                    {/* Invitee */}
+                                                    <TableCell>
+                                                        <div className="flex items-center space-x-3">
+                                                            <Users2 className="w-8 h-8 text-muted-foreground" />
+                                                            <div className="space-y-1">
+                                                                <div className="font-medium">
+                                                                    {invite.name}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {invite.email.split("@")[0] ||
+                                                                        "New member"}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {invite.role}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Contact */}
+                                                    <TableCell>
+                                                        <div className="flex items-center text-sm">
+                                                            <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                            {invite.email}
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Location */}
+                                                    <TableCell>
+                                                        <div className="flex items-center text-sm">
+                                                            <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                                                            {getLocationName(invite.location_id)}
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Membership */}
+                                                    <TableCell>
+                                                        {membershipType ? (
+                                                            <div className="space-y-1">
+                                                                <div className="font-medium capitalize">
+                                                                    {membershipLabel}
+                                                                </div>
+                                                                {/* {membershipPrice && (
+                                <div className="text-xs text-muted-foreground">
+                                  {membershipPrice}
+                                </div>
+                              )} */}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm text-muted-foreground">
+                                                                Not specified
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+
+                                                    {/* Invited At */}
+                                                    <TableCell>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {invite.invited_at
+                                                                ? new Date(
+                                                                      invite.invited_at
+                                                                  ).toLocaleDateString(undefined, {
+                                                                      month: "short",
+                                                                      day: "numeric",
+                                                                      year: "numeric"
+                                                                  })
+                                                                : "—"}
+                                                        </div>
+                                                    </TableCell>
+
+                                                    {/* Status */}
+                                                    <TableCell>
+                                                        {getInviteStatusBadge(invite.status)}
+                                                    </TableCell>
+
+                                                    {/* Actions */}
+                                                    <TableCell className="text-right">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                >
+                                                                    <MoreHorizontal className="w-4 h-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem
+                                                                    onSelect={(e) => {
+                                                                        e.preventDefault();
+                                                                        toast.info(
+                                                                            "Resend invite coming soon"
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Mail className="w-4 h-4 mr-2" />
+                                                                    Resend Invite
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    className="text-destructive"
+                                                                    onSelect={(e) => {
+                                                                        e.preventDefault();
+                                                                        handleCancelInvite(
+                                                                            invite.id
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                                    Cancel Invite
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    {/* Other status tabs */}
+                    <TabsContent value="suspended">
+                        <div className="text-center py-16 space-y-4">
+                            <Users2 className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-semibold">No Suspended Members</h3>
+                                <p className="text-muted-foreground">
+                                    All members are currently in good standing.
+                                </p>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="expired">
+                        <div className="text-center py-16 space-y-4">
+                            <Users2 className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-semibold">No Expired Memberships</h3>
+                                <p className="text-muted-foreground">
+                                    All current memberships are active.
+                                </p>
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* Intake Form Tab */}
+                    <TabsContent value="intake-form">
+                        <MemberIntakeFormBuilder />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </DefaultLayout>
     );
 }

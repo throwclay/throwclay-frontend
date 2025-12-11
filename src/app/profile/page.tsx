@@ -39,6 +39,8 @@ import { StudentBadge, ArtistProfile as ArtistProfileType } from "@/types";
 import { toast } from "sonner";
 import { useAppContext } from "@/app/context/AppContext";
 
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
+
 export function ArtistProfile() {
     const context = useAppContext();
     const [isEditing, setIsEditing] = useState(false);

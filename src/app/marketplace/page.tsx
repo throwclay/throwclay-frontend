@@ -17,9 +17,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { useAppContext, type PotteryEntry } from "@/app/context/AppContext";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function CommerceMarketplace() {
     const { currentUser, currentStudio } = useAppContext();
@@ -201,248 +209,249 @@ export default function CommerceMarketplace() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1>Pottery Marketplace</h1>
-                    <p className="text-muted-foreground">
-                        Discover unique handmade pottery from{" "}
-                        {currentStudio?.name || "talented artists"}
-                    </p>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <Badge
-                        variant="secondary"
-                        className="flex items-center space-x-1"
-                    >
-                        <ShoppingBag className="w-3 h-3" />
-                        <span>{sortedItems.length} items</span>
-                    </Badge>
-                    {currentStudio && (
-                        <Badge className="bg-blue-100 text-blue-800">
-                            Studio Commission: {mockCommissionRate}%
-                        </Badge>
-                    )}
-                </div>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                        placeholder="Search pottery, artists, or descriptions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                    />
-                </div>
-
-                <div className="flex gap-4">
-                    <Select
-                        value={sortBy}
-                        onValueChange={setSortBy}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="newest">Newest First</SelectItem>
-                            <SelectItem value="oldest">Oldest First</SelectItem>
-                            <SelectItem value="price-low">Price: Low to High</SelectItem>
-                            <SelectItem value="price-high">Price: High to Low</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={priceFilter}
-                        onValueChange={setPriceFilter}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Prices</SelectItem>
-                            <SelectItem value="under50">Under $50</SelectItem>
-                            <SelectItem value="50to100">$50 - $100</SelectItem>
-                            <SelectItem value="over100">Over $100</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            {/* Marketplace Grid */}
-            {sortedItems.length === 0 ? (
-                <Card className="text-center py-12">
-                    <CardContent>
-                        <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <h3>No items found</h3>
+        <DefaultLayout>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1>Pottery Marketplace</h1>
                         <p className="text-muted-foreground">
-                            {marketplaceItems.length === 0
-                                ? "No pottery is currently available for sale."
-                                : "Try adjusting your search or filters."}
+                            Discover unique handmade pottery from{" "}
+                            {currentStudio?.name || "talented artists"}
                         </p>
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sortedItems.map((item) => (
-                        <Card
-                            key={item.id}
-                            className="overflow-hidden hover:shadow-lg transition-shadow"
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <Badge
+                            variant="secondary"
+                            className="flex items-center space-x-1"
                         >
-                            {/* Image */}
-                            <div className="aspect-square relative">
-                                <ImageWithFallback
-                                    src={item.photos?.[0]?.url}
-                                    alt={item.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute top-3 right-3">
-                                    <Badge className="bg-green-100 text-green-800">
-                                        ${item.price}
-                                    </Badge>
-                                </div>
-                            </div>
+                            <ShoppingBag className="w-3 h-3" />
+                            <span>{sortedItems.length} items</span>
+                        </Badge>
+                        {currentStudio && (
+                            <Badge className="bg-blue-100 text-blue-800">
+                                Studio Commission: {mockCommissionRate}%
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+                {/* Search and Filters */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <Input
+                            placeholder="Search pottery, artists, or descriptions..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
 
-                            <CardContent className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                    <h3 className="font-medium line-clamp-1">{item.title}</h3>
-                                    <div className="flex items-center space-x-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="p-1"
-                                        >
-                                            <Heart className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="p-1"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </Button>
+                    <div className="flex gap-4">
+                        <Select
+                            value={sortBy}
+                            onValueChange={setSortBy}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="newest">Newest First</SelectItem>
+                                <SelectItem value="oldest">Oldest First</SelectItem>
+                                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                                <SelectItem value="price-high">Price: High to Low</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            value={priceFilter}
+                            onValueChange={setPriceFilter}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Prices</SelectItem>
+                                <SelectItem value="under50">Under $50</SelectItem>
+                                <SelectItem value="50to100">$50 - $100</SelectItem>
+                                <SelectItem value="over100">Over $100</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {/* Marketplace Grid */}
+                {sortedItems.length === 0 ? (
+                    <Card className="text-center py-12">
+                        <CardContent>
+                            <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                            <h3>No items found</h3>
+                            <p className="text-muted-foreground">
+                                {marketplaceItems.length === 0
+                                    ? "No pottery is currently available for sale."
+                                    : "Try adjusting your search or filters."}
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {sortedItems.map((item) => (
+                            <Card
+                                key={item.id}
+                                className="overflow-hidden hover:shadow-lg transition-shadow"
+                            >
+                                {/* Image */}
+                                <div className="aspect-square relative">
+                                    <ImageWithFallback
+                                        src={item.photos?.[0]?.url}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute top-3 right-3">
+                                        <Badge className="bg-green-100 text-green-800">
+                                            ${item.price}
+                                        </Badge>
                                     </div>
                                 </div>
 
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                    {item.description}
-                                </p>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <h3 className="font-medium line-clamp-1">{item.title}</h3>
+                                        <div className="flex items-center space-x-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="p-1"
+                                            >
+                                                <Heart className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="p-1"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
 
-                                {/* Artist Info */}
-                                <div className="flex items-center space-x-2 mb-3">
-                                    <Avatar className="w-6 h-6">
-                                        <AvatarImage src={item.artistAvatar} />
-                                        <AvatarFallback className="text-xs">
-                                            {item.artistName
-                                                .split(" ")
-                                                .map((n) => n[0])
-                                                .join("")}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm text-muted-foreground">
-                                        by {item.artistName}
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                        {item.description}
+                                    </p>
+
+                                    {/* Artist Info */}
+                                    <div className="flex items-center space-x-2 mb-3">
+                                        <Avatar className="w-6 h-6">
+                                            <AvatarImage src={item.artistAvatar} />
+                                            <AvatarFallback className="text-xs">
+                                                {item.artistName
+                                                    .split(" ")
+                                                    .map((n) => n[0])
+                                                    .join("")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm text-muted-foreground">
+                                            by {item.artistName}
+                                        </span>
+                                    </div>
+
+                                    {/* Details */}
+                                    <div className="space-y-1 mb-4 text-xs text-muted-foreground">
+                                        <div>Type: {item.potteryType}</div>
+                                        <div>Clay: {item.clayType}</div>
+                                        {item.dimensions && <div>Size: {item.dimensions}</div>}
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                            {item.glazes?.slice(0, 2).map((glaze) => (
+                                                <Badge
+                                                    key={glaze}
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    {glaze}
+                                                </Badge>
+                                            ))}
+                                            {item.glazes && item.glazes.length > 2 && (
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    +{item.glazes.length - 2} more
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Commission Info for Studio Admin */}
+                                    {currentUser?.type === "studio" && currentStudio && (
+                                        <div className="text-xs bg-muted p-2 rounded mb-3">
+                                            <div className="flex justify-between">
+                                                <span>Artist receives:</span>
+                                                <span>
+                                                    $
+                                                    {getCommissionInfo(
+                                                        item.price || 0
+                                                    )?.artistReceives.toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Studio commission:</span>
+                                                <span>
+                                                    $
+                                                    {getCommissionInfo(
+                                                        item.price || 0
+                                                    )?.commission.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Purchase Button */}
+                                    <Button
+                                        onClick={() => handlePurchase(item)}
+                                        className="w-full flex items-center space-x-2"
+                                    >
+                                        <ShoppingBag className="w-4 h-4" />
+                                        <span>Purchase ${item.price}</span>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+                {/* Studio Info Footer */}
+                {currentStudio && (
+                    <Card className="mt-12">
+                        <CardHeader>
+                            <CardTitle className="flex items-center space-x-2">
+                                <Building2 className="w-5 h-5" />
+                                <span>About {currentStudio.name}</span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground mb-4">
+                                All pottery featured in this marketplace is created by talented
+                                artists at {currentStudio.name}. Each piece is handmade with care
+                                and attention to detail.
+                            </p>
+                            <div className="flex flex-wrap gap-4 text-sm">
+                                <div className="flex items-center space-x-2">
+                                    <User className="w-4 h-4" />
+                                    <span>{currentStudio.memberCount || 0} Artists</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Palette className="w-4 h-4" />
+                                    <span>
+                                        {currentStudio.glazes?.length || 0} Available Glazes
                                     </span>
                                 </div>
-
-                                {/* Details */}
-                                <div className="space-y-1 mb-4 text-xs text-muted-foreground">
-                                    <div>Type: {item.potteryType}</div>
-                                    <div>Clay: {item.clayType}</div>
-                                    {item.dimensions && <div>Size: {item.dimensions}</div>}
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {item.glazes?.slice(0, 2).map((glaze) => (
-                                            <Badge
-                                                key={glaze}
-                                                variant="outline"
-                                                className="text-xs"
-                                            >
-                                                {glaze}
-                                            </Badge>
-                                        ))}
-                                        {item.glazes && item.glazes.length > 2 && (
-                                            <Badge
-                                                variant="outline"
-                                                className="text-xs"
-                                            >
-                                                +{item.glazes.length - 2} more
-                                            </Badge>
-                                        )}
-                                    </div>
+                                <div className="flex items-center space-x-2">
+                                    <DollarSign className="w-4 h-4" />
+                                    <span>{mockCommissionRate}% Studio Commission</span>
                                 </div>
-
-                                {/* Commission Info for Studio Admin */}
-                                {currentUser?.type === "studio" && currentStudio && (
-                                    <div className="text-xs bg-muted p-2 rounded mb-3">
-                                        <div className="flex justify-between">
-                                            <span>Artist receives:</span>
-                                            <span>
-                                                $
-                                                {getCommissionInfo(
-                                                    item.price || 0
-                                                )?.artistReceives.toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Studio commission:</span>
-                                            <span>
-                                                $
-                                                {getCommissionInfo(
-                                                    item.price || 0
-                                                )?.commission.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Purchase Button */}
-                                <Button
-                                    onClick={() => handlePurchase(item)}
-                                    className="w-full flex items-center space-x-2"
-                                >
-                                    <ShoppingBag className="w-4 h-4" />
-                                    <span>Purchase ${item.price}</span>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
-            {/* Studio Info Footer */}
-            {currentStudio && (
-                <Card className="mt-12">
-                    <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                            <Building2 className="w-5 h-5" />
-                            <span>About {currentStudio.name}</span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground mb-4">
-                            All pottery featured in this marketplace is created by talented artists
-                            at {currentStudio.name}. Each piece is handmade with care and attention
-                            to detail.
-                        </p>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                            <div className="flex items-center space-x-2">
-                                <User className="w-4 h-4" />
-                                <span>{currentStudio.memberCount || 0} Artists</span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Palette className="w-4 h-4" />
-                                <span>{currentStudio.glazes?.length || 0} Available Glazes</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <DollarSign className="w-4 h-4" />
-                                <span>{mockCommissionRate}% Studio Commission</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </DefaultLayout>
     );
 }

@@ -1,37 +1,36 @@
 "use client";
 
-import { useState } from "react";
 import {
-    User,
-    Building2,
-    ShoppingBag,
     BarChart3,
-    GraduationCap,
-    Calendar,
-    MessageCircle,
-    Settings as SettingsIcon,
-    MapPin,
-    Globe,
-    Users,
-    UserCog,
-    Menu,
-    X,
-    ChevronDown,
-    Brush,
-    Grid3X3,
-    MoreHorizontal,
-    Check,
-    Flame,
-    Bell,
-    FileText,
     Beaker,
+    Bell,
     BookOpen,
-    Mail,
+    Brush,
+    Building2,
+    Calendar,
+    Check,
+    ChevronDown,
+    FileText,
+    Flame,
+    GraduationCap,
+    Grid3X3,
+    MapPin,
+    Menu,
+    MessageCircle,
     Package,
-    Rss
+    Rss,
+    Settings as SettingsIcon,
+    ShoppingBag,
+    User,
+    UserCog,
+    Users,
+    X
 } from "lucide-react";
-import { Button } from "./ui/button";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,18 +38,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "./ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Badge } from "./ui/badge";
-import { Checkbox } from "./ui/checkbox";
 
 import { useAppContext } from "@/app/context/AppContext";
-import { StudioRole, NotificationItem } from "@/types";
-
-interface NavigationProps {
-    currentPage: string;
-    onPageChange: (page: string) => void;
-    onLogout: () => void;
-}
+import { NotificationItem, StudioRole } from "@/types";
+import { usePathname, useRouter } from "next/navigation";
 
 // Custom 3x3 grid component
 const AppGridIcon = ({ className }: { className?: string }) => (
@@ -142,9 +133,12 @@ const AppGridIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export function NavigationPrimary({ currentPage, onPageChange, onLogout }: NavigationProps) {
+export function NavigationPrimary() {
+    const router = useRouter();
+    const pathname = usePathname();
     const { currentUser, setCurrentUser, currentStudio, pendingInvites } = useAppContext();
     const pendingInvitesCount = pendingInvites.filter((i) => i.status === "pending").length;
+
 
     console.log(`Pending invites: ${pendingInvitesCount}`);
 
@@ -153,11 +147,6 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
         currentStudio?.locations?.[0]?.id || ""
     ]);
     const [showStudioMenu, setShowStudioMenu] = useState(false);
-
-    // If somehow rendered without a user, don't blow up
-    if (!currentUser) {
-        return null;
-    }
 
     const getSelectedLocationNames = () => {
         if (!currentStudio?.locations) return "No Locations";
@@ -214,9 +203,9 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
     console.log(`User can enter studio mode: ${canEnterStudioMode(currentUser, currentStudio)}`);
 
     const getMainNavigationItems = (): NavItem[] => {
-        const isArtistMode = currentUser.activeMode === "artist";
+        const isArtistMode = currentUser?.activeMode === "artist";
         const inStudioMode =
-            currentUser.activeMode === "studio" &&
+            currentUser?.activeMode === "studio" &&
             !!currentStudio &&
             canEnterStudioMode(currentUser, currentStudio);
 
@@ -258,7 +247,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
 
     // More dropdown items based on user type
     const getMoreItems = () => {
-        if (currentUser.activeMode === "studio" && currentStudio) {
+        if (currentUser?.activeMode === "studio" && currentStudio) {
             return [
                 {
                     id: "events",
@@ -329,7 +318,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
 
     const getNotifications = (): NotificationItem[] => {
         const inviteNotifications: NotificationItem[] = pendingInvites
-            .filter((i) => i.status === "pending" && i.email === currentUser.email)
+            .filter((i) => i.status === "pending" && i.email === currentUser?.email)
             .map((invite) => ({
                 id: `invite-${invite.id}`,
                 type: "invite",
@@ -350,6 +339,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
     const notifications = getNotifications();
     const baseUnread = notifications.filter((n) => !n.isRead && n.type !== "invite").length;
     const unreadCount = baseUnread + pendingInvitesCount;
+    const currentPage = pathname.split("/")[1]; // TODO: this can be improved
 
     const NavigationContent = () => (
         <div className="flex items-center space-x-2">
@@ -363,7 +353,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                         key={item.id}
                         variant={isActive ? "default" : "ghost"}
                         size="sm"
-                        onClick={() => onPageChange(item.id)}
+                        onClick={() => router.push(`/${item.id}`)   }
                         className={`${
                             isActive ? "" : "text-muted-foreground hover:text-foreground"
                         }`}
@@ -371,7 +361,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                         <Icon className="w-4 h-4 mr-2" />
                         {item.label}
                         {/* {item.id === "staff" &&
-              currentUser.activeMode === "studio" &&
+              currentUser?.activeMode === "studio" &&
               currentStudio && (
                 <Badge
                   variant="secondary"
@@ -406,7 +396,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                             return (
                                 <DropdownMenuItem
                                     key={item.id}
-                                    onClick={() => onPageChange(item.id)}
+                                    onClick={() => router.push(`/${item.id}`)}
                                     className={`cursor-pointer ${isActive ? "bg-accent" : ""}`}
                                 >
                                     <div className="flex items-center justify-between w-full">
@@ -502,7 +492,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                                     size="sm"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onPageChange("invites");
+                                                        router.push(`/invites`);
                                                     }}
                                                 >
                                                     Review invite
@@ -559,7 +549,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                     {/* Right Section - Studio Menu + User Menu */}
                     <div className="flex items-center space-x-4">
                         {/* Studio Menu for Studio Users (guarded) */}
-                        {currentUser.activeMode === "studio" &&
+                        {currentUser?.activeMode === "studio" &&
                             currentStudio &&
                             canEnterStudioMode(currentUser, currentStudio) && (
                                 <DropdownMenu
@@ -695,14 +685,14 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
 
                                         {/* Studio Actions */}
                                         <DropdownMenuItem
-                                            onClick={() => onPageChange("profile")}
+                                            onClick={() => router.push("/profile")}
                                             className="cursor-pointer"
                                         >
                                             <Building2 className="mr-3 h-4 w-4" />
                                             Studio Profile
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                            onClick={() => onPageChange("settings")}
+                                            onClick={() => router.push("/settings")}
                                             className="cursor-pointer"
                                         >
                                             <SettingsIcon className="mr-3 h-4 w-4" />
@@ -721,11 +711,11 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                 >
                                     <Avatar className="h-9 w-9">
                                         <AvatarImage
-                                            src={currentUser.profile?.profileImage}
-                                            alt={currentUser.name}
+                                            src={currentUser?.profile?.profileImage}
+                                            alt={currentUser?.name}
                                         />
                                         <AvatarFallback>
-                                            {currentUser.name
+                                            {currentUser?.name
                                                 .split(" ")
                                                 .map((n) => n[0])
                                                 .join("")}
@@ -741,11 +731,11 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                 <div className="flex items-center space-x-3 p-4">
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage
-                                            src={currentUser.profile?.profileImage}
-                                            alt={currentUser.name}
+                                            src={currentUser?.profile?.profileImage}
+                                            alt={currentUser?.name}
                                         />
                                         <AvatarFallback>
-                                            {currentUser.name
+                                            {currentUser?.name
                                                 .split(" ")
                                                 .map((n) => n[0])
                                                 .join("")}
@@ -753,15 +743,15 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                     </Avatar>
                                     <div className="flex flex-col space-y-1 flex-1 min-w-0">
                                         <p className="font-semibold text-sm truncate">
-                                            {currentUser.name}
+                                            {currentUser?.name}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">
-                                            @{currentUser.handle}
+                                            @{currentUser?.handle}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">
-                                            {currentUser.email}
+                                            {currentUser?.email}
                                         </p>
-                                        {currentUser.type === "artist" && currentStudio && (
+                                        {currentUser?.type === "artist" && currentStudio && (
                                             <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                                 <Building2 className="w-3 h-3" />
                                                 <span className="truncate">
@@ -769,17 +759,17 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                                 </span>
                                             </div>
                                         )}
-                                        {currentUser.type === "artist" &&
-                                            currentUser.subscription && (
+                                        {currentUser?.type === "artist" &&
+                                            currentUser?.subscription && (
                                                 <Badge
                                                     variant="secondary"
                                                     className="w-fit text-xs"
                                                 >
-                                                    {currentUser.subscription === "free"
+                                                    {currentUser?.subscription === "free"
                                                         ? "Free"
-                                                        : currentUser.subscription === "passion"
+                                                        : currentUser?.subscription === "passion"
                                                           ? "Passion"
-                                                          : currentUser.subscription ===
+                                                          : currentUser?.subscription ===
                                                               "small-artist"
                                                             ? "Artist"
                                                             : "Studio Pro"}
@@ -789,21 +779,21 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                 </div>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                    onClick={() => onPageChange("profile")}
+                                    onClick={() => router.push("/profile")}
                                     className="cursor-pointer"
                                 >
                                     <User className="mr-3 h-4 w-4" />
                                     Profile
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={() => onPageChange("settings")}
+                                    onClick={() => router.push("/settings")}
                                     className="cursor-pointer"
                                 >
                                     <SettingsIcon className="mr-3 h-4 w-4" />
                                     Settings
                                 </DropdownMenuItem>
 
-                                {currentUser.availableModes?.includes("studio") && (
+                                {currentUser?.availableModes?.includes("studio") && (
                                     <>
                                         <DropdownMenuSeparator />
 
@@ -814,7 +804,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
 
                                                 // If switching *into* studio, enforce guard.
                                                 const goingToStudio =
-                                                    currentUser.activeMode !== "studio";
+                                                    currentUser?.activeMode !== "studio";
                                                 if (goingToStudio) {
                                                     if (
                                                         !currentStudio ||
@@ -828,18 +818,18 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                                         alert(
                                                             "You don’t have permission to enter Studio mode. Ask an owner/admin or open My Studios."
                                                         );
-                                                        onPageChange("dashboard");
+                                                        router.push("/dashboard");
                                                         return;
                                                     }
                                                 }
-                                                onPageChange("dashboard");
+                                                router.push("/dashboard");
                                                 setCurrentUser({
                                                     ...currentUser,
                                                     activeMode: goingToStudio ? "studio" : "artist"
                                                 });
                                             }}
                                         >
-                                            {currentUser.activeMode === "studio"
+                                            {currentUser?.activeMode === "studio"
                                                 ? "Switch to Artist mode"
                                                 : "Switch to Studio mode"}
                                         </DropdownMenuItem>
@@ -849,7 +839,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                 <DropdownMenuSeparator />
 
                                 <DropdownMenuItem
-                                    onClick={onLogout}
+                                    onClick={() => router.push("/login")}
                                     className="cursor-pointer text-destructive focus:text-destructive"
                                 >
                                     Logout
@@ -888,7 +878,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                         <button
                                             key={item.id}
                                             onClick={() => {
-                                                onPageChange(item.id);
+                                                router.push(`/${item.id}`);
                                                 setIsMobileMenuOpen(false);
                                             }}
                                             className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -900,7 +890,7 @@ export function NavigationPrimary({ currentPage, onPageChange, onLogout }: Navig
                                             <Icon className="w-5 h-5" />
                                             <span className="flex-1 text-left">{item.label}</span>
                                             {item.id === "staff" &&
-                                                currentUser.activeMode === "studio" &&
+                                                currentUser?.activeMode === "studio" &&
                                                 currentStudio && (
                                                     <Badge
                                                         variant="secondary"

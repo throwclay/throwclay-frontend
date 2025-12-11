@@ -58,10 +58,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function PotteryJournal() {
     const { currentUser, currentStudio, setCurrentThrow, navigateToPage } = useAppContext();
@@ -691,181 +699,390 @@ export default function PotteryJournal() {
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="flex items-center space-x-3">
-                        <Palette className="w-8 h-8 text-primary" />
-                        <span>Pottery Journal</span>
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Document your ceramic journey with photos, sketches, and notes
-                    </p>
+        <DefaultLayout>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 className="flex items-center space-x-3">
+                            <Palette className="w-8 h-8 text-primary" />
+                            <span>Pottery Journal</span>
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Document your ceramic journey with photos, sketches, and notes
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowNewProjectDialog(true)}
+                            disabled={
+                                subscriptionLimits.projects !== -1 &&
+                                usageStats.projectsUsed >= subscriptionLimits.projects
+                            }
+                        >
+                            <FolderOpen className="w-4 h-4 mr-2" />
+                            New Project
+                        </Button>
+                        <Button
+                            onClick={() => setShowNewThrowDialog(true)}
+                            disabled={
+                                subscriptionLimits.additionalThrows !== -1 &&
+                                usageStats.additionalThrowsUsed >=
+                                    subscriptionLimits.additionalThrows
+                            }
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Throw
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                    <Button
-                        variant="outline"
-                        onClick={() => setShowNewProjectDialog(true)}
-                        disabled={
-                            subscriptionLimits.projects !== -1 &&
-                            usageStats.projectsUsed >= subscriptionLimits.projects
-                        }
-                    >
-                        <FolderOpen className="w-4 h-4 mr-2" />
-                        New Project
-                    </Button>
-                    <Button
-                        onClick={() => setShowNewThrowDialog(true)}
-                        disabled={
-                            subscriptionLimits.additionalThrows !== -1 &&
-                            usageStats.additionalThrowsUsed >= subscriptionLimits.additionalThrows
-                        }
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Throw
-                    </Button>
-                </div>
-            </div>
-
-            {renderUsageLimits()}
-
-            {/* Main Content */}
-            <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="space-y-6"
-            >
-                <TabsList>
-                    <TabsTrigger value="throws">All Throws ({throws.length})</TabsTrigger>
-                    <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
-                </TabsList>
-
-                {/* Filters */}
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex flex-wrap items-center gap-4">
-                            <div className="relative flex-1 min-w-64">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                                <Input
-                                    placeholder={
-                                        activeTab === "throws"
-                                            ? "Search throws..."
-                                            : "Search projects..."
-                                    }
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
-                                />
-                            </div>
-
-                            {activeTab === "throws" && (
-                                <>
-                                    <Select
-                                        value={statusFilter}
-                                        onValueChange={setStatusFilter}
-                                    >
-                                        <SelectTrigger className="w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Statuses</SelectItem>
-                                            <SelectItem value="planning">Planning</SelectItem>
-                                            <SelectItem value="in-progress">In Progress</SelectItem>
-                                            <SelectItem value="fired">Fired</SelectItem>
-                                            <SelectItem value="completed">Completed</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <Select
-                                        value={selectedProject || "all"}
-                                        onValueChange={(value) =>
-                                            setSelectedProject(value === "all" ? null : value)
-                                        }
-                                    >
-                                        <SelectTrigger className="w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Projects</SelectItem>
-                                            <SelectItem value="none">No Project</SelectItem>
-                                            {projects.map((project) => (
-                                                <SelectItem
-                                                    key={project.id}
-                                                    value={project.id}
-                                                >
-                                                    {project.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Throws Tab */}
-                <TabsContent
-                    value="throws"
+                {renderUsageLimits()}
+                {/* Main Content */}
+                <Tabs
+                    value={activeTab}
+                    onValueChange={setActiveTab}
                     className="space-y-6"
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredThrows.map((entry) => {
-                            const project = entry.projectId
-                                ? projects.find((p) => p.id === entry.projectId)
-                                : null;
-
-                            return (
-                                <Card
-                                    key={entry.id}
-                                    className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
-                                    style={{ borderLeftColor: project?.color || "#e5e7eb" }}
-                                    onClick={() => handleEditThrow(entry)}
-                                >
-                                    <CardHeader className="pb-3">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-2 mb-2">
-                                                    {getStatusIcon(entry.status)}
-                                                    <h3 className="font-semibold truncate">
-                                                        {entry.title}
-                                                    </h3>
-                                                    {entry.whiteboardMode && (
+                    <TabsList>
+                        <TabsTrigger value="throws">All Throws ({throws.length})</TabsTrigger>
+                        <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
+                    </TabsList>
+                    {/* Filters */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex flex-wrap items-center gap-4">
+                                <div className="relative flex-1 min-w-64">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                    <Input
+                                        placeholder={
+                                            activeTab === "throws"
+                                                ? "Search throws..."
+                                                : "Search projects..."
+                                        }
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                                {activeTab === "throws" && (
+                                    <>
+                                        <Select
+                                            value={statusFilter}
+                                            onValueChange={setStatusFilter}
+                                        >
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Statuses</SelectItem>
+                                                <SelectItem value="planning">Planning</SelectItem>
+                                                <SelectItem value="in-progress">
+                                                    In Progress
+                                                </SelectItem>
+                                                <SelectItem value="fired">Fired</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Select
+                                            value={selectedProject || "all"}
+                                            onValueChange={(value) =>
+                                                setSelectedProject(value === "all" ? null : value)
+                                            }
+                                        >
+                                            <SelectTrigger className="w-48">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Projects</SelectItem>
+                                                <SelectItem value="none">No Project</SelectItem>
+                                                {projects.map((project) => (
+                                                    <SelectItem
+                                                        key={project.id}
+                                                        value={project.id}
+                                                    >
+                                                        {project.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    {/* Throws Tab */}
+                    <TabsContent
+                        value="throws"
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredThrows.map((entry) => {
+                                const project = entry.projectId
+                                    ? projects.find((p) => p.id === entry.projectId)
+                                    : null;
+                                return (
+                                    <Card
+                                        key={entry.id}
+                                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
+                                        style={{ borderLeftColor: project?.color || "#e5e7eb" }}
+                                        onClick={() => handleEditThrow(entry)}
+                                    >
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center space-x-2 mb-2">
+                                                        {getStatusIcon(entry.status)}
+                                                        <h3 className="font-semibold truncate">
+                                                            {entry.title}
+                                                        </h3>
+                                                        {entry.whiteboardMode && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
+                                                                <Layers className="w-3 h-3 mr-1" />
+                                                                {entry.whiteboardPages.length}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
+                                                        <Calendar className="w-3 h-3" />
+                                                        <span>
+                                                            {new Date(
+                                                                entry.date
+                                                            ).toLocaleDateString()}
+                                                        </span>
                                                         <Badge
-                                                            variant="secondary"
+                                                            variant="outline"
                                                             className="text-xs"
                                                         >
-                                                            <Layers className="w-3 h-3 mr-1" />
-                                                            {entry.whiteboardPages.length}
+                                                            {entry.potteryType}
                                                         </Badge>
+                                                    </div>
+                                                    {project && (
+                                                        <div className="flex items-center space-x-1 mb-2">
+                                                            <div
+                                                                className="w-3 h-3 rounded-full"
+                                                                style={{
+                                                                    backgroundColor: project.color
+                                                                }}
+                                                            />
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {project.name}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
-                                                    <Calendar className="w-3 h-3" />
-                                                    <span>
-                                                        {new Date(entry.date).toLocaleDateString()}
-                                                    </span>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="text-xs"
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                        onClick={(e) => e.stopPropagation()}
                                                     >
-                                                        {entry.potteryType}
-                                                    </Badge>
-                                                </div>
-                                                {project && (
-                                                    <div className="flex items-center space-x-1 mb-2">
-                                                        <div
-                                                            className="w-3 h-3 rounded-full"
-                                                            style={{
-                                                                backgroundColor: project.color
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <MoreHorizontal className="w-4 h-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEditThrow(entry);
                                                             }}
-                                                        />
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {project.name}
+                                                        >
+                                                            <Edit3 className="w-4 h-4 mr-2" />
+                                                            {entry.whiteboardMode
+                                                                ? "Open Whiteboard"
+                                                                : "Edit Throw"}
+                                                        </DropdownMenuItem>
+                                                        {subscriptionLimits.canExport && (
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleExportToPDF(entry.id);
+                                                                }}
+                                                            >
+                                                                <FileDown className="w-4 h-4 mr-2" />
+                                                                Export PDF
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {subscriptionLimits.canCollaborate && (
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShareTarget({
+                                                                        type: "throw",
+                                                                        id: entry.id
+                                                                    });
+                                                                    setShowShareDialog(true);
+                                                                }}
+                                                            >
+                                                                <Share2 className="w-4 h-4 mr-2" />
+                                                                Share
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-destructive"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (
+                                                                    confirm(
+                                                                        "Are you sure you want to delete this throw?"
+                                                                    )
+                                                                ) {
+                                                                    setThrows((prev) =>
+                                                                        prev.filter(
+                                                                            (t) => t.id !== entry.id
+                                                                        )
+                                                                    );
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Trash2 className="w-4 h-4 mr-2" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">
+                                                        Clay:
+                                                    </span>
+                                                    <span>{entry.clayType}</span>
+                                                </div>
+                                                {entry.dimensions && (
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Size:
+                                                        </span>
+                                                        <span>{entry.dimensions}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-muted-foreground">
+                                                        Firing:
+                                                    </span>
+                                                    <span>
+                                                        {entry.firingType} @ {entry.firingTemp}
+                                                    </span>
+                                                </div>
+                                                {entry.glazes.length > 0 && (
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-muted-foreground">
+                                                            Glazes:
+                                                        </span>
+                                                        <span className="truncate">
+                                                            {entry.glazes.join(", ")}
                                                         </span>
                                                     </div>
                                                 )}
+                                                {entry.notes && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
+                                                        {entry.notes}
+                                                    </p>
+                                                )}
+                                                <div className="flex items-center justify-between pt-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        {entry.isShared && (
+                                                            <div className="flex items-center space-x-1">
+                                                                <Users className="w-3 h-3 text-blue-500" />
+                                                                <span className="text-xs text-blue-500">
+                                                                    Shared
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {entry.whiteboardMode && (
+                                                            <div className="flex items-center space-x-1">
+                                                                <Palette className="w-3 h-3 text-purple-500" />
+                                                                <span className="text-xs text-purple-500">
+                                                                    Whiteboard
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {entry.techniques.length > 0 && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
+                                                                {entry.techniques.length} technique
+                                                                {entry.techniques.length !== 1
+                                                                    ? "s"
+                                                                    : ""}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <Badge
+                                                        variant={
+                                                            entry.status === "completed"
+                                                                ? "default"
+                                                                : "secondary"
+                                                        }
+                                                        className="text-xs"
+                                                    >
+                                                        {entry.status}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                        {filteredThrows.length === 0 && (
+                            <div className="text-center py-12">
+                                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <h3>No throws found</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    {searchTerm
+                                        ? "Try adjusting your search or filters"
+                                        : "Start documenting your pottery journey"}
+                                </p>
+                                <Button onClick={() => setShowNewThrowDialog(true)}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Create First Throw
+                                </Button>
+                            </div>
+                        )}
+                    </TabsContent>
+                    {/* Projects Tab */}
+                    <TabsContent
+                        value="projects"
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredProjects.map((project) => (
+                                <Card
+                                    key={project.id}
+                                    className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
+                                    style={{ borderLeftColor: project.color }}
+                                    onClick={() => {
+                                        setSelectedProject(project.id);
+                                        setActiveTab("throws");
+                                    }}
+                                >
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center space-x-3 flex-1">
+                                                <div
+                                                    className="w-4 h-4 rounded-full"
+                                                    style={{ backgroundColor: project.color }}
+                                                />
+                                                <div>
+                                                    <h3 className="font-semibold">
+                                                        {project.name}
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {project.throwCount} throws
+                                                    </p>
+                                                </div>
                                             </div>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger
@@ -884,38 +1101,26 @@ export default function PotteryJournal() {
                                                     <DropdownMenuItem
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleEditThrow(entry);
+                                                            setEditingProject(project);
+                                                            setShowEditProjectDialog(true);
                                                         }}
                                                     >
                                                         <Edit3 className="w-4 h-4 mr-2" />
-                                                        {entry.whiteboardMode
-                                                            ? "Open Whiteboard"
-                                                            : "Edit Throw"}
+                                                        Edit Project
                                                     </DropdownMenuItem>
-                                                    {subscriptionLimits.canExport && (
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleExportToPDF(entry.id);
-                                                            }}
-                                                        >
-                                                            <FileDown className="w-4 h-4 mr-2" />
-                                                            Export PDF
-                                                        </DropdownMenuItem>
-                                                    )}
                                                     {subscriptionLimits.canCollaborate && (
                                                         <DropdownMenuItem
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setShareTarget({
-                                                                    type: "throw",
-                                                                    id: entry.id
+                                                                    type: "project",
+                                                                    id: project.id
                                                                 });
                                                                 setShowShareDialog(true);
                                                             }}
                                                         >
                                                             <Share2 className="w-4 h-4 mr-2" />
-                                                            Share
+                                                            Share Project
                                                         </DropdownMenuItem>
                                                     )}
                                                     <DropdownMenuSeparator />
@@ -925,12 +1130,12 @@ export default function PotteryJournal() {
                                                             e.stopPropagation();
                                                             if (
                                                                 confirm(
-                                                                    "Are you sure you want to delete this throw?"
+                                                                    "Are you sure you want to delete this project?"
                                                                 )
                                                             ) {
-                                                                setThrows((prev) =>
+                                                                setProjects((prev) =>
                                                                     prev.filter(
-                                                                        (t) => t.id !== entry.id
+                                                                        (p) => p.id !== project.id
                                                                     )
                                                                 );
                                                             }
@@ -944,602 +1149,250 @@ export default function PotteryJournal() {
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">Clay:</span>
-                                                <span>{entry.clayType}</span>
-                                            </div>
-                                            {entry.dimensions && (
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">
-                                                        Size:
-                                                    </span>
-                                                    <span>{entry.dimensions}</span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-muted-foreground">
-                                                    Firing:
-                                                </span>
-                                                <span>
-                                                    {entry.firingType} @ {entry.firingTemp}
-                                                </span>
-                                            </div>
-                                            {entry.glazes.length > 0 && (
-                                                <div className="flex items-center justify-between text-sm">
-                                                    <span className="text-muted-foreground">
-                                                        Glazes:
-                                                    </span>
-                                                    <span className="truncate">
-                                                        {entry.glazes.join(", ")}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {entry.notes && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                                                    {entry.notes}
-                                                </p>
-                                            )}
-                                            <div className="flex items-center justify-between pt-2">
-                                                <div className="flex items-center space-x-2">
-                                                    {entry.isShared && (
-                                                        <div className="flex items-center space-x-1">
-                                                            <Users className="w-3 h-3 text-blue-500" />
-                                                            <span className="text-xs text-blue-500">
-                                                                Shared
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {entry.whiteboardMode && (
-                                                        <div className="flex items-center space-x-1">
-                                                            <Palette className="w-3 h-3 text-purple-500" />
-                                                            <span className="text-xs text-purple-500">
-                                                                Whiteboard
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {entry.techniques.length > 0 && (
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-xs"
-                                                        >
-                                                            {entry.techniques.length} technique
-                                                            {entry.techniques.length !== 1
-                                                                ? "s"
-                                                                : ""}
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <Badge
-                                                    variant={
-                                                        entry.status === "completed"
-                                                            ? "default"
-                                                            : "secondary"
-                                                    }
-                                                    className="text-xs"
-                                                >
-                                                    {entry.status}
-                                                </Badge>
-                                            </div>
+                                        {project.description && (
+                                            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                                                {project.description}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center justify-between text-sm mb-2">
+                                            <span className="text-muted-foreground">Created:</span>
+                                            <span>
+                                                {new Date(project.createdAt).toLocaleDateString()}
+                                            </span>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-
-                    {filteredThrows.length === 0 && (
-                        <div className="text-center py-12">
-                            <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3>No throws found</h3>
-                            <p className="text-muted-foreground mb-4">
-                                {searchTerm
-                                    ? "Try adjusting your search or filters"
-                                    : "Start documenting your pottery journey"}
-                            </p>
-                            <Button onClick={() => setShowNewThrowDialog(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create First Throw
-                            </Button>
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* Projects Tab */}
-                <TabsContent
-                    value="projects"
-                    className="space-y-6"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredProjects.map((project) => (
-                            <Card
-                                key={project.id}
-                                className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
-                                style={{ borderLeftColor: project.color }}
-                                onClick={() => {
-                                    setSelectedProject(project.id);
-                                    setActiveTab("throws");
-                                }}
-                            >
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center space-x-3 flex-1">
-                                            <div
-                                                className="w-4 h-4 rounded-full"
-                                                style={{ backgroundColor: project.color }}
-                                            />
-                                            <div>
-                                                <h3 className="font-semibold">{project.name}</h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {project.throwCount} throws
-                                                </p>
-                                            </div>
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">Updated:</span>
+                                            <span>
+                                                {new Date(project.updatedAt).toLocaleDateString()}
+                                            </span>
                                         </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger
-                                                asChild
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setEditingProject(project);
-                                                        setShowEditProjectDialog(true);
-                                                    }}
-                                                >
-                                                    <Edit3 className="w-4 h-4 mr-2" />
-                                                    Edit Project
-                                                </DropdownMenuItem>
-                                                {subscriptionLimits.canCollaborate && (
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setShareTarget({
-                                                                type: "project",
-                                                                id: project.id
-                                                            });
-                                                            setShowShareDialog(true);
-                                                        }}
-                                                    >
-                                                        <Share2 className="w-4 h-4 mr-2" />
-                                                        Share Project
-                                                    </DropdownMenuItem>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <div className="flex items-center space-x-2">
+                                                {project.isShared && (
+                                                    <div className="flex items-center space-x-1">
+                                                        <Users className="w-3 h-3 text-blue-500" />
+                                                        <span className="text-xs text-blue-500">
+                                                            Shared
+                                                        </span>
+                                                    </div>
                                                 )}
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-destructive"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (
-                                                            confirm(
-                                                                "Are you sure you want to delete this project?"
-                                                            )
-                                                        ) {
-                                                            setProjects((prev) =>
-                                                                prev.filter(
-                                                                    (p) => p.id !== project.id
-                                                                )
-                                                            );
-                                                        }
-                                                    }}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {project.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-                                            {project.description}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center justify-between text-sm mb-2">
-                                        <span className="text-muted-foreground">Created:</span>
-                                        <span>
-                                            {new Date(project.createdAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Updated:</span>
-                                        <span>
-                                            {new Date(project.updatedAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between mt-3">
-                                        <div className="flex items-center space-x-2">
-                                            {project.isShared && (
-                                                <div className="flex items-center space-x-1">
-                                                    <Users className="w-3 h-3 text-blue-500" />
-                                                    <span className="text-xs text-blue-500">
-                                                        Shared
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {project.comments.length > 0 && (
-                                                <div className="flex items-center space-x-1">
-                                                    <MessageSquare className="w-3 h-3 text-green-500" />
-                                                    <span className="text-xs text-green-500">
-                                                        {project.comments.length}
-                                                    </span>
-                                                </div>
-                                            )}
+                                                {project.comments.length > 0 && (
+                                                    <div className="flex items-center space-x-1">
+                                                        <MessageSquare className="w-3 h-3 text-green-500" />
+                                                        <span className="text-xs text-green-500">
+                                                            {project.comments.length}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Badge variant="outline">{project.status}</Badge>
                                         </div>
-                                        <Badge variant="outline">{project.status}</Badge>
-                                    </div>
-                                    {project.tags && project.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mt-2">
-                                            {project.tags.slice(0, 3).map((tag) => (
-                                                <Badge
-                                                    key={tag}
-                                                    variant="secondary"
-                                                    className="text-xs"
-                                                >
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                            {project.tags.length > 3 && (
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="text-xs"
-                                                >
-                                                    +{project.tags.length - 3} more
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-
-                    {filteredProjects.length === 0 && (
-                        <div className="text-center py-12">
-                            <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <h3>No projects found</h3>
-                            <p className="text-muted-foreground mb-4">
-                                {searchTerm
-                                    ? "Try adjusting your search"
-                                    : "Create your first project to organize your throws"}
-                            </p>
-                            <Button onClick={() => setShowNewProjectDialog(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create First Project
+                                        {project.tags && project.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                {project.tags.slice(0, 3).map((tag) => (
+                                                    <Badge
+                                                        key={tag}
+                                                        variant="secondary"
+                                                        className="text-xs"
+                                                    >
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                                {project.tags.length > 3 && (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="text-xs"
+                                                    >
+                                                        +{project.tags.length - 3} more
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                        {filteredProjects.length === 0 && (
+                            <div className="text-center py-12">
+                                <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <h3>No projects found</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    {searchTerm
+                                        ? "Try adjusting your search"
+                                        : "Create your first project to organize your throws"}
+                                </p>
+                                <Button onClick={() => setShowNewProjectDialog(true)}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Create First Project
+                                </Button>
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
+                {/* Dialogs */}
+                <Dialog
+                    open={showNewProjectDialog}
+                    onOpenChange={setShowNewProjectDialog}
+                >
+                    <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <FolderOpen className="w-5 h-5" />
+                                <span>Create New Project</span>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Organize your throws into projects to better track your ceramic
+                                journey.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                    htmlFor="project-name"
+                                    className="text-right"
+                                >
+                                    Name
+                                </Label>
+                                <Input
+                                    id="project-name"
+                                    value={newProjectName}
+                                    onChange={(e) => setNewProjectName(e.target.value)}
+                                    placeholder="e.g., Dinner Set Collection"
+                                    className="col-span-3"
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-start gap-4">
+                                <Label
+                                    htmlFor="project-description"
+                                    className="text-right mt-2"
+                                >
+                                    Description
+                                </Label>
+                                <Textarea
+                                    id="project-description"
+                                    value={newProjectDescription}
+                                    onChange={(e) => setNewProjectDescription(e.target.value)}
+                                    placeholder="What's this project about?"
+                                    className="col-span-3"
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label
+                                    htmlFor="project-color"
+                                    className="text-right"
+                                >
+                                    Color
+                                </Label>
+                                <div className="flex items-center space-x-3 col-span-3">
+                                    <input
+                                        id="project-color"
+                                        type="color"
+                                        value={newProjectColor}
+                                        onChange={(e) => setNewProjectColor(e.target.value)}
+                                        className="w-12 h-10 rounded border"
+                                    />
+                                    <span className="text-sm text-muted-foreground">
+                                        Choose a color to identify your project
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowNewProjectDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateProject}
+                                disabled={!newProjectName.trim()}
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Create Project
                             </Button>
                         </div>
-                    )}
-                </TabsContent>
-            </Tabs>
-
-            {/* Dialogs */}
-            <Dialog
-                open={showNewProjectDialog}
-                onOpenChange={setShowNewProjectDialog}
-            >
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <FolderOpen className="w-5 h-5" />
-                            <span>Create New Project</span>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Organize your throws into projects to better track your ceramic journey.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label
-                                htmlFor="project-name"
-                                className="text-right"
-                            >
-                                Name
-                            </Label>
-                            <Input
-                                id="project-name"
-                                value={newProjectName}
-                                onChange={(e) => setNewProjectName(e.target.value)}
-                                placeholder="e.g., Dinner Set Collection"
-                                className="col-span-3"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label
-                                htmlFor="project-description"
-                                className="text-right mt-2"
-                            >
-                                Description
-                            </Label>
-                            <Textarea
-                                id="project-description"
-                                value={newProjectDescription}
-                                onChange={(e) => setNewProjectDescription(e.target.value)}
-                                placeholder="What's this project about?"
-                                className="col-span-3"
-                                rows={3}
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label
-                                htmlFor="project-color"
-                                className="text-right"
-                            >
-                                Color
-                            </Label>
-                            <div className="flex items-center space-x-3 col-span-3">
-                                <input
-                                    id="project-color"
-                                    type="color"
-                                    value={newProjectColor}
-                                    onChange={(e) => setNewProjectColor(e.target.value)}
-                                    className="w-12 h-10 rounded border"
-                                />
-                                <span className="text-sm text-muted-foreground">
-                                    Choose a color to identify your project
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowNewProjectDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleCreateProject}
-                            disabled={!newProjectName.trim()}
-                        >
-                            <Save className="w-4 h-4 mr-2" />
-                            Create Project
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog
-                open={showNewThrowDialog}
-                onOpenChange={setShowNewThrowDialog}
-            >
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <Plus className="w-5 h-5" />
-                            <span>Document New Throw</span>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Record the details of your pottery piece. Choose traditional form or
-                            whiteboard mode for visual documentation.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                        <div className="space-y-4">
-                            <h4 className="flex items-center space-x-2 font-medium">
-                                <Settings className="w-4 h-4" />
-                                <span>Documentation Mode</span>
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Card
-                                    className={`cursor-pointer transition-all duration-200 ${
-                                        !newThrowData.whiteboardMode
-                                            ? "ring-2 ring-primary"
-                                            : "hover:shadow-md"
-                                    }`}
-                                    onClick={() =>
-                                        setNewThrowData((prev) => ({
-                                            ...prev,
-                                            whiteboardMode: false
-                                        }))
-                                    }
-                                >
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center space-x-3">
-                                            <FileText className="w-8 h-8 text-blue-500" />
-                                            <div>
-                                                <h5 className="font-medium">Traditional Form</h5>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Structured form with fields for pottery details
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                <Card
-                                    className={`cursor-pointer transition-all duration-200 ${
-                                        newThrowData.whiteboardMode
-                                            ? "ring-2 ring-primary"
-                                            : "hover:shadow-md"
-                                    }`}
-                                    onClick={() =>
-                                        setNewThrowData((prev) => ({
-                                            ...prev,
-                                            whiteboardMode: true
-                                        }))
-                                    }
-                                >
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center space-x-3">
-                                            <Palette className="w-8 h-8 text-purple-500" />
-                                            <div>
-                                                <h5 className="font-medium">Whiteboard Mode</h5>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Visual canvas with photos, sketches, and notes
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="flex items-center space-x-2 font-medium">
-                                <Type className="w-4 h-4" />
-                                <span>Basic Information</span>
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="throw-title">Title *</Label>
-                                    <Input
-                                        id="throw-title"
-                                        value={newThrowData.title}
-                                        onChange={(e) =>
+                    </DialogContent>
+                </Dialog>
+                <Dialog
+                    open={showNewThrowDialog}
+                    onOpenChange={setShowNewThrowDialog}
+                >
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <Plus className="w-5 h-5" />
+                                <span>Document New Throw</span>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Record the details of your pottery piece. Choose traditional form or
+                                whiteboard mode for visual documentation.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-6 py-4">
+                            <div className="space-y-4">
+                                <h4 className="flex items-center space-x-2 font-medium">
+                                    <Settings className="w-4 h-4" />
+                                    <span>Documentation Mode</span>
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Card
+                                        className={`cursor-pointer transition-all duration-200 ${
+                                            !newThrowData.whiteboardMode
+                                                ? "ring-2 ring-primary"
+                                                : "hover:shadow-md"
+                                        }`}
+                                        onClick={() =>
                                             setNewThrowData((prev) => ({
                                                 ...prev,
-                                                title: e.target.value
-                                            }))
-                                        }
-                                        placeholder="e.g., Celadon Bowl #1"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Label htmlFor="throw-description">Description</Label>
-                                    <Textarea
-                                        id="throw-description"
-                                        value={newThrowData.description}
-                                        onChange={(e) =>
-                                            setNewThrowData((prev) => ({
-                                                ...prev,
-                                                description: e.target.value
-                                            }))
-                                        }
-                                        placeholder="Describe your piece - what are you making, what's special about it?"
-                                        rows={3}
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="throw-project">Project (Optional)</Label>
-                                    <Select
-                                        value={newThrowData.projectId}
-                                        onValueChange={(value) =>
-                                            setNewThrowData((prev) => ({
-                                                ...prev,
-                                                projectId: value
+                                                whiteboardMode: false
                                             }))
                                         }
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="No project" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">No project</SelectItem>
-                                            {projects.map((project) => (
-                                                <SelectItem
-                                                    key={project.id}
-                                                    value={project.id}
-                                                >
-                                                    <div className="flex items-center space-x-2">
-                                                        <div
-                                                            className="w-3 h-3 rounded-full"
-                                                            style={{
-                                                                backgroundColor: project.color
-                                                            }}
-                                                        />
-                                                        <span>{project.name}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        <CardContent className="p-4">
+                                            <div className="flex items-center space-x-3">
+                                                <FileText className="w-8 h-8 text-blue-500" />
+                                                <div>
+                                                    <h5 className="font-medium">
+                                                        Traditional Form
+                                                    </h5>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Structured form with fields for pottery
+                                                        details
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card
+                                        className={`cursor-pointer transition-all duration-200 ${
+                                            newThrowData.whiteboardMode
+                                                ? "ring-2 ring-primary"
+                                                : "hover:shadow-md"
+                                        }`}
+                                        onClick={() =>
+                                            setNewThrowData((prev) => ({
+                                                ...prev,
+                                                whiteboardMode: true
+                                            }))
+                                        }
+                                    >
+                                        <CardContent className="p-4">
+                                            <div className="flex items-center space-x-3">
+                                                <Palette className="w-8 h-8 text-purple-500" />
+                                                <div>
+                                                    <h5 className="font-medium">Whiteboard Mode</h5>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Visual canvas with photos, sketches, and
+                                                        notes
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             </div>
-                        </div>
-
-                        {newThrowData.whiteboardMode && (
-                            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                                <div className="flex items-start space-x-3">
-                                    <Palette className="w-5 h-5 text-purple-500 mt-0.5" />
-                                    <div>
-                                        <h5 className="font-medium text-purple-900">
-                                            Whiteboard Mode
-                                        </h5>
-                                        <p className="text-sm text-purple-700 mt-1">
-                                            Your throw will open in a visual whiteboard where you
-                                            can add photos, sketches, sticky notes, and text.
-                                            Perfect for documenting your process with visual
-                                            elements and freeform notes.
-                                        </p>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            <Badge
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
-                                                <Upload className="w-3 h-3 mr-1" />
-                                                Photo Upload
-                                            </Badge>
-                                            <Badge
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
-                                                <StickyNote className="w-3 h-3 mr-1" />
-                                                Sticky Notes
-                                            </Badge>
-                                            <Badge
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
-                                                <Pen className="w-3 h-3 mr-1" />
-                                                Drawing Tools
-                                            </Badge>
-                                            <Badge
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
-                                                <Layers className="w-3 h-3 mr-1" />
-                                                Multiple Pages
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowNewThrowDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleCreateThrow}
-                            disabled={!newThrowData.title.trim()}
-                        >
-                            <Save className="w-4 h-4 mr-2" />
-                            {newThrowData.whiteboardMode ? "Create Whiteboard" : "Save Throw"}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Traditional Throw Edit Dialog */}
-            <Dialog
-                open={showEditThrowDialog}
-                onOpenChange={setShowEditThrowDialog}
-            >
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <Edit3 className="w-5 h-5" />
-                            <span>Edit Throw</span>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Update the details of your pottery piece.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {editingThrow && (
-                        <div className="grid gap-6 py-4">
                             <div className="space-y-4">
                                 <h4 className="flex items-center space-x-2 font-medium">
                                     <Type className="w-4 h-4" />
@@ -1547,328 +1400,498 @@ export default function PotteryJournal() {
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <Label htmlFor="edit-throw-title">Title *</Label>
+                                        <Label htmlFor="throw-title">Title *</Label>
                                         <Input
-                                            id="edit-throw-title"
-                                            value={editingThrow.title}
+                                            id="throw-title"
+                                            value={newThrowData.title}
                                             onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
+                                                setNewThrowData((prev) => ({
+                                                    ...prev,
                                                     title: e.target.value
-                                                })
+                                                }))
                                             }
                                             placeholder="e.g., Celadon Bowl #1"
                                         />
                                     </div>
-                                    <div>
-                                        <Label htmlFor="edit-throw-type">Pottery Type</Label>
-                                        <Select
-                                            value={editingThrow.potteryType}
-                                            onValueChange={(value) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    potteryType: value
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {potteryTypes.map((type) => (
-                                                    <SelectItem
-                                                        key={type}
-                                                        value={type}
-                                                    >
-                                                        {type}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-throw-dimensions">Dimensions</Label>
-                                        <Input
-                                            id="edit-throw-dimensions"
-                                            value={editingThrow.dimensions || ""}
-                                            onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    dimensions: e.target.value
-                                                })
-                                            }
-                                            placeholder="e.g., 6″ diameter x 3″ height"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-throw-status">Status</Label>
-                                        <Select
-                                            value={editingThrow.status}
-                                            onValueChange={(
-                                                value:
-                                                    | "planning"
-                                                    | "in-progress"
-                                                    | "fired"
-                                                    | "completed"
-                                            ) =>
-                                                setEditingThrow({ ...editingThrow, status: value })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="planning">Planning</SelectItem>
-                                                <SelectItem value="in-progress">
-                                                    In Progress
-                                                </SelectItem>
-                                                <SelectItem value="fired">Fired</SelectItem>
-                                                <SelectItem value="completed">Completed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="flex items-center space-x-2 font-medium">
-                                    <Flame className="w-4 h-4" />
-                                    <span>Clay & Firing</span>
-                                </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="edit-clay-type">Clay Type</Label>
-                                        <Select
-                                            value={editingThrow.clayType}
-                                            onValueChange={(value) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    clayType: value
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {clayTypes.map((type) => (
-                                                    <SelectItem
-                                                        key={type}
-                                                        value={type}
-                                                    >
-                                                        {type}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-firing-type">Firing Type</Label>
-                                        <Select
-                                            value={editingThrow.firingType}
-                                            onValueChange={(value) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    firingType: value
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {firingTypes.map((type) => (
-                                                    <SelectItem
-                                                        key={type}
-                                                        value={type}
-                                                    >
-                                                        {type}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-firing-temp">Temperature</Label>
-                                        <Select
-                                            value={editingThrow.firingTemp}
-                                            onValueChange={(value) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    firingTemp: value
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {temperatures.map((temp) => (
-                                                    <SelectItem
-                                                        key={temp}
-                                                        value={temp}
-                                                    >
-                                                        {temp}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="flex items-center space-x-2 font-medium">
-                                    <FileText className="w-4 h-4" />
-                                    <span>Notes & Reflection</span>
-                                </h4>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="edit-throw-description">Description</Label>
+                                    <div className="md:col-span-2">
+                                        <Label htmlFor="throw-description">Description</Label>
                                         <Textarea
-                                            id="edit-throw-description"
-                                            value={editingThrow.description || ""}
+                                            id="throw-description"
+                                            value={newThrowData.description}
                                             onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
+                                                setNewThrowData((prev) => ({
+                                                    ...prev,
                                                     description: e.target.value
-                                                })
+                                                }))
                                             }
-                                            placeholder="Brief description of the piece..."
-                                            rows={2}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-throw-notes">Process Notes</Label>
-                                        <Textarea
-                                            id="edit-throw-notes"
-                                            value={editingThrow.notes}
-                                            onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    notes: e.target.value
-                                                })
-                                            }
-                                            placeholder="What happened during the making process?"
+                                            placeholder="Describe your piece - what are you making, what's special about it?"
                                             rows={3}
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="edit-throw-challenges">Challenges</Label>
-                                        <Textarea
-                                            id="edit-throw-challenges"
-                                            value={editingThrow.challenges}
-                                            onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    challenges: e.target.value
-                                                })
+                                        <Label htmlFor="throw-project">Project (Optional)</Label>
+                                        <Select
+                                            value={newThrowData.projectId}
+                                            onValueChange={(value) =>
+                                                setNewThrowData((prev) => ({
+                                                    ...prev,
+                                                    projectId: value
+                                                }))
                                             }
-                                            placeholder="What was difficult?"
-                                            rows={2}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="edit-throw-next-steps">Next Steps</Label>
-                                        <Textarea
-                                            id="edit-throw-next-steps"
-                                            value={editingThrow.nextSteps}
-                                            onChange={(e) =>
-                                                setEditingThrow({
-                                                    ...editingThrow,
-                                                    nextSteps: e.target.value
-                                                })
-                                            }
-                                            placeholder="What's next for this piece?"
-                                            rows={2}
-                                        />
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="No project" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">No project</SelectItem>
+                                                {projects.map((project) => (
+                                                    <SelectItem
+                                                        key={project.id}
+                                                        value={project.id}
+                                                    >
+                                                        <div className="flex items-center space-x-2">
+                                                            <div
+                                                                className="w-3 h-3 rounded-full"
+                                                                style={{
+                                                                    backgroundColor: project.color
+                                                                }}
+                                                            />
+                                                            <span>{project.name}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
                             </div>
+                            {newThrowData.whiteboardMode && (
+                                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                    <div className="flex items-start space-x-3">
+                                        <Palette className="w-5 h-5 text-purple-500 mt-0.5" />
+                                        <div>
+                                            <h5 className="font-medium text-purple-900">
+                                                Whiteboard Mode
+                                            </h5>
+                                            <p className="text-sm text-purple-700 mt-1">
+                                                Your throw will open in a visual whiteboard where
+                                                you can add photos, sketches, sticky notes, and
+                                                text. Perfect for documenting your process with
+                                                visual elements and freeform notes.
+                                            </p>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                >
+                                                    <Upload className="w-3 h-3 mr-1" />
+                                                    Photo Upload
+                                                </Badge>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                >
+                                                    <StickyNote className="w-3 h-3 mr-1" />
+                                                    Sticky Notes
+                                                </Badge>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                >
+                                                    <Pen className="w-3 h-3 mr-1" />
+                                                    Drawing Tools
+                                                </Badge>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="text-xs"
+                                                >
+                                                    <Layers className="w-3 h-3 mr-1" />
+                                                    Multiple Pages
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowEditThrowDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpdateThrow}>
-                            <Save className="w-4 h-4 mr-2" />
-                            Save Changes
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Share Dialog */}
-            <Dialog
-                open={showShareDialog}
-                onOpenChange={setShowShareDialog}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            Share {shareTarget?.type === "project" ? "Project" : "Throw"}
-                        </DialogTitle>
-                        <DialogDescription>
-                            Collaborate with other artists by sharing your work.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label>Email Address</Label>
-                            <Input
-                                value={shareEmail}
-                                onChange={(e) => setShareEmail(e.target.value)}
-                                placeholder="artist@example.com"
-                                type="email"
-                            />
-                        </div>
-                        <div>
-                            <Label>Permission Level</Label>
-                            <Select
-                                value={sharePermission}
-                                onValueChange={(value: "view" | "comment" | "edit") =>
-                                    setSharePermission(value)
-                                }
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowNewThrowDialog(false)}
                             >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="view">View Only</SelectItem>
-                                    <SelectItem value="comment">Comment</SelectItem>
-                                    <SelectItem value="edit">Edit</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateThrow}
+                                disabled={!newThrowData.title.trim()}
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                {newThrowData.whiteboardMode ? "Create Whiteboard" : "Save Throw"}
+                            </Button>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                checked={canDuplicate}
-                                onCheckedChange={setCanDuplicate}
-                            />
-                            <Label>Allow duplication</Label>
+                    </DialogContent>
+                </Dialog>
+                {/* Traditional Throw Edit Dialog */}
+                <Dialog
+                    open={showEditThrowDialog}
+                    onOpenChange={setShowEditThrowDialog}
+                >
+                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <Edit3 className="w-5 h-5" />
+                                <span>Edit Throw</span>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Update the details of your pottery piece.
+                            </DialogDescription>
+                        </DialogHeader>
+                        {editingThrow && (
+                            <div className="grid gap-6 py-4">
+                                <div className="space-y-4">
+                                    <h4 className="flex items-center space-x-2 font-medium">
+                                        <Type className="w-4 h-4" />
+                                        <span>Basic Information</span>
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="edit-throw-title">Title *</Label>
+                                            <Input
+                                                id="edit-throw-title"
+                                                value={editingThrow.title}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        title: e.target.value
+                                                    })
+                                                }
+                                                placeholder="e.g., Celadon Bowl #1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-type">Pottery Type</Label>
+                                            <Select
+                                                value={editingThrow.potteryType}
+                                                onValueChange={(value) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        potteryType: value
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {potteryTypes.map((type) => (
+                                                        <SelectItem
+                                                            key={type}
+                                                            value={type}
+                                                        >
+                                                            {type}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-dimensions">
+                                                Dimensions
+                                            </Label>
+                                            <Input
+                                                id="edit-throw-dimensions"
+                                                value={editingThrow.dimensions || ""}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        dimensions: e.target.value
+                                                    })
+                                                }
+                                                placeholder="e.g., 6″ diameter x 3″ height"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-status">Status</Label>
+                                            <Select
+                                                value={editingThrow.status}
+                                                onValueChange={(
+                                                    value:
+                                                        | "planning"
+                                                        | "in-progress"
+                                                        | "fired"
+                                                        | "completed"
+                                                ) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        status: value
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="planning">
+                                                        Planning
+                                                    </SelectItem>
+                                                    <SelectItem value="in-progress">
+                                                        In Progress
+                                                    </SelectItem>
+                                                    <SelectItem value="fired">Fired</SelectItem>
+                                                    <SelectItem value="completed">
+                                                        Completed
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="flex items-center space-x-2 font-medium">
+                                        <Flame className="w-4 h-4" />
+                                        <span>Clay & Firing</span>
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="edit-clay-type">Clay Type</Label>
+                                            <Select
+                                                value={editingThrow.clayType}
+                                                onValueChange={(value) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        clayType: value
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {clayTypes.map((type) => (
+                                                        <SelectItem
+                                                            key={type}
+                                                            value={type}
+                                                        >
+                                                            {type}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-firing-type">Firing Type</Label>
+                                            <Select
+                                                value={editingThrow.firingType}
+                                                onValueChange={(value) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        firingType: value
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {firingTypes.map((type) => (
+                                                        <SelectItem
+                                                            key={type}
+                                                            value={type}
+                                                        >
+                                                            {type}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-firing-temp">Temperature</Label>
+                                            <Select
+                                                value={editingThrow.firingTemp}
+                                                onValueChange={(value) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        firingTemp: value
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {temperatures.map((temp) => (
+                                                        <SelectItem
+                                                            key={temp}
+                                                            value={temp}
+                                                        >
+                                                            {temp}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="flex items-center space-x-2 font-medium">
+                                        <FileText className="w-4 h-4" />
+                                        <span>Notes & Reflection</span>
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="edit-throw-description">
+                                                Description
+                                            </Label>
+                                            <Textarea
+                                                id="edit-throw-description"
+                                                value={editingThrow.description || ""}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        description: e.target.value
+                                                    })
+                                                }
+                                                placeholder="Brief description of the piece..."
+                                                rows={2}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-notes">Process Notes</Label>
+                                            <Textarea
+                                                id="edit-throw-notes"
+                                                value={editingThrow.notes}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        notes: e.target.value
+                                                    })
+                                                }
+                                                placeholder="What happened during the making process?"
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-challenges">
+                                                Challenges
+                                            </Label>
+                                            <Textarea
+                                                id="edit-throw-challenges"
+                                                value={editingThrow.challenges}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        challenges: e.target.value
+                                                    })
+                                                }
+                                                placeholder="What was difficult?"
+                                                rows={2}
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="edit-throw-next-steps">
+                                                Next Steps
+                                            </Label>
+                                            <Textarea
+                                                id="edit-throw-next-steps"
+                                                value={editingThrow.nextSteps}
+                                                onChange={(e) =>
+                                                    setEditingThrow({
+                                                        ...editingThrow,
+                                                        nextSteps: e.target.value
+                                                    })
+                                                }
+                                                placeholder="What's next for this piece?"
+                                                rows={2}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowEditThrowDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleUpdateThrow}>
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Changes
+                            </Button>
                         </div>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowShareDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => alert("Share functionality would be implemented here")}
-                            disabled={!shareEmail.trim()}
-                        >
-                            <Send className="w-4 h-4 mr-2" />
-                            Share
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div>
+                    </DialogContent>
+                </Dialog>
+                {/* Share Dialog */}
+                <Dialog
+                    open={showShareDialog}
+                    onOpenChange={setShowShareDialog}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>
+                                Share {shareTarget?.type === "project" ? "Project" : "Throw"}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Collaborate with other artists by sharing your work.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label>Email Address</Label>
+                                <Input
+                                    value={shareEmail}
+                                    onChange={(e) => setShareEmail(e.target.value)}
+                                    placeholder="artist@example.com"
+                                    type="email"
+                                />
+                            </div>
+                            <div>
+                                <Label>Permission Level</Label>
+                                <Select
+                                    value={sharePermission}
+                                    onValueChange={(value: "view" | "comment" | "edit") =>
+                                        setSharePermission(value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="view">View Only</SelectItem>
+                                        <SelectItem value="comment">Comment</SelectItem>
+                                        <SelectItem value="edit">Edit</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    checked={canDuplicate}
+                                    onCheckedChange={setCanDuplicate}
+                                />
+                                <Label>Allow duplication</Label>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowShareDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() =>
+                                    alert("Share functionality would be implemented here")
+                                }
+                                disabled={!shareEmail.trim()}
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                Share
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </DefaultLayout>
     );
 }

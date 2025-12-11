@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import type { StudioInvite, User } from "@/types";
 
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
+
 export default function InvitesPanel() {
     const context = useAppContext();
     const [invites, setInvites] = useState<StudioInvite[]>([]);
@@ -169,101 +171,101 @@ export default function InvitesPanel() {
 
     if (!context.currentUser) {
         return (
-            <div className="max-w-4xl mx-auto p-8 text-center">
-                <h1 className="text-2xl font-semibold mb-2">Studio Invites</h1>
-                <p className="text-muted-foreground">Please log in to view invites.</p>
-            </div>
+            <DefaultLayout>
+                <div className="max-w-4xl mx-auto p-8 text-center">
+                    <h1 className="text-2xl font-semibold mb-2">Studio Invites</h1>
+                    <p className="text-muted-foreground">Please log in to view invites.</p>
+                </div>
+            </DefaultLayout>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-8 space-y-4">
-            {renderHeader()}
-
-            {isLoading && (
-                <Card className="p-6 text-center text-muted-foreground">Loading invites…</Card>
-            )}
-
-            {!isLoading && error && (
-                <Card className="p-6 text-center">
-                    <CardTitle className="text-lg mb-2">Unable to load invites</CardTitle>
-                    <CardDescription className="text-sm text-red-500 mb-4">{error}</CardDescription>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchInvites}
-                    >
-                        Retry
-                    </Button>
-                </Card>
-            )}
-
-            {!isLoading && !error && invites.length === 0 && (
-                <Card className="p-6 text-center">
-                    <CardTitle className="text-lg mb-2">No pending invites</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground">
-                        When studios invite you to join, you&apos;ll see them here.
-                    </CardDescription>
-                </Card>
-            )}
-
-            {!isLoading && !error && invites.length > 0 && (
-                <div className="space-y-3">
-                    {invites.map((invite) => (
-                        <Card key={invite.id}>
-                            <CardHeader className="flex flex-row items-start justify-between gap-4">
-                                <div className="min-w-0 space-y-1">
-                                    <CardTitle className="text-base font-semibold truncate">
-                                        {invite.studios?.name ?? "A studio"} invited you
-                                    </CardTitle>
-                                    <CardDescription className="text-sm">
-                                        Role:{" "}
-                                        <span className="capitalize font-medium">
-                                            {invite.role}
-                                        </span>
-                                        {invite.studios?.handle && (
-                                            <>
-                                                {" "}
-                                                • <span>@{invite.studios.handle}</span>
-                                            </>
-                                        )}
-                                    </CardDescription>
-                                    {invite.invited_at && (
-                                        <p className="text-xs text-muted-foreground">
-                                            Invited{" "}
-                                            {new Date(invite.invited_at).toLocaleDateString(
-                                                undefined,
-                                                {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    year: "numeric"
-                                                }
+        <DefaultLayout>
+            <div className="max-w-4xl mx-auto p-8 space-y-4">
+                {renderHeader()}
+                {isLoading && (
+                    <Card className="p-6 text-center text-muted-foreground">Loading invites…</Card>
+                )}
+                {!isLoading && error && (
+                    <Card className="p-6 text-center">
+                        <CardTitle className="text-lg mb-2">Unable to load invites</CardTitle>
+                        <CardDescription className="text-sm text-red-500 mb-4">{error}</CardDescription>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchInvites}
+                        >
+                            Retry
+                        </Button>
+                    </Card>
+                )}
+                {!isLoading && !error && invites.length === 0 && (
+                    <Card className="p-6 text-center">
+                        <CardTitle className="text-lg mb-2">No pending invites</CardTitle>
+                        <CardDescription className="text-sm text-muted-foreground">
+                            When studios invite you to join, you&apos;ll see them here.
+                        </CardDescription>
+                    </Card>
+                )}
+                {!isLoading && !error && invites.length > 0 && (
+                    <div className="space-y-3">
+                        {invites.map((invite) => (
+                            <Card key={invite.id}>
+                                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                    <div className="min-w-0 space-y-1">
+                                        <CardTitle className="text-base font-semibold truncate">
+                                            {invite.studios?.name ?? "A studio"} invited you
+                                        </CardTitle>
+                                        <CardDescription className="text-sm">
+                                            Role:{" "}
+                                            <span className="capitalize font-medium">
+                                                {invite.role}
+                                            </span>
+                                            {invite.studios?.handle && (
+                                                <>
+                                                    {" "}
+                                                    • <span>@{invite.studios.handle}</span>
+                                                </>
                                             )}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
-                                    <Badge
-                                        variant="secondary"
-                                        className="capitalize"
-                                    >
-                                        {invite.status}
-                                    </Badge>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => handleAccept(invite.id)}
-                                    >
-                                        Accept
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-0 pb-4 text-xs text-muted-foreground">
-                                {/* extra metadata can live here later if needed */}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            )}
-        </div>
+                                        </CardDescription>
+                                        {invite.invited_at && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Invited{" "}
+                                                {new Date(invite.invited_at).toLocaleDateString(
+                                                    undefined,
+                                                    {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric"
+                                                    }
+                                                )}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
+                                        <Badge
+                                            variant="secondary"
+                                            className="capitalize"
+                                        >
+                                            {invite.status}
+                                        </Badge>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleAccept(invite.id)}
+                                        >
+                                            Accept
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-0 pb-4 text-xs text-muted-foreground">
+                                    {/* extra metadata can live here later if needed */}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </DefaultLayout>
     );
 }

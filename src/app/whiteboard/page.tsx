@@ -56,7 +56,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -65,13 +71,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Toggle } from "@/components/ui/toggle";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function WhiteboardEditor() {
     const {
@@ -1505,602 +1519,615 @@ export default function WhiteboardEditor() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-                className="hidden"
-            />
+        <DefaultLayout>
+            <div className="min-h-screen flex flex-col">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                />
 
-            {/* Header */}
-            {renderToolbar()}
+                {/* Header */}
+                {renderToolbar()}
 
-            {/* Whiteboard Tools */}
-            {renderWhiteboardTools()}
+                {/* Whiteboard Tools */}
+                {renderWhiteboardTools()}
 
-            {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Canvas Area */}
-                <div className="flex-1 flex flex-col">
-                    {renderCanvas()}
-                    {renderPageNavigation()}
+                {/* Main Content */}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Canvas Area */}
+                    <div className="flex-1 flex flex-col">
+                        {renderCanvas()}
+                        {renderPageNavigation()}
+                    </div>
+
+                    {/* Sidebar */}
+                    {showSidebar && renderSidebar()}
                 </div>
 
-                {/* Sidebar */}
-                {showSidebar && renderSidebar()}
-            </div>
+                {/* Enhanced Glazing Dialog */}
+                <Dialog
+                    open={showGlazingDialog}
+                    onOpenChange={setShowGlazingDialog}
+                >
+                    <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <Paintbrush className="w-5 h-5 text-green-600" />
+                                <span>Glazing Planner</span>
+                                <Badge
+                                    variant="secondary"
+                                    className="ml-2"
+                                >
+                                    Enhanced
+                                </Badge>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Select glazes from your studio's collection or add custom glazes for
+                                this piece.
+                            </DialogDescription>
+                        </DialogHeader>
 
-            {/* Enhanced Glazing Dialog */}
-            <Dialog
-                open={showGlazingDialog}
-                onOpenChange={setShowGlazingDialog}
-            >
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <Paintbrush className="w-5 h-5 text-green-600" />
-                            <span>Glazing Planner</span>
-                            <Badge
-                                variant="secondary"
-                                className="ml-2"
-                            >
-                                Enhanced
-                            </Badge>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Select glazes from your studio's collection or add custom glazes for
-                            this piece.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-6 py-4">
-                        <div>
-                            <Label className="text-base font-medium">Studio Glazes</Label>
-                            <p className="text-sm text-muted-foreground mb-3">
-                                Available at {currentStudio?.name}
-                            </p>
-                            <div className="grid grid-cols-2 gap-2">
-                                {availableGlazes.map((glaze) => (
-                                    <div
-                                        key={glaze}
-                                        className="flex items-center space-x-2"
-                                    >
-                                        <Checkbox
-                                            checked={selectedGlazes.includes(glaze)}
-                                            onCheckedChange={(checked) => {
-                                                if (checked) {
-                                                    setSelectedGlazes([...selectedGlazes, glaze]);
-                                                } else {
-                                                    setSelectedGlazes(
-                                                        selectedGlazes.filter((g) => g !== glaze)
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                        <Label className="text-sm">{glaze}</Label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <div>
-                            <Label className="text-base font-medium">Custom Glaze</Label>
-                            <p className="text-sm text-muted-foreground mb-3">
-                                Add a glaze not in the studio collection
-                            </p>
-                            <Input
-                                value={customGlaze}
-                                onChange={(e) => setCustomGlaze(e.target.value)}
-                                placeholder="e.g., Personal celadon mix"
-                            />
-                        </div>
-
-                        {(selectedGlazes.length > 0 || customGlaze.trim()) && (
-                            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                                <h4 className="font-medium text-green-800 mb-2">
-                                    Glazing Plan Preview
-                                </h4>
-                                <div className="space-y-1">
-                                    {selectedGlazes.map((glaze) => (
+                        <div className="space-y-6 py-4">
+                            <div>
+                                <Label className="text-base font-medium">Studio Glazes</Label>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Available at {currentStudio?.name}
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {availableGlazes.map((glaze) => (
                                         <div
                                             key={glaze}
-                                            className="flex items-center space-x-2 text-sm"
+                                            className="flex items-center space-x-2"
                                         >
-                                            <div className="w-2 h-2 rounded-full bg-green-600" />
-                                            <span>{glaze}</span>
+                                            <Checkbox
+                                                checked={selectedGlazes.includes(glaze)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedGlazes([
+                                                            ...selectedGlazes,
+                                                            glaze
+                                                        ]);
+                                                    } else {
+                                                        setSelectedGlazes(
+                                                            selectedGlazes.filter(
+                                                                (g) => g !== glaze
+                                                            )
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            <Label className="text-sm">{glaze}</Label>
                                         </div>
                                     ))}
-                                    {customGlaze.trim() && (
-                                        <div className="flex items-center space-x-2 text-sm">
-                                            <div className="w-2 h-2 rounded-full bg-green-600" />
-                                            <span>{customGlaze}</span>
-                                            <Badge
-                                                variant="outline"
-                                                className="text-xs"
-                                            >
-                                                Custom
-                                            </Badge>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowGlazingDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleApplyGlazes}
-                            disabled={selectedGlazes.length === 0 && !customGlaze.trim()}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            <Paintbrush className="w-4 h-4 mr-2" />
-                            Apply Glazes
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                            <Separator />
 
-            {/* Enhanced Firing Dialog */}
-            <Dialog
-                open={showFiringDialog}
-                onOpenChange={setShowFiringDialog}
-            >
-                <DialogContent className="sm:max-w-[700px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <Flame className="w-5 h-5 text-red-600" />
-                            <span>Firing Scheduler</span>
-                            <Badge
-                                variant="secondary"
-                                className="ml-2"
+                            <div>
+                                <Label className="text-base font-medium">Custom Glaze</Label>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                    Add a glaze not in the studio collection
+                                </p>
+                                <Input
+                                    value={customGlaze}
+                                    onChange={(e) => setCustomGlaze(e.target.value)}
+                                    placeholder="e.g., Personal celadon mix"
+                                />
+                            </div>
+
+                            {(selectedGlazes.length > 0 || customGlaze.trim()) && (
+                                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <h4 className="font-medium text-green-800 mb-2">
+                                        Glazing Plan Preview
+                                    </h4>
+                                    <div className="space-y-1">
+                                        {selectedGlazes.map((glaze) => (
+                                            <div
+                                                key={glaze}
+                                                className="flex items-center space-x-2 text-sm"
+                                            >
+                                                <div className="w-2 h-2 rounded-full bg-green-600" />
+                                                <span>{glaze}</span>
+                                            </div>
+                                        ))}
+                                        {customGlaze.trim() && (
+                                            <div className="flex items-center space-x-2 text-sm">
+                                                <div className="w-2 h-2 rounded-full bg-green-600" />
+                                                <span>{customGlaze}</span>
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    Custom
+                                                </Badge>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowGlazingDialog(false)}
                             >
-                                Enhanced
-                            </Badge>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Schedule your piece for an upcoming firing or plan a custom firing.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-6 py-4">
-                        <Tabs
-                            defaultValue="scheduled"
-                            className="w-full"
-                        >
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="scheduled">Scheduled Firings</TabsTrigger>
-                                <TabsTrigger value="custom">Custom Firing</TabsTrigger>
-                            </TabsList>
-
-                            <TabsContent
-                                value="scheduled"
-                                className="space-y-4"
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleApplyGlazes}
+                                disabled={selectedGlazes.length === 0 && !customGlaze.trim()}
+                                className="bg-green-600 hover:bg-green-700"
                             >
-                                <div>
-                                    <Label className="text-base font-medium">
-                                        Available Firings
-                                    </Label>
-                                    <p className="text-sm text-muted-foreground mb-3">
-                                        Upcoming firing schedule at {currentStudio?.name}
+                                <Paintbrush className="w-4 h-4 mr-2" />
+                                Apply Glazes
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Enhanced Firing Dialog */}
+                <Dialog
+                    open={showFiringDialog}
+                    onOpenChange={setShowFiringDialog}
+                >
+                    <DialogContent className="sm:max-w-[700px]">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <Flame className="w-5 h-5 text-red-600" />
+                                <span>Firing Scheduler</span>
+                                <Badge
+                                    variant="secondary"
+                                    className="ml-2"
+                                >
+                                    Enhanced
+                                </Badge>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Schedule your piece for an upcoming firing or plan a custom firing.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6 py-4">
+                            <Tabs
+                                defaultValue="scheduled"
+                                className="w-full"
+                            >
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="scheduled">Scheduled Firings</TabsTrigger>
+                                    <TabsTrigger value="custom">Custom Firing</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent
+                                    value="scheduled"
+                                    className="space-y-4"
+                                >
+                                    <div>
+                                        <Label className="text-base font-medium">
+                                            Available Firings
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground mb-3">
+                                            Upcoming firing schedule at {currentStudio?.name}
+                                        </p>
+
+                                        {availableFirings.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {availableFirings.map((firing) => (
+                                                    <Card
+                                                        key={firing.id}
+                                                        className={`cursor-pointer transition-all ${
+                                                            selectedFiring === firing.id
+                                                                ? "ring-2 ring-orange-500 bg-orange-50"
+                                                                : firing.available
+                                                                  ? "hover:bg-gray-50"
+                                                                  : "opacity-60"
+                                                        }`}
+                                                        onClick={() =>
+                                                            firing.available &&
+                                                            setSelectedFiring(firing.id)
+                                                        }
+                                                    >
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <h4 className="font-medium">
+                                                                        {firing.type} Firing
+                                                                    </h4>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        {new Date(
+                                                                            firing.date
+                                                                        ).toLocaleDateString()}{" "}
+                                                                        • {firing.temperature}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <Badge
+                                                                        variant={
+                                                                            firing.available
+                                                                                ? "default"
+                                                                                : "secondary"
+                                                                        }
+                                                                    >
+                                                                        {firing.available
+                                                                            ? `${firing.spotsLeft} spots left`
+                                                                            : "Full"}
+                                                                    </Badge>
+                                                                </div>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 text-muted-foreground">
+                                                <Flame className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                <p>No scheduled firings available</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent
+                                    value="custom"
+                                    className="space-y-4"
+                                >
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label>Firing Type</Label>
+                                            <Input
+                                                value={customFiring}
+                                                onChange={(e) => setCustomFiring(e.target.value)}
+                                                placeholder="e.g., Special bisque firing"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label>Temperature</Label>
+                                            <Select
+                                                value={firingTemp}
+                                                onValueChange={setFiringTemp}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {temperatures.map((temp) => (
+                                                        <SelectItem
+                                                            key={temp}
+                                                            value={temp}
+                                                        >
+                                                            {temp}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </div>
+
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowFiringDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleScheduleFiring}
+                                disabled={!selectedFiring && !customFiring.trim()}
+                                className="bg-red-600 hover:bg-red-700"
+                            >
+                                <Flame className="w-4 h-4 mr-2" />
+                                Schedule Firing
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* AI Trimming Dialog */}
+                <Dialog
+                    open={showTrimmingDialog}
+                    onOpenChange={setShowTrimmingDialog}
+                >
+                    <DialogContent className="sm:max-w-[800px]">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center space-x-2">
+                                <Scissors className="w-5 h-5 text-blue-600" />
+                                <span>AI Trimming Assistant</span>
+                                <Badge
+                                    variant="secondary"
+                                    className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                                >
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    AI Powered
+                                </Badge>
+                            </DialogTitle>
+                            <DialogDescription>
+                                Get AI-powered trimming suggestions based on your pottery type and
+                                uploaded photos.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6 py-4">
+                            {isGeneratingAI ? (
+                                <div className="flex flex-col items-center justify-center py-8">
+                                    <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+                                    <h3 className="font-medium">Analyzing your piece...</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        AI is examining pottery type and proportions
                                     </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div className="flex items-start space-x-3">
+                                            <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5" />
+                                            <div>
+                                                <h4 className="font-medium text-blue-800">
+                                                    Analysis Complete
+                                                </h4>
+                                                <p className="text-sm text-blue-700 mt-1">
+                                                    Based on your{" "}
+                                                    {currentThrow?.potteryType?.toLowerCase() ||
+                                                        "piece"}{" "}
+                                                    and uploaded photos, here are the recommended
+                                                    trimming approaches:
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                    {availableFirings.length > 0 ? (
-                                        <div className="space-y-2">
-                                            {availableFirings.map((firing) => (
+                                    <div>
+                                        <Label className="text-base font-medium">
+                                            AI Recommendations
+                                        </Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                            {aiTrimmingSuggestions.map((pattern) => (
                                                 <Card
-                                                    key={firing.id}
+                                                    key={pattern.id}
                                                     className={`cursor-pointer transition-all ${
-                                                        selectedFiring === firing.id
-                                                            ? "ring-2 ring-orange-500 bg-orange-50"
-                                                            : firing.available
-                                                              ? "hover:bg-gray-50"
-                                                              : "opacity-60"
+                                                        selectedTrimmingPattern === pattern.id
+                                                            ? "ring-2 ring-blue-500 bg-blue-50"
+                                                            : "hover:bg-gray-50"
                                                     }`}
                                                     onClick={() =>
-                                                        firing.available &&
-                                                        setSelectedFiring(firing.id)
+                                                        setSelectedTrimmingPattern(pattern.id)
                                                     }
                                                 >
                                                     <CardContent className="p-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <h4 className="font-medium">
-                                                                    {firing.type} Firing
-                                                                </h4>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    {new Date(
-                                                                        firing.date
-                                                                    ).toLocaleDateString()}{" "}
-                                                                    • {firing.temperature}
-                                                                </p>
+                                                        <div className="flex items-start justify-between mb-2">
+                                                            <h4 className="font-medium">
+                                                                {pattern.name}
+                                                            </h4>
+                                                            <div className="flex items-center space-x-1">
+                                                                <div
+                                                                    className={`w-2 h-2 rounded-full ${
+                                                                        pattern.confidence >= 90
+                                                                            ? "bg-green-500"
+                                                                            : pattern.confidence >=
+                                                                                80
+                                                                              ? "bg-yellow-500"
+                                                                              : "bg-orange-500"
+                                                                    }`}
+                                                                />
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {pattern.confidence}%
+                                                                </span>
                                                             </div>
-                                                            <div className="text-right">
-                                                                <Badge
-                                                                    variant={
-                                                                        firing.available
-                                                                            ? "default"
-                                                                            : "secondary"
-                                                                    }
-                                                                >
-                                                                    {firing.available
-                                                                        ? `${firing.spotsLeft} spots left`
-                                                                        : "Full"}
-                                                                </Badge>
-                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {pattern.description}
+                                                        </p>
+                                                        <div className="mt-2">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
+                                                                {pattern.confidence >= 90
+                                                                    ? "Highly Recommended"
+                                                                    : pattern.confidence >= 80
+                                                                      ? "Recommended"
+                                                                      : "Consider"}
+                                                            </Badge>
                                                         </div>
                                                     </CardContent>
                                                 </Card>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-6 text-muted-foreground">
-                                            <Flame className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                            <p>No scheduled firings available</p>
+                                    </div>
+
+                                    {selectedTrimmingPattern && (
+                                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                            <h4 className="font-medium text-purple-800 mb-2">
+                                                Selected Pattern Preview
+                                            </h4>
+                                            <p className="text-sm text-purple-700">
+                                                The AI will add detailed trimming guidance to your
+                                                whiteboard, including:
+                                            </p>
+                                            <ul className="list-disc list-inside text-sm text-purple-700 mt-2 ml-2">
+                                                <li>Step-by-step trimming instructions</li>
+                                                <li>Recommended tool angles and positions</li>
+                                                <li>Wall thickness guidelines</li>
+                                                <li>Visual reference overlays</li>
+                                            </ul>
                                         </div>
                                     )}
-                                </div>
-                            </TabsContent>
+                                </>
+                            )}
+                        </div>
 
-                            <TabsContent
-                                value="custom"
-                                className="space-y-4"
-                            >
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label>Firing Type</Label>
-                                        <Input
-                                            value={customFiring}
-                                            onChange={(e) => setCustomFiring(e.target.value)}
-                                            placeholder="e.g., Special bisque firing"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Label>Temperature</Label>
-                                        <Select
-                                            value={firingTemp}
-                                            onValueChange={setFiringTemp}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {temperatures.map((temp) => (
-                                                    <SelectItem
-                                                        key={temp}
-                                                        value={temp}
-                                                    >
-                                                        {temp}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    </div>
-
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowFiringDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleScheduleFiring}
-                            disabled={!selectedFiring && !customFiring.trim()}
-                            className="bg-red-600 hover:bg-red-700"
-                        >
-                            <Flame className="w-4 h-4 mr-2" />
-                            Schedule Firing
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* AI Trimming Dialog */}
-            <Dialog
-                open={showTrimmingDialog}
-                onOpenChange={setShowTrimmingDialog}
-            >
-                <DialogContent className="sm:max-w-[800px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center space-x-2">
-                            <Scissors className="w-5 h-5 text-blue-600" />
-                            <span>AI Trimming Assistant</span>
-                            <Badge
-                                variant="secondary"
-                                className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                            >
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                AI Powered
-                            </Badge>
-                        </DialogTitle>
-                        <DialogDescription>
-                            Get AI-powered trimming suggestions based on your pottery type and
-                            uploaded photos.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-6 py-4">
-                        {isGeneratingAI ? (
-                            <div className="flex flex-col items-center justify-center py-8">
-                                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
-                                <h3 className="font-medium">Analyzing your piece...</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    AI is examining pottery type and proportions
-                                </p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <div className="flex items-start space-x-3">
-                                        <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5" />
-                                        <div>
-                                            <h4 className="font-medium text-blue-800">
-                                                Analysis Complete
-                                            </h4>
-                                            <p className="text-sm text-blue-700 mt-1">
-                                                Based on your{" "}
-                                                {currentThrow?.potteryType?.toLowerCase() ||
-                                                    "piece"}{" "}
-                                                and uploaded photos, here are the recommended
-                                                trimming approaches:
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <Label className="text-base font-medium">
-                                        AI Recommendations
-                                    </Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                                        {aiTrimmingSuggestions.map((pattern) => (
-                                            <Card
-                                                key={pattern.id}
-                                                className={`cursor-pointer transition-all ${
-                                                    selectedTrimmingPattern === pattern.id
-                                                        ? "ring-2 ring-blue-500 bg-blue-50"
-                                                        : "hover:bg-gray-50"
-                                                }`}
-                                                onClick={() =>
-                                                    setSelectedTrimmingPattern(pattern.id)
-                                                }
-                                            >
-                                                <CardContent className="p-4">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <h4 className="font-medium">
-                                                            {pattern.name}
-                                                        </h4>
-                                                        <div className="flex items-center space-x-1">
-                                                            <div
-                                                                className={`w-2 h-2 rounded-full ${
-                                                                    pattern.confidence >= 90
-                                                                        ? "bg-green-500"
-                                                                        : pattern.confidence >= 80
-                                                                          ? "bg-yellow-500"
-                                                                          : "bg-orange-500"
-                                                                }`}
-                                                            />
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {pattern.confidence}%
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {pattern.description}
-                                                    </p>
-                                                    <div className="mt-2">
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="text-xs"
-                                                        >
-                                                            {pattern.confidence >= 90
-                                                                ? "Highly Recommended"
-                                                                : pattern.confidence >= 80
-                                                                  ? "Recommended"
-                                                                  : "Consider"}
-                                                        </Badge>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {selectedTrimmingPattern && (
-                                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                                        <h4 className="font-medium text-purple-800 mb-2">
-                                            Selected Pattern Preview
-                                        </h4>
-                                        <p className="text-sm text-purple-700">
-                                            The AI will add detailed trimming guidance to your
-                                            whiteboard, including:
-                                        </p>
-                                        <ul className="list-disc list-inside text-sm text-purple-700 mt-2 ml-2">
-                                            <li>Step-by-step trimming instructions</li>
-                                            <li>Recommended tool angles and positions</li>
-                                            <li>Wall thickness guidelines</li>
-                                            <li>Visual reference overlays</li>
-                                        </ul>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowTrimmingDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        {!isGeneratingAI && (
+                        <div className="flex justify-end space-x-3">
                             <Button
-                                onClick={() => handleApplyTrimmingPattern(selectedTrimmingPattern)}
-                                disabled={!selectedTrimmingPattern}
-                                className="bg-blue-600 hover:bg-blue-700"
+                                variant="outline"
+                                onClick={() => setShowTrimmingDialog(false)}
                             >
-                                <Wand2 className="w-4 h-4 mr-2" />
-                                Apply AI Suggestion
+                                Cancel
                             </Button>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Share Dialog */}
-            <Dialog
-                open={showShareDialog}
-                onOpenChange={setShowShareDialog}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Share Throw</DialogTitle>
-                        <DialogDescription>
-                            Collaborate with other artists by sharing your pottery documentation.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label>Email Address</Label>
-                            <Input
-                                value={shareEmail}
-                                onChange={(e) => setShareEmail(e.target.value)}
-                                placeholder="artist@example.com"
-                                type="email"
-                            />
+                            {!isGeneratingAI && (
+                                <Button
+                                    onClick={() =>
+                                        handleApplyTrimmingPattern(selectedTrimmingPattern)
+                                    }
+                                    disabled={!selectedTrimmingPattern}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                    <Wand2 className="w-4 h-4 mr-2" />
+                                    Apply AI Suggestion
+                                </Button>
+                            )}
                         </div>
-                        <div>
-                            <Label>Permission Level</Label>
-                            <Select
-                                value={sharePermission}
-                                onValueChange={(value: "view" | "comment" | "edit") =>
-                                    setSharePermission(value)
-                                }
+                    </DialogContent>
+                </Dialog>
+
+                {/* Share Dialog */}
+                <Dialog
+                    open={showShareDialog}
+                    onOpenChange={setShowShareDialog}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Share Throw</DialogTitle>
+                            <DialogDescription>
+                                Collaborate with other artists by sharing your pottery
+                                documentation.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div>
+                                <Label>Email Address</Label>
+                                <Input
+                                    value={shareEmail}
+                                    onChange={(e) => setShareEmail(e.target.value)}
+                                    placeholder="artist@example.com"
+                                    type="email"
+                                />
+                            </div>
+                            <div>
+                                <Label>Permission Level</Label>
+                                <Select
+                                    value={sharePermission}
+                                    onValueChange={(value: "view" | "comment" | "edit") =>
+                                        setSharePermission(value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="view">
+                                            <div className="flex items-center space-x-2">
+                                                <Eye className="w-4 h-4" />
+                                                <div>
+                                                    <p>View Only</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Can see the throw
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="comment">
+                                            <div className="flex items-center space-x-2">
+                                                <MessageSquare className="w-4 h-4" />
+                                                <div>
+                                                    <p>Comment</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Can view and leave comments
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="edit">
+                                            <div className="flex items-center space-x-2">
+                                                <Edit3 className="w-4 h-4" />
+                                                <div>
+                                                    <p>Edit</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Can view, comment, and edit
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    checked={canDuplicate}
+                                    onCheckedChange={setCanDuplicate}
+                                />
+                                <Label>Allow duplication</Label>
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowShareDialog(false)}
                             >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="view">
-                                        <div className="flex items-center space-x-2">
-                                            <Eye className="w-4 h-4" />
-                                            <div>
-                                                <p>View Only</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Can see the throw
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="comment">
-                                        <div className="flex items-center space-x-2">
-                                            <MessageSquare className="w-4 h-4" />
-                                            <div>
-                                                <p>Comment</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Can view and leave comments
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </SelectItem>
-                                    <SelectItem value="edit">
-                                        <div className="flex items-center space-x-2">
-                                            <Edit3 className="w-4 h-4" />
-                                            <div>
-                                                <p>Edit</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Can view, comment, and edit
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={() =>
+                                    alert("Share functionality would be implemented here")
+                                }
+                                disabled={!shareEmail.trim()}
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                Share
+                            </Button>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                checked={canDuplicate}
-                                onCheckedChange={setCanDuplicate}
-                            />
-                            <Label>Allow duplication</Label>
-                        </div>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowShareDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={() => alert("Share functionality would be implemented here")}
-                            disabled={!shareEmail.trim()}
-                        >
-                            <Send className="w-4 h-4 mr-2" />
-                            Share
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                    </DialogContent>
+                </Dialog>
 
-            {/* Export Dialog */}
-            <Dialog
-                open={showExportDialog}
-                onOpenChange={setShowExportDialog}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Export to PDF</DialogTitle>
-                        <DialogDescription>
-                            Export your pottery documentation as a PDF file.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="text-sm">
-                            <p>Your PDF will include:</p>
-                            <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
-                                <li>
-                                    All {currentThrow.whiteboardPages.length} page
-                                    {currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
-                                </li>
-                                <li>Photos and annotations</li>
-                                <li>Sticky notes and text</li>
-                                <li>Process details and notes</li>
-                                <li>AI analysis and suggestions</li>
-                            </ul>
+                {/* Export Dialog */}
+                <Dialog
+                    open={showExportDialog}
+                    onOpenChange={setShowExportDialog}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Export to PDF</DialogTitle>
+                            <DialogDescription>
+                                Export your pottery documentation as a PDF file.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="text-sm">
+                                <p>Your PDF will include:</p>
+                                <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
+                                    <li>
+                                        All {currentThrow.whiteboardPages.length} page
+                                        {currentThrow.whiteboardPages.length !== 1 ? "s" : ""}
+                                    </li>
+                                    <li>Photos and annotations</li>
+                                    <li>Sticky notes and text</li>
+                                    <li>Process details and notes</li>
+                                    <li>AI analysis and suggestions</li>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowExportDialog(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={() => alert("PDF export would be implemented here")}>
-                            <FileDown className="w-4 h-4 mr-2" />
-                            Export PDF
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div>
+                        <div className="flex justify-end space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowExportDialog(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={() => alert("PDF export would be implemented here")}>
+                                <FileDown className="w-4 h-4 mr-2" />
+                                Export PDF
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </DefaultLayout>
     );
 }

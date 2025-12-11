@@ -69,7 +69,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
@@ -78,6 +84,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppContext } from "@/app/context/AppContext";
 import { toast } from "sonner";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 // Blog interfaces
 export interface BlogComment {
@@ -459,683 +467,712 @@ Today, Sarah is working on a series of large platters with intricate carved desi
     }
 
     return (
-        <TooltipProvider>
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                    <div>
-                        <h1 className="text-3xl font-bold">Blog Management</h1>
-                        <p className="text-muted-foreground">
-                            Create, edit, and manage your blog content
-                        </p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                        >
-                            <BarChart className="w-4 h-4 mr-2" />
-                            Analytics
-                        </Button>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button onClick={() => setIsEditing(true)}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    New Post
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>Create New Blog Post</DialogTitle>
-                                    <DialogDescription>
-                                        Write and publish your blog content for your community
-                                    </DialogDescription>
-                                </DialogHeader>
+        <DefaultLayout>
+            <TooltipProvider>
+                <div className="max-w-7xl mx-auto p-6 space-y-6">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                        <div>
+                            <h1 className="text-3xl font-bold">Blog Management</h1>
+                            <p className="text-muted-foreground">
+                                Create, edit, and manage your blog content
+                            </p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                            >
+                                <BarChart className="w-4 h-4 mr-2" />
+                                Analytics
+                            </Button>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button onClick={() => setIsEditing(true)}>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        New Post
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Create New Blog Post</DialogTitle>
+                                        <DialogDescription>
+                                            Write and publish your blog content for your community
+                                        </DialogDescription>
+                                    </DialogHeader>
 
-                                <div className="space-y-6">
-                                    {/* Post Title */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="title">Title</Label>
-                                        <Input
-                                            id="title"
-                                            value={newPost.title}
-                                            onChange={(e) =>
-                                                setNewPost((prev) => ({
-                                                    ...prev,
-                                                    title: e.target.value
-                                                }))
-                                            }
-                                            placeholder="Enter your blog post title..."
-                                            className="text-lg"
-                                        />
-                                    </div>
-
-                                    {/* Content Editor */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <Label htmlFor="content">Content</Label>
-                                            <div className="flex items-center space-x-2">
-                                                <Button
-                                                    variant={
-                                                        editorMode === "write" ? "default" : "ghost"
-                                                    }
-                                                    size="sm"
-                                                    onClick={() => setEditorMode("write")}
-                                                >
-                                                    <Edit className="w-4 h-4 mr-1" />
-                                                    Write
-                                                </Button>
-                                                <Button
-                                                    variant={
-                                                        editorMode === "preview"
-                                                            ? "default"
-                                                            : "ghost"
-                                                    }
-                                                    size="sm"
-                                                    onClick={() => setEditorMode("preview")}
-                                                >
-                                                    <Eye className="w-4 h-4 mr-1" />
-                                                    Preview
-                                                </Button>
-                                            </div>
+                                    <div className="space-y-6">
+                                        {/* Post Title */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="title">Title</Label>
+                                            <Input
+                                                id="title"
+                                                value={newPost.title}
+                                                onChange={(e) =>
+                                                    setNewPost((prev) => ({
+                                                        ...prev,
+                                                        title: e.target.value
+                                                    }))
+                                                }
+                                                placeholder="Enter your blog post title..."
+                                                className="text-lg"
+                                            />
                                         </div>
 
-                                        {editorMode === "write" ? (
-                                            <div className="space-y-3">
-                                                {/* Toolbar */}
-                                                <div className="flex items-center space-x-2 p-2 border rounded-lg bg-muted/30">
+                                        {/* Content Editor */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="content">Content</Label>
+                                                <div className="flex items-center space-x-2">
                                                     <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Bold className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Italic className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Underline className="w-4 h-4" />
-                                                    </Button>
-                                                    <Separator
-                                                        orientation="vertical"
-                                                        className="h-4"
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <List className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <ListOrdered className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Quote className="w-4 h-4" />
-                                                    </Button>
-                                                    <Separator
-                                                        orientation="vertical"
-                                                        className="h-4"
-                                                    />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <ImageIcon className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Video className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                    >
-                                                        <Link className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-
-                                                <Textarea
-                                                    id="content"
-                                                    value={newPost.content}
-                                                    onChange={(e) =>
-                                                        setNewPost((prev) => ({
-                                                            ...prev,
-                                                            content: e.target.value
-                                                        }))
-                                                    }
-                                                    placeholder="Write your blog post content here... You can use Markdown syntax."
-                                                    rows={12}
-                                                    className="resize-none font-mono text-sm"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="min-h-[300px] p-4 border rounded-lg bg-background">
-                                                <div className="prose prose-sm max-w-none">
-                                                    {newPost.content ? (
-                                                        <div className="whitespace-pre-wrap">
-                                                            {newPost.content}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-muted-foreground italic">
-                                                            No content to preview yet...
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Post Settings */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Left Column */}
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="excerpt">Excerpt</Label>
-                                                <Textarea
-                                                    id="excerpt"
-                                                    value={newPost.excerpt}
-                                                    onChange={(e) =>
-                                                        setNewPost((prev) => ({
-                                                            ...prev,
-                                                            excerpt: e.target.value
-                                                        }))
-                                                    }
-                                                    placeholder="Brief description of your post..."
-                                                    rows={3}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="category">Category</Label>
-                                                <Select
-                                                    value={newPost.category}
-                                                    onValueChange={(value) =>
-                                                        setNewPost((prev) => ({
-                                                            ...prev,
-                                                            category: value
-                                                        }))
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select category..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {categories.map((category) => (
-                                                            <SelectItem
-                                                                key={category}
-                                                                value={category}
-                                                            >
-                                                                {category}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="tags">Tags</Label>
-                                                <Input
-                                                    id="tags"
-                                                    placeholder="pottery, ceramics, tutorial (comma separated)"
-                                                    onChange={(e) => {
-                                                        const tags = e.target.value
-                                                            .split(",")
-                                                            .map((tag) => tag.trim())
-                                                            .filter((tag) => tag);
-                                                        setNewPost((prev) => ({ ...prev, tags }));
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Right Column */}
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="status">Status</Label>
-                                                <Select
-                                                    value={newPost.status}
-                                                    onValueChange={(value) =>
-                                                        setNewPost((prev) => ({
-                                                            ...prev,
-                                                            status: value as BlogPost["status"]
-                                                        }))
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="draft">Draft</SelectItem>
-                                                        <SelectItem value="review">
-                                                            Review
-                                                        </SelectItem>
-                                                        <SelectItem value="published">
-                                                            Published
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="visibility">Visibility</Label>
-                                                <Select
-                                                    value={newPost.visibility}
-                                                    onValueChange={(value) =>
-                                                        setNewPost((prev) => ({
-                                                            ...prev,
-                                                            visibility:
-                                                                value as BlogPost["visibility"]
-                                                        }))
-                                                    }
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="public">
-                                                            Public
-                                                        </SelectItem>
-                                                        <SelectItem value="members-only">
-                                                            Members Only
-                                                        </SelectItem>
-                                                        <SelectItem value="private">
-                                                            Private
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
-                                                    <Label htmlFor="comments">
-                                                        Enable Comments
-                                                    </Label>
-                                                    <Switch
-                                                        id="comments"
-                                                        checked={newPost.commentsEnabled}
-                                                        onCheckedChange={(checked) =>
-                                                            setNewPost((prev) => ({
-                                                                ...prev,
-                                                                commentsEnabled: checked
-                                                            }))
+                                                        variant={
+                                                            editorMode === "write"
+                                                                ? "default"
+                                                                : "ghost"
                                                         }
-                                                    />
-                                                </div>
-
-                                                <div className="flex items-center justify-between">
-                                                    <Label htmlFor="social">Social Sharing</Label>
-                                                    <Switch
-                                                        id="social"
-                                                        checked={newPost.socialShareEnabled}
-                                                        onCheckedChange={(checked) =>
-                                                            setNewPost((prev) => ({
-                                                                ...prev,
-                                                                socialShareEnabled: checked
-                                                            }))
+                                                        size="sm"
+                                                        onClick={() => setEditorMode("write")}
+                                                    >
+                                                        <Edit className="w-4 h-4 mr-1" />
+                                                        Write
+                                                    </Button>
+                                                    <Button
+                                                        variant={
+                                                            editorMode === "preview"
+                                                                ? "default"
+                                                                : "ghost"
                                                         }
-                                                    />
-                                                </div>
-
-                                                <div className="flex items-center justify-between">
-                                                    <Label htmlFor="featured">Featured Post</Label>
-                                                    <Switch
-                                                        id="featured"
-                                                        checked={newPost.isFeatured}
-                                                        onCheckedChange={(checked) =>
-                                                            setNewPost((prev) => ({
-                                                                ...prev,
-                                                                isFeatured: checked
-                                                            }))
-                                                        }
-                                                    />
+                                                        size="sm"
+                                                        onClick={() => setEditorMode("preview")}
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-1" />
+                                                        Preview
+                                                    </Button>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Actions */}
-                                    <div className="flex items-center justify-between pt-4 border-t">
-                                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                            <Clock className="w-4 h-4" />
-                                            <span>
-                                                Reading time: ~
-                                                {Math.ceil(
-                                                    (newPost.content || "").split(" ").length / 200
-                                                )}{" "}
-                                                min
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center space-x-3">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setIsEditing(false)}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button onClick={handleCreatePost}>
-                                                <Save className="w-4 h-4 mr-2" />
-                                                {newPost.status === "published"
-                                                    ? "Publish"
-                                                    : "Save Draft"}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </div>
-
-                {/* Filters and Search */}
-                <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
-                            placeholder="Search posts..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10"
-                        />
-                    </div>
-                    <Select
-                        value={statusFilter}
-                        onValueChange={(value: any) => setStatusFilter(value)}
-                    >
-                        <SelectTrigger className="w-40">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="review">Review</SelectItem>
-                            <SelectItem value="published">Published</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Posts List */}
-                <div className="space-y-4">
-                    {filteredPosts.length > 0 ? (
-                        filteredPosts.map((post) => {
-                            const StatusIcon = getStatusIcon(post.status);
-                            return (
-                                <Card
-                                    key={post.id}
-                                    className="hover:shadow-md transition-shadow"
-                                >
-                                    <CardContent className="p-6">
-                                        <div className="flex items-start space-x-4">
-                                            {/* Featured Image */}
-                                            {post.featuredImage && (
-                                                <div className="w-24 h-16 flex-shrink-0">
-                                                    <AspectRatio ratio={3 / 2}>
-                                                        <img
-                                                            src={post.featuredImage}
-                                                            alt={post.title}
-                                                            className="w-full h-full object-cover rounded"
+                                            {editorMode === "write" ? (
+                                                <div className="space-y-3">
+                                                    {/* Toolbar */}
+                                                    <div className="flex items-center space-x-2 p-2 border rounded-lg bg-muted/30">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Bold className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Italic className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Underline className="w-4 h-4" />
+                                                        </Button>
+                                                        <Separator
+                                                            orientation="vertical"
+                                                            className="h-4"
                                                         />
-                                                    </AspectRatio>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <List className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <ListOrdered className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Quote className="w-4 h-4" />
+                                                        </Button>
+                                                        <Separator
+                                                            orientation="vertical"
+                                                            className="h-4"
+                                                        />
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <ImageIcon className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Link className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+
+                                                    <Textarea
+                                                        id="content"
+                                                        value={newPost.content}
+                                                        onChange={(e) =>
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                content: e.target.value
+                                                            }))
+                                                        }
+                                                        placeholder="Write your blog post content here... You can use Markdown syntax."
+                                                        rows={12}
+                                                        className="resize-none font-mono text-sm"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="min-h-[300px] p-4 border rounded-lg bg-background">
+                                                    <div className="prose prose-sm max-w-none">
+                                                        {newPost.content ? (
+                                                            <div className="whitespace-pre-wrap">
+                                                                {newPost.content}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-muted-foreground italic">
+                                                                No content to preview yet...
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
+                                        </div>
 
-                                            {/* Content */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center space-x-2 mb-2">
-                                                            <Badge
-                                                                variant={getStatusColor(
-                                                                    post.status
-                                                                )}
-                                                                className="flex items-center space-x-1"
-                                                            >
-                                                                <StatusIcon className="w-3 h-3" />
-                                                                <span className="capitalize">
-                                                                    {post.status}
-                                                                </span>
-                                                            </Badge>
-                                                            {post.isFeatured && (
-                                                                <Badge variant="outline">
-                                                                    Featured
-                                                                </Badge>
-                                                            )}
-                                                            {post.isSticky && (
-                                                                <Badge variant="outline">
-                                                                    Sticky
-                                                                </Badge>
-                                                            )}
-                                                            <Badge variant="secondary">
-                                                                {post.category}
-                                                            </Badge>
-                                                        </div>
+                                        {/* Post Settings */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Left Column */}
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="excerpt">Excerpt</Label>
+                                                    <Textarea
+                                                        id="excerpt"
+                                                        value={newPost.excerpt}
+                                                        onChange={(e) =>
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                excerpt: e.target.value
+                                                            }))
+                                                        }
+                                                        placeholder="Brief description of your post..."
+                                                        rows={3}
+                                                    />
+                                                </div>
 
-                                                        <h3 className="text-lg font-semibold mb-2 line-clamp-2">
-                                                            {post.title}
-                                                        </h3>
-                                                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                                                            {post.excerpt}
-                                                        </p>
-
-                                                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                                            <div className="flex items-center space-x-1">
-                                                                <Avatar className="w-4 h-4">
-                                                                    <AvatarImage
-                                                                        src={post.authorAvatar}
-                                                                    />
-                                                                    <AvatarFallback className="text-xs">
-                                                                        {post.authorName
-                                                                            .split(" ")
-                                                                            .map((n) => n[0])
-                                                                            .join("")}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                                <span>{post.authorName}</span>
-                                                            </div>
-                                                            <div className="flex items-center space-x-1">
-                                                                <Calendar className="w-3 h-3" />
-                                                                <span>
-                                                                    {new Date(
-                                                                        post.createdAt
-                                                                    ).toLocaleDateString()}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center space-x-1">
-                                                                <Clock className="w-3 h-3" />
-                                                                <span>
-                                                                    {post.readingTime} min read
-                                                                </span>
-                                                            </div>
-                                                            {post.status === "published" && (
-                                                                <>
-                                                                    <div className="flex items-center space-x-1">
-                                                                        <Eye className="w-3 h-3" />
-                                                                        <span>
-                                                                            {post.views.toLocaleString()}{" "}
-                                                                            views
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-1">
-                                                                        <Heart className="w-3 h-3" />
-                                                                        <span>{post.likes}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-1">
-                                                                        <MessageCircle className="w-3 h-3" />
-                                                                        <span>
-                                                                            {post.comments.length}
-                                                                        </span>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-1 mt-3">
-                                                            {post.tags.slice(0, 3).map((tag) => (
-                                                                <Badge
-                                                                    key={tag}
-                                                                    variant="outline"
-                                                                    className="text-xs"
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="category">Category</Label>
+                                                    <Select
+                                                        value={newPost.category}
+                                                        onValueChange={(value) =>
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                category: value
+                                                            }))
+                                                        }
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select category..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {categories.map((category) => (
+                                                                <SelectItem
+                                                                    key={category}
+                                                                    value={category}
                                                                 >
-                                                                    #{tag}
-                                                                </Badge>
+                                                                    {category}
+                                                                </SelectItem>
                                                             ))}
-                                                            {post.tags.length > 3 && (
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="text-xs"
-                                                                >
-                                                                    +{post.tags.length - 3} more
-                                                                </Badge>
-                                                            )}
-                                                        </div>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="tags">Tags</Label>
+                                                    <Input
+                                                        id="tags"
+                                                        placeholder="pottery, ceramics, tutorial (comma separated)"
+                                                        onChange={(e) => {
+                                                            const tags = e.target.value
+                                                                .split(",")
+                                                                .map((tag) => tag.trim())
+                                                                .filter((tag) => tag);
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                tags
+                                                            }));
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Right Column */}
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="status">Status</Label>
+                                                    <Select
+                                                        value={newPost.status}
+                                                        onValueChange={(value) =>
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                status: value as BlogPost["status"]
+                                                            }))
+                                                        }
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="draft">
+                                                                Draft
+                                                            </SelectItem>
+                                                            <SelectItem value="review">
+                                                                Review
+                                                            </SelectItem>
+                                                            <SelectItem value="published">
+                                                                Published
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="visibility">Visibility</Label>
+                                                    <Select
+                                                        value={newPost.visibility}
+                                                        onValueChange={(value) =>
+                                                            setNewPost((prev) => ({
+                                                                ...prev,
+                                                                visibility:
+                                                                    value as BlogPost["visibility"]
+                                                            }))
+                                                        }
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="public">
+                                                                Public
+                                                            </SelectItem>
+                                                            <SelectItem value="members-only">
+                                                                Members Only
+                                                            </SelectItem>
+                                                            <SelectItem value="private">
+                                                                Private
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label htmlFor="comments">
+                                                            Enable Comments
+                                                        </Label>
+                                                        <Switch
+                                                            id="comments"
+                                                            checked={newPost.commentsEnabled}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewPost((prev) => ({
+                                                                    ...prev,
+                                                                    commentsEnabled: checked
+                                                                }))
+                                                            }
+                                                        />
                                                     </div>
 
-                                                    {/* Actions */}
-                                                    <div className="flex items-center space-x-2">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                >
-                                                                    <Eye className="w-4 h-4" />
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Preview</TooltipContent>
-                                                        </Tooltip>
+                                                    <div className="flex items-center justify-between">
+                                                        <Label htmlFor="social">
+                                                            Social Sharing
+                                                        </Label>
+                                                        <Switch
+                                                            id="social"
+                                                            checked={newPost.socialShareEnabled}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewPost((prev) => ({
+                                                                    ...prev,
+                                                                    socialShareEnabled: checked
+                                                                }))
+                                                            }
+                                                        />
+                                                    </div>
 
-                                                        <Dialog>
-                                                            <DialogTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                >
-                                                                    <Edit className="w-4 h-4" />
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                                                                <DialogHeader>
-                                                                    <DialogTitle>
-                                                                        Edit Blog Post
-                                                                    </DialogTitle>
-                                                                </DialogHeader>
-                                                                {/* Edit form would go here - similar to create form */}
-                                                            </DialogContent>
-                                                        </Dialog>
-
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                >
-                                                                    <MoreHorizontal className="w-4 h-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                {post.status !== "published" && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            handleStatusChange(
-                                                                                post.id,
-                                                                                "published"
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Send className="w-4 h-4 mr-2" />
-                                                                        Publish
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                                {post.status === "published" && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            handleStatusChange(
-                                                                                post.id,
-                                                                                "draft"
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <RotateCcw className="w-4 h-4 mr-2" />
-                                                                        Unpublish
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        handleStatusChange(
-                                                                            post.id,
-                                                                            "archived"
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Archive className="w-4 h-4 mr-2" />
-                                                                    Archive
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem>
-                                                                    <Copy className="w-4 h-4 mr-2" />
-                                                                    Duplicate
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem>
-                                                                    <Share2 className="w-4 h-4 mr-2" />
-                                                                    Share
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        handleDeletePost(post.id)
-                                                                    }
-                                                                    className="text-destructive focus:text-destructive"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
+                                                    <div className="flex items-center justify-between">
+                                                        <Label htmlFor="featured">
+                                                            Featured Post
+                                                        </Label>
+                                                        <Switch
+                                                            id="featured"
+                                                            checked={newPost.isFeatured}
+                                                            onCheckedChange={(checked) =>
+                                                                setNewPost((prev) => ({
+                                                                    ...prev,
+                                                                    isFeatured: checked
+                                                                }))
+                                                            }
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })
-                    ) : (
-                        <Card>
-                            <CardContent className="p-12 text-center">
-                                <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                                <h3 className="text-xl font-semibold mb-2">No Blog Posts Found</h3>
-                                <p className="text-muted-foreground mb-6">
-                                    {searchQuery || statusFilter !== "all"
-                                        ? "Try adjusting your search or filters."
-                                        : "Create your first blog post to get started."}
-                                </p>
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button onClick={() => setIsEditing(true)}>
-                                            <Plus className="w-4 h-4 mr-2" />
-                                            Create Your First Post
-                                        </Button>
-                                    </DialogTrigger>
-                                </Dialog>
-                            </CardContent>
-                        </Card>
-                    )}
+
+                                        {/* Actions */}
+                                        <div className="flex items-center justify-between pt-4 border-t">
+                                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                                <Clock className="w-4 h-4" />
+                                                <span>
+                                                    Reading time: ~
+                                                    {Math.ceil(
+                                                        (newPost.content || "").split(" ").length /
+                                                            200
+                                                    )}{" "}
+                                                    min
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setIsEditing(false)}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button onClick={handleCreatePost}>
+                                                    <Save className="w-4 h-4 mr-2" />
+                                                    {newPost.status === "published"
+                                                        ? "Publish"
+                                                        : "Save Draft"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    </div>
+
+                    {/* Filters and Search */}
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <Input
+                                placeholder="Search posts..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <Select
+                            value={statusFilter}
+                            onValueChange={(value: any) => setStatusFilter(value)}
+                        >
+                            <SelectTrigger className="w-40">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="review">Review</SelectItem>
+                                <SelectItem value="published">Published</SelectItem>
+                                <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Posts List */}
+                    <div className="space-y-4">
+                        {filteredPosts.length > 0 ? (
+                            filteredPosts.map((post) => {
+                                const StatusIcon = getStatusIcon(post.status);
+                                return (
+                                    <Card
+                                        key={post.id}
+                                        className="hover:shadow-md transition-shadow"
+                                    >
+                                        <CardContent className="p-6">
+                                            <div className="flex items-start space-x-4">
+                                                {/* Featured Image */}
+                                                {post.featuredImage && (
+                                                    <div className="w-24 h-16 flex-shrink-0">
+                                                        <AspectRatio ratio={3 / 2}>
+                                                            <img
+                                                                src={post.featuredImage}
+                                                                alt={post.title}
+                                                                className="w-full h-full object-cover rounded"
+                                                            />
+                                                        </AspectRatio>
+                                                    </div>
+                                                )}
+
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center space-x-2 mb-2">
+                                                                <Badge
+                                                                    variant={getStatusColor(
+                                                                        post.status
+                                                                    )}
+                                                                    className="flex items-center space-x-1"
+                                                                >
+                                                                    <StatusIcon className="w-3 h-3" />
+                                                                    <span className="capitalize">
+                                                                        {post.status}
+                                                                    </span>
+                                                                </Badge>
+                                                                {post.isFeatured && (
+                                                                    <Badge variant="outline">
+                                                                        Featured
+                                                                    </Badge>
+                                                                )}
+                                                                {post.isSticky && (
+                                                                    <Badge variant="outline">
+                                                                        Sticky
+                                                                    </Badge>
+                                                                )}
+                                                                <Badge variant="secondary">
+                                                                    {post.category}
+                                                                </Badge>
+                                                            </div>
+
+                                                            <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+                                                                {post.title}
+                                                            </h3>
+                                                            <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                                                                {post.excerpt}
+                                                            </p>
+
+                                                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                                                <div className="flex items-center space-x-1">
+                                                                    <Avatar className="w-4 h-4">
+                                                                        <AvatarImage
+                                                                            src={post.authorAvatar}
+                                                                        />
+                                                                        <AvatarFallback className="text-xs">
+                                                                            {post.authorName
+                                                                                .split(" ")
+                                                                                .map((n) => n[0])
+                                                                                .join("")}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span>{post.authorName}</span>
+                                                                </div>
+                                                                <div className="flex items-center space-x-1">
+                                                                    <Calendar className="w-3 h-3" />
+                                                                    <span>
+                                                                        {new Date(
+                                                                            post.createdAt
+                                                                        ).toLocaleDateString()}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center space-x-1">
+                                                                    <Clock className="w-3 h-3" />
+                                                                    <span>
+                                                                        {post.readingTime} min read
+                                                                    </span>
+                                                                </div>
+                                                                {post.status === "published" && (
+                                                                    <>
+                                                                        <div className="flex items-center space-x-1">
+                                                                            <Eye className="w-3 h-3" />
+                                                                            <span>
+                                                                                {post.views.toLocaleString()}{" "}
+                                                                                views
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-1">
+                                                                            <Heart className="w-3 h-3" />
+                                                                            <span>
+                                                                                {post.likes}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-1">
+                                                                            <MessageCircle className="w-3 h-3" />
+                                                                            <span>
+                                                                                {
+                                                                                    post.comments
+                                                                                        .length
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex flex-wrap gap-1 mt-3">
+                                                                {post.tags
+                                                                    .slice(0, 3)
+                                                                    .map((tag) => (
+                                                                        <Badge
+                                                                            key={tag}
+                                                                            variant="outline"
+                                                                            className="text-xs"
+                                                                        >
+                                                                            #{tag}
+                                                                        </Badge>
+                                                                    ))}
+                                                                {post.tags.length > 3 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="text-xs"
+                                                                    >
+                                                                        +{post.tags.length - 3} more
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Actions */}
+                                                        <div className="flex items-center space-x-2">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Preview
+                                                                </TooltipContent>
+                                                            </Tooltip>
+
+                                                            <Dialog>
+                                                                <DialogTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                    >
+                                                                        <Edit className="w-4 h-4" />
+                                                                    </Button>
+                                                                </DialogTrigger>
+                                                                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>
+                                                                            Edit Blog Post
+                                                                        </DialogTitle>
+                                                                    </DialogHeader>
+                                                                    {/* Edit form would go here - similar to create form */}
+                                                                </DialogContent>
+                                                            </Dialog>
+
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                    >
+                                                                        <MoreHorizontal className="w-4 h-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    {post.status !==
+                                                                        "published" && (
+                                                                        <DropdownMenuItem
+                                                                            onClick={() =>
+                                                                                handleStatusChange(
+                                                                                    post.id,
+                                                                                    "published"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Send className="w-4 h-4 mr-2" />
+                                                                            Publish
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    {post.status ===
+                                                                        "published" && (
+                                                                        <DropdownMenuItem
+                                                                            onClick={() =>
+                                                                                handleStatusChange(
+                                                                                    post.id,
+                                                                                    "draft"
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <RotateCcw className="w-4 h-4 mr-2" />
+                                                                            Unpublish
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleStatusChange(
+                                                                                post.id,
+                                                                                "archived"
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Archive className="w-4 h-4 mr-2" />
+                                                                        Archive
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem>
+                                                                        <Copy className="w-4 h-4 mr-2" />
+                                                                        Duplicate
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem>
+                                                                        <Share2 className="w-4 h-4 mr-2" />
+                                                                        Share
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleDeletePost(
+                                                                                post.id
+                                                                            )
+                                                                        }
+                                                                        className="text-destructive focus:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })
+                        ) : (
+                            <Card>
+                                <CardContent className="p-12 text-center">
+                                    <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                                    <h3 className="text-xl font-semibold mb-2">
+                                        No Blog Posts Found
+                                    </h3>
+                                    <p className="text-muted-foreground mb-6">
+                                        {searchQuery || statusFilter !== "all"
+                                            ? "Try adjusting your search or filters."
+                                            : "Create your first blog post to get started."}
+                                    </p>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button onClick={() => setIsEditing(true)}>
+                                                <Plus className="w-4 h-4 mr-2" />
+                                                Create Your First Post
+                                            </Button>
+                                        </DialogTrigger>
+                                    </Dialog>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </TooltipProvider>
+            </TooltipProvider>
+        </DefaultLayout>
     );
 }
