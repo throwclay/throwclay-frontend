@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { Check, X, Clock, Trophy, AlertCircle, Users, Award, Target } from "lucide-react";
 import { Button } from "./ui/button";

@@ -1,3 +1,4 @@
+"use client";
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Save, Upload, Pencil, Eraser, RotateCcw, X, Edit } from "lucide-react";
 import { Button } from "./ui/button";
