@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { Camera, Plus, Pencil, Upload, X, Edit, Trash2, Image } from "lucide-react";
 import { Button } from "./ui/button";
