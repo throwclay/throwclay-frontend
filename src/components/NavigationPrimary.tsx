@@ -225,7 +225,7 @@ export function NavigationPrimary() {
             ...(isArtistMode && hasAnyStudioMemberships(currentUser)
                 ? [
                       {
-                          id: "mystudios",
+                          id: "my-studios",
                           label: "My Studios",
                           icon: Building2,
                           description: "Your studio resources & community"

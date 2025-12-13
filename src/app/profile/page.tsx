@@ -41,7 +41,7 @@ import { useAppContext } from "@/app/context/AppContext";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
-export function ArtistProfile() {
+export default function ArtistProfile() {
     const context = useAppContext();
     const [isEditing, setIsEditing] = useState(false);
     const [editedProfile, setEditedProfile] = useState<ArtistProfileType>(
@@ -373,6 +373,8 @@ export function ArtistProfile() {
     }
 
     return (
+        <DefaultLayout>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Hero Section */}
             <div className="relative mb-12">
@@ -1491,5 +1493,6 @@ export function ArtistProfile() {
                 </TabsContent>
             </Tabs>
         </div>
+        </DefaultLayout>
     );
 }

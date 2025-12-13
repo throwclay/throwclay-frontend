@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,15 +9,13 @@ import { Label } from "@/components/ui/label";
 
 import { supabase } from "@/lib/apis/supabaseClient";
 import { SignupFlow, type SignupData } from "@/components/SignupFlow";
+import { useAppContext } from "@/app/context/AppContext";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
+import type { User as UserType, Studio, StudioLocation, StudioMembership } from "@/types";
 
-interface LoginFormProps {
-    onLogin: (userData: { email: string; phone?: string; session: any }) => void;
-    onBack: () => void;
-}
 
-export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
+export default function LoginForm() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -32,6 +31,256 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showSignup, setShowSignup] = useState(false);
+
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    const context = useAppContext();
+    const router = useRouter();
+
+    const fetchLocationsForStudio = async (
+        studioId: string,
+        token: string
+    ): Promise<StudioLocation[]> => {
+        console.log(`Fetching Locations | Studio ID: ${studioId}`);
+
+        try {
+            const res = await fetch(`/api/studios/${studioId}/locations`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                console.error("Error fetching studio locations", body);
+                return [];
+            }
+
+            const body = await res.json();
+            const data = (body.locations || []) as StudioLocation[];
+
+            console.log(`Studio Locations: ${data.length}`);
+            return data;
+        } catch (err) {
+            console.error("Error fetching studio locations", err);
+            return [];
+        }
+    };
+
+
+    const handleLogin = async (userData: { email: string; phone?: string; session: any }) => {
+        const { session } = userData;
+
+        if (!session || !session.user) {
+            console.error("handleLogin: missing session or user");
+            return;
+        }
+
+        const user = session.user;
+        const accessToken = session.access_token;
+
+        // 1) Store access token in AppContext for API routes
+        context.setAuthToken(accessToken);
+
+        // 2) Parallel fetch: profile, active subscription, memberships
+        const [
+            { data: profileRow, error: profileError },
+            { data: profileSub, error: subError },
+            { data: memberships, error: membershipError }
+        ] = await Promise.all([
+            supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+            supabase
+                .from("subscriptions")
+                .select("*")
+                .eq("owner_type", "profile")
+                .eq("owner_id", user.id)
+                .eq("status", "active")
+                .maybeSingle(),
+            supabase
+                .from("studio_memberships")
+                .select(
+                    `
+        id,
+        user_id,
+        studio_id,
+        role,
+        status,
+        location_id,
+        membership_type,
+        created_at,
+        studios:studio_id (
+          id,
+          name,
+          handle,
+          email,
+          description,
+          is_active,
+          plan,
+          created_at
+        ),
+        studio_locations:location_id (
+          id,
+          name
+        )
+      `
+                )
+                .eq("user_id", user.id)
+                .eq("status", "active")
+        ]);
+
+        console.log(`Prof name: ${profileRow?.name}`);
+
+        if (profileError) {
+            console.error("handleLogin: error fetching profile", profileError);
+        }
+        if (membershipError) {
+            console.error("handleLogin: error fetching memberships", membershipError);
+        }
+        if (subError) {
+            console.error("handleLogin: error fetching subscription", subError);
+        }
+
+        const email = user.email ?? userData.email;
+        const phone = (user as any).phone ?? userData.phone;
+        const fallbackName = email?.split("@")[0] ?? "Unnamed";
+
+        const name =
+            (profileRow as any)?.name ?? (user.user_metadata as any)?.full_name ?? fallbackName;
+
+        const handle =
+            (profileRow as any)?.handle ?? fallbackName.toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+
+        const artistPlan = (profileRow as any)?.artist_plan ?? "artist-free";
+
+        // 3) Build front-end User object
+        const appUser: UserType = {
+            id: user.id,
+            name,
+            handle,
+            email,
+            phone,
+            type: "artist",
+            subscription: profileSub?.plan_code ?? null,
+            artistPlan,
+            subscriptionLimits: undefined,
+            usageStats: undefined,
+            profile: {
+                bio: (profileRow as any)?.bio ?? "",
+                socialMedia: (profileRow as any)?.social_media ?? {},
+                branding: {
+                    primaryColor: (profileRow as any)?.branding?.primaryColor ?? "#030213",
+                    secondaryColor: (profileRow as any)?.branding?.secondaryColor,
+                    logoUrl: (profileRow as any)?.branding?.logoUrl
+                }
+            },
+            createdAt: (profileRow as any)?.created_at ?? new Date().toISOString(),
+            lastLogin: (profileRow as any)?.last_login ?? user.last_sign_in_at ?? undefined,
+            isActive: (profileRow as any)?.is_active ?? true
+        };
+
+        console.log(`User ${appUser.name} last logged in ${appUser.lastLogin}`);
+
+        // 4) Build studio (if any memberships)
+
+        // Normalize memberships
+        const normalizedMemberships: StudioMembership[] = (memberships ?? []).map(
+            (m: any): StudioMembership => ({
+                id: m.id,
+                userId: m.user_id,
+                studioId: m.studio_id,
+                role: m.role, // StudioRole
+                status: m.status,
+                locationId: m.location_id,
+                locationName: m.studio_locations?.name ?? null,
+                membershipType: m.membership_type,
+                startDate: m.created_at,
+                lastActivity: profileRow?.last_login ?? null,
+                createdAt: m.created_at,
+                shelfNumber: null,
+                monthlyRate: null,
+                passionProjectsUpgrade: null,
+                studioName: m.studios?.name,
+                studioHandle: m.studios?.handle
+            })
+        );
+
+        context.setStudioMemberships(normalizedMemberships);
+
+        let studioForState: Studio | null = null;
+        let studioRoleForCurrentUser: string | null = null;
+        let membershipForState: StudioMembership | null = null;
+
+        if (normalizedMemberships.length > 0) {
+            // For now: just pick the first active membership as the "current" one
+            const membership = normalizedMemberships[0];
+            const raw = (memberships ?? [])[0] as any; // original row to grab studios + locations
+            const s = raw?.studios;
+
+            if (s) {
+                studioRoleForCurrentUser = membership.role ?? null;
+
+                const studioLocations = await fetchLocationsForStudio(s.id, session.access_token);
+
+                studioForState = {
+                    id: s.id,
+                    name: s.name,
+                    handle: s.handle,
+                    email: s.email ?? "",
+                    website: (s as any).website ?? "",
+                    description: s.description ?? "",
+                    locations: studioLocations,
+                    isActive: s.is_active ?? true,
+                    plan: (s.plan as Studio["plan"]) ?? "studio-free",
+                    createdAt: s.created_at,
+                    memberCount: 0,
+                    classCount: 0,
+                    glazes: [],
+                    firingSchedule: [],
+                    roleForCurrentUser: studioRoleForCurrentUser as any
+                };
+
+                membershipForState = membership;
+            }
+        }
+
+        // 5) Derive modes
+        const hasStudioRole = (memberships ?? []).some((m: any) =>
+            ["owner", "admin"].includes(m.role)
+        );
+
+        appUser.availableModes = hasStudioRole ? ["artist", "studio"] : ["artist"];
+        appUser.activeMode = hasStudioRole ? "studio" : "artist";
+
+        // Did they have *any* studio membership (any role)?
+        (appUser as any).hasStudioMemberships = (memberships ?? []).length > 0;
+
+        // 6) Push into context + app state
+        context.setCurrentStudio(studioForState);
+        context.setCurrentUser(appUser);
+        context.setCurrentMembership(membershipForState);
+        setIsLoggedIn(true);
+
+        // 7) Fetch user-level invites with the *fresh* token
+        await context.refreshInvites({
+            status: "pending",
+            tokenOverride: accessToken
+        });
+
+        const userPhone = user?.phone ?? phone ?? null;
+        if (!userPhone) {
+            // No phone on file -> send them to phone verification
+            router.push("/verify-phone");
+            return;
+        }
+       router.push("/dashboard");
+    };
+
+    const handleLogout = () => {
+        context.setCurrentUser(null);
+        context.setCurrentStudio(null);
+        context.setAuthToken(null); // clear token
+        context.setPendingInvites([]); // clear invites for previous user
+        setIsLoggedIn(false);
+        router.push("/landing");
+    };
 
     const resetStatus = () => {
         setError(null);
@@ -54,7 +303,7 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
             return;
         }
 
-        onLogin({ email, phone, session: data.session });
+        handleLogin({ email, phone, session: data.session });
     };
 
     // Step 1: send OTP
@@ -106,7 +355,7 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
             return;
         }
 
-        onLogin({ email: data.session.user.email ?? "", phone, session: data.session });
+        handleLogin({ email: data.session.user.email ?? "", phone, session: data.session });
     };
 
     const handleSubmit = async () => {
@@ -206,7 +455,7 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
                 }
             }
 
-            onLogin({
+            handleLogin({
                 email: signupData.email,
                 session: data.session
             });
@@ -224,7 +473,10 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
                 <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
                     <SignupFlow
                         onComplete={handleSignupComplete}
-                        onBack={() => setShowSignup(false)}
+                        onBack={() => {
+                            setShowSignup(false);
+                            router.push("/login");
+                        }}
                     />
                 </div>
             </DefaultLayout>
@@ -241,7 +493,7 @@ export default function LoginForm({ onLogin, onBack }: LoginFormProps) {
                     {/* Back Button */}
                     <Button
                         variant="ghost"
-                        onClick={onBack}
+                        onClick={() => router.push("/")}
                         className="mb-4 flex items-center space-x-2"
                     >
                         <ArrowLeft className="w-4 h-4" />

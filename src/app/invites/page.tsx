@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/app/context/AppContext";
 import { Button } from "@/components/ui/button";
