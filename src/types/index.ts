@@ -1261,6 +1261,9 @@ export type AppContextType = {
 
     // central user-level invite fetcher
     refreshInvites: (opts?: { status?: string; tokenOverride?: string }) => Promise<StudioInvite[]>;
+
+    // session initialization state
+    isInitializing?: boolean;
 };
 
 export type PriceRange = "low" | "medium" | "high";

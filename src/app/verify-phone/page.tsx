@@ -1,28 +1,26 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/apis/supabaseClient";
 import { PhoneSetup } from "@/components/PhoneSetup";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+
+import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function VerifyPhonePage() {
     const router = useRouter();
     const context = useAppContext();
     const [initialPhone, setInitialPhone] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState("landing");
 
     useEffect(() => {
         const loadUser = async () => {
             const { data, error } = await supabase.auth.getUser();
 
             if (error || !data.user) {
-                // Not logged in, bounce to login
-                // router.replace("/");  // for future
-                setCurrentPage("login"); // leaving this for now
+                router.push("/login");
                 return;
             }
 
@@ -31,57 +29,58 @@ export default function VerifyPhonePage() {
         };
 
         loadUser();
-    }, [router]);
+    }, []);
 
     const handleVerified = () => {
-        // After successful verification, send them to your normal app entry
-        console.log("handleVerified", context.currentUser?.activeMode);
-        setCurrentPage(context.currentUser?.activeMode === "studio" ? "dashboard" : "profile");
-        // router.replace("/"); // will route to homepage in future
+        const nextRoute = context.currentUser?.activeMode === "studio" ? "/dashboard" : "/profile";
+
+        router.push(nextRoute);
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-muted-foreground">Loading...</p>
-            </div>
+            <DefaultLayout>
+                <div className="min-h-screen flex items-center justify-center">
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </DefaultLayout>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
-            <div className="w-full max-w-lg">
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle>Verify your phone</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Add and verify your phone so you can log in with SMS codes.
-                        </p>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <PhoneSetup
-                            initialPhone={initialPhone}
-                            onVerified={handleVerified}
-                        />
-
-                        <div className="pt-2 border-t mt-6">
-                            <p className="text-xs text-muted-foreground mb-2">
-                                You can skip this for now, but you&apos;ll need a verified phone to
-                                sign in with OTP later.
+        <DefaultLayout>
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                <div className="w-full max-w-lg">
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Verify your phone</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Add and verify your phone so you can log in with SMS codes.
                             </p>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                // onClick={() => router.replace("/")}
-                                // onClick={handleVerified}
-                                onClick={() => setCurrentPage("profile")}
-                            >
-                                Skip for now
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <PhoneSetup
+                                initialPhone={initialPhone}
+                                onVerified={handleVerified}
+                            />
+
+                            <div className="pt-2 border-t mt-6">
+                                <p className="text-xs text-muted-foreground mb-2">
+                                    You can skip this for now, but you&apos;ll need a verified phone
+                                    to sign in with OTP later.
+                                </p>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleVerified}
+                                >
+                                    Skip for now
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
+        </DefaultLayout>
     );
 }
