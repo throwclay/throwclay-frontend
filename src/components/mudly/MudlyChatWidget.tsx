@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useAppContext } from "@/app/context/AppContext";
 import {
     X,
     Send,
@@ -79,6 +80,7 @@ export interface MudlyChatWidgetProps {
 }
 
 export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetProps) {
+    const { currentUser, currentStudio, authToken } = useAppContext();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -97,6 +99,7 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
     ]);
     const [currentMessage, setCurrentMessage] = useState("");
     const [isRecording, setIsRecording] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -119,37 +122,88 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
         scrollToBottom();
     }, [messages]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (!currentMessage.trim() && uploadedFiles.length === 0) return;
+        if (!authToken) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    role: "assistant",
+                    content: "You need to be signed in to chat with me.",
+                    timestamp: new Date()
+                }
+            ]);
+            return;
+        }
+        const userContent = currentMessage.trim();
         const newMessage: Message = {
             id: Date.now().toString(),
             role: "user",
-            content: currentMessage,
+            content: userContent,
             timestamp: new Date(),
             attachments: uploadedFiles.map((f) => ({ name: f.name, type: f.type, size: f.size }))
         };
         setMessages((prev) => [...prev, newMessage]);
         setCurrentMessage("");
         setUploadedFiles([]);
-        setTimeout(() => {
-            const responses = [
-                "Great question! Let me help you with that. For pottery techniques, I'd recommend...",
-                "I understand you're working on this. Based on your studio's settings, here's what I suggest...",
-                "That's a common challenge in pottery! Here's how you can approach it...",
-                "I've checked your kiln schedule and here's what I found...",
-                "Based on the image you uploaded, I can see that...",
-                "Let me pull up the relevant information from your studio's glaze repository...",
-                "I can help you with that! Would you like me to create a reminder or add it to your calendar?",
-                "That's an excellent project! Here are some tips based on your skill level and available materials..."
-            ];
-            const aiMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: "assistant",
-                content: responses[Math.floor(Math.random() * responses.length)],
-                timestamp: new Date()
-            };
-            setMessages((prev) => [...prev, aiMessage]);
-        }, 1000);
+        setIsLoading(true);
+        try {
+            const apiMessages = [...messages, newMessage]
+                .filter((m) => m.role === "user" || m.role === "assistant")
+                .map((m) => ({ role: m.role, content: m.content }));
+            const res = await fetch("/api/mudly/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`
+                },
+                body: JSON.stringify({
+                    messages: apiMessages,
+                    context: {
+                        activeMode: currentUser?.activeMode ?? "artist",
+                        studioId: currentStudio?.id ?? null,
+                        userName: currentUser?.name ?? "User"
+                    }
+                })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const err = data?.error ?? "Something went wrong.";
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: (Date.now() + 1).toString(),
+                        role: "assistant",
+                        content: `Sorry, I couldn't complete that. (${err})`,
+                        timestamp: new Date()
+                    }
+                ]);
+                return;
+            }
+            const assistantContent = data?.content ?? "I didn't get a response. Try again.";
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: assistantContent,
+                    timestamp: new Date()
+                }
+            ]);
+        } catch (e) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: "assistant",
+                    content: "Something went wrong. Please try again.",
+                    timestamp: new Date()
+                }
+            ]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,7 +251,7 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
                     id: "1",
                     role: "assistant",
                     content:
-                        "Hi there! I'm Mudly, your pottery studio AI assistant! 🎨 How can I help you today?",
+                        "Hi there! I'm Mudly, your pottery studio AI agent! 🎨 How can I help you today?",
                     timestamp: new Date()
                 }
             ]);
@@ -283,7 +337,7 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-white">Mudly AI</h3>
-                                        <p className="text-xs text-white/80">Your pottery assistant</p>
+                                        <p className="text-xs text-white/80">Your pottery agent</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1">
@@ -459,10 +513,19 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
                                                     handleSendMessage();
                                                 }
                                             }}
-                                            disabled={isRecording}
+                                            disabled={isRecording || isLoading}
                                         />
-                                        <Button onClick={handleSendMessage} size="icon" className="flex-shrink-0">
-                                            <Send className="w-4 h-4" />
+                                        <Button
+                                            onClick={handleSendMessage}
+                                            size="icon"
+                                            className="flex-shrink-0"
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? (
+                                                <span className="text-xs">...</span>
+                                            ) : (
+                                                <Send className="w-4 h-4" />
+                                            )}
                                         </Button>
                                     </div>
                                     {isRecording && (
@@ -485,7 +548,7 @@ export function MudlyChatWidget({ position = "bottom-right" }: MudlyChatWidgetPr
                             <MudlyLogo size={32} />
                             Mudly AI Settings
                         </DialogTitle>
-                        <DialogDescription>Customize your Mudly AI assistant preferences</DialogDescription>
+                        <DialogDescription>Customize your Mudly AI agent preferences</DialogDescription>
                     </DialogHeader>
                     <Tabs defaultValue="general" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
