@@ -115,6 +115,7 @@ export default function MessagingCenter() {
     const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("all");
     const [creatingChat, setCreatingChat] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesScrollContainerRef = useRef<HTMLDivElement>(null);
 
     const studioId = currentStudio?.id;
     const activeConversation = conversations.find((c) => c.id === activeChat);
@@ -188,9 +189,24 @@ export default function MessagingCenter() {
         if (showNewChatDialog) fetchMembers();
     }, [showNewChatDialog, fetchMembers]);
 
+    // Scroll to bottom only within the messages panel (not the page). Use the ScrollArea viewport
+    // so we don't trigger document scroll when selecting a conversation.
+    const scrollMessagesToBottom = useCallback((behavior: "smooth" | "auto" = "smooth") => {
+        const viewport = messagesScrollContainerRef.current?.querySelector<HTMLElement>(
+            "[data-slot=scroll-area-viewport]"
+        );
+        if (viewport) {
+            viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+        }
+    }, []);
+
+    // Scroll to bottom only when opening a conversation (after messages load), not on every re-render.
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [activeChatMessages]);
+        if (activeChat && !messagesLoading) {
+            const t = setTimeout(() => scrollMessagesToBottom("smooth"), 0);
+            return () => clearTimeout(t);
+        }
+    }, [activeChat, messagesLoading, scrollMessagesToBottom]);
 
     const handleSendMessage = async () => {
         const content = messageText.trim();
@@ -210,6 +226,7 @@ export default function MessagingCenter() {
         setMessages((prev) => [...prev, optimistic]);
         setMessageText("");
         setSending(true);
+        setTimeout(() => scrollMessagesToBottom("smooth"), 0);
 
         try {
             const res = await fetch(
@@ -314,18 +331,16 @@ export default function MessagingCenter() {
         return date.toLocaleDateString();
     };
 
-    const getChatIcon = (type: "direct" | "group") => {
-        return type === "group" ? <Users className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />;
-    };
-
     if (!studioId) {
         return (
             <RequireAuth>
                 <DefaultLayout>
-                    <div className="max-w-7xl mx-auto p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
-                        <MessageCircle className="w-16 h-16 text-muted-foreground opacity-50 mb-4" />
-                        <h2 className="text-xl font-semibold">Select a studio</h2>
-                        <p className="text-muted-foreground mt-2">
+                    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                        <div className="w-20 h-20 rounded-full bg-muted/80 flex items-center justify-center mb-6">
+                            <MessageCircle className="w-10 h-10 text-muted-foreground" />
+                        </div>
+                        <h2 className="text-lg font-semibold">Select a studio</h2>
+                        <p className="text-sm text-muted-foreground mt-2 max-w-sm">
                             Switch to a studio from the menu to view and send messages with studio members.
                         </p>
                     </div>
@@ -337,13 +352,13 @@ export default function MessagingCenter() {
     return (
         <RequireAuth>
         <DefaultLayout>
-            <div className="max-w-7xl mx-auto p-8 space-y-8">
+            <div className="h-[calc(100vh-8rem)] max-w-6xl mx-auto flex flex-col px-4 py-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                        <h1 className="text-3xl font-semibold">Messages</h1>
-                        <p className="text-muted-foreground text-lg">
-                            Chat with studio members, instructors, and classmates
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                            Chat with studio members and instructors
                         </p>
                     </div>
                     <Dialog
@@ -351,7 +366,7 @@ export default function MessagingCenter() {
                         onOpenChange={setShowNewChatDialog}
                     >
                         <DialogTrigger asChild>
-                            <Button>
+                            <Button className="rounded-full shadow-sm">
                                 <Plus className="w-4 h-4 mr-2" />
                                 New Chat
                             </Button>
@@ -538,173 +553,224 @@ export default function MessagingCenter() {
                     </Dialog>
                 </div>
                 {/* Main Chat Interface */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-200px)]">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-0 bg-card border rounded-2xl shadow-sm overflow-hidden">
                     {/* Chat List Sidebar */}
-                    <div className="lg:col-span-1 space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                            <Input
-                                placeholder="Search chats..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
+                    <div className="flex flex-col border-r bg-muted/30">
+                        <div className="p-3 border-b bg-background/50">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                <Input
+                                    placeholder="Search conversations..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-9 h-9 rounded-lg bg-background border-muted-foreground/20"
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            {conversationsLoading ? (
-                                <p className="text-sm text-muted-foreground p-4">Loading conversations...</p>
-                            ) : (
-                                conversations
-                                    .filter(
-                                        (c) =>
-                                            c.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                            (c.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
-                                    )
-                                    .map((chat) => (
-                                        <div
-                                            key={chat.id}
-                                            className={`flex items-center space-x-3 p-4 rounded-lg cursor-pointer transition-colors border ${
-                                                activeChat === chat.id
-                                                    ? "bg-primary/5 border-primary/20"
-                                                    : "hover:bg-accent border-transparent"
-                                            }`}
-                                            onClick={() => setActiveChat(chat.id)}
-                                        >
-                                            <div className="relative">
-                                                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                                                    {getChatIcon(chat.type)}
-                                                </div>
-                                                {chat.isPrivate && (
-                                                    <Lock className="absolute -bottom-1 -right-1 w-4 h-4 bg-background rounded-full p-0.5" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0 space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="font-medium truncate">{chat.displayName}</p>
-                                                    {chat.lastMessage && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {formatTime(chat.lastMessage.createdAt)}
-                                                        </span>
+                        <ScrollArea className="flex-1">
+                            <div className="p-2 space-y-0.5">
+                                {conversationsLoading ? (
+                                    <div className="p-6 text-center">
+                                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                        <p className="text-sm text-muted-foreground mt-2">Loading...</p>
+                                    </div>
+                                ) : (
+                                    conversations
+                                        .filter(
+                                            (c) =>
+                                                c.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                (c.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+                                        )
+                                        .map((chat) => (
+                                            <button
+                                                key={chat.id}
+                                                type="button"
+                                                className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all duration-200 ${
+                                                    activeChat === chat.id
+                                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                                        : "hover:bg-muted/80 active:bg-muted"
+                                                }`}
+                                                onClick={() => setActiveChat(chat.id)}
+                                            >
+                                                <div className="relative shrink-0">
+                                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                                                        activeChat === chat.id ? "bg-primary-foreground/20" : "bg-muted"
+                                                    }`}>
+                                                        {chat.type === "group" ? (
+                                                            <Users className="w-5 h-5 text-muted-foreground" />
+                                                        ) : (
+                                                            <span className="text-sm font-semibold">
+                                                                {chat.displayName.slice(0, 2).toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {chat.isPrivate && (
+                                                        <Lock className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-0.5 text-muted-foreground" />
                                                     )}
                                                 </div>
-                                                {chat.lastMessage && (
-                                                    <p className="text-sm text-muted-foreground truncate">
-                                                        {chat.lastMessage.content}
-                                                    </p>
-                                                )}
-                                                <p className="text-xs text-muted-foreground">
-                                                    {chat.memberCount} member{chat.memberCount !== 1 ? "s" : ""}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))
-                            )}
-                        </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-baseline justify-between gap-2">
+                                                        <span className="font-medium text-sm truncate">
+                                                            {chat.displayName}
+                                                        </span>
+                                                        {chat.lastMessage && (
+                                                            <span className={`text-xs shrink-0 ${
+                                                                activeChat === chat.id ? "text-primary-foreground/80" : "text-muted-foreground"
+                                                            }`}>
+                                                                {formatTime(chat.lastMessage.createdAt)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {chat.lastMessage ? (
+                                                        <p className={`text-xs truncate mt-0.5 ${
+                                                            activeChat === chat.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                                        }`}>
+                                                            {chat.lastMessage.content}
+                                                        </p>
+                                                    ) : (
+                                                        <p className={`text-xs mt-0.5 ${
+                                                            activeChat === chat.id ? "text-primary-foreground/60" : "text-muted-foreground"
+                                                        }`}>
+                                                            {chat.memberCount} member{chat.memberCount !== 1 ? "s" : ""}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        ))
+                                )}
+                            </div>
+                        </ScrollArea>
                     </div>
                     {/* Chat Messages Area */}
-                    <div className="lg:col-span-3 flex flex-col">
+                    <div className="flex flex-col min-h-0 bg-background/50">
                         {activeChat ? (
                             <>
                                 {/* Chat Header */}
-                                <div className="flex items-center justify-between p-4 border-b">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                                            {getChatIcon(activeConversation?.type ?? "direct")}
+                                <div className="flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                            {activeConversation?.type === "group" ? (
+                                                <Users className="w-5 h-5 text-muted-foreground" />
+                                            ) : (
+                                                <span className="text-sm font-semibold text-muted-foreground">
+                                                    {activeConversation?.displayName?.slice(0, 2).toUpperCase() ?? "?"}
+                                                </span>
+                                            )}
                                         </div>
-                                        <div className="space-y-1">
-                                            <h3 className="font-semibold">{activeConversation?.displayName}</h3>
-                                            <p className="text-sm text-muted-foreground">
+                                        <div className="min-w-0">
+                                            <h3 className="font-semibold truncate">{activeConversation?.displayName}</h3>
+                                            <p className="text-xs text-muted-foreground">
                                                 {activeConversation?.memberCount ?? 0} member{(activeConversation?.memberCount ?? 0) !== 1 ? "s" : ""}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                        >
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                                             <Phone className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                        >
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                                             <VideoIcon className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                        >
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
                                             <Info className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </div>
-                                {/* Messages */}
-                                <ScrollArea className="flex-1 p-4">
-                                    {messagesLoading ? (
-                                        <p className="text-sm text-muted-foreground">Loading messages...</p>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {activeChatMessages.map((message) => (
-                                                <div key={message.id} className="flex items-start space-x-3">
-                                                    <Avatar className="w-8 h-8">
-                                                        <AvatarFallback>
-                                                            {message.senderName
-                                                                .split(" ")
-                                                                .map((n) => n[0])
-                                                                .join("") || "?"}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1 space-y-1">
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="font-medium text-sm">
-                                                                {message.senderName}
-                                                            </span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatTime(message.createdAt)}
-                                                            </span>
+                                {/* Messages - ref wraps ScrollArea so we can scroll only its viewport, not the page */}
+                                <div ref={messagesScrollContainerRef} className="flex-1 min-h-0">
+                                    <ScrollArea className="h-full">
+                                        <div className="p-4">
+                                        {messagesLoading ? (
+                                            <div className="flex flex-col items-center justify-center py-12">
+                                                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                                <p className="text-sm text-muted-foreground mt-3">Loading messages...</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {activeChatMessages.map((message) => {
+                                                    const isOwn = message.senderId === currentUser?.id;
+                                                    return (
+                                                        <div
+                                                            key={message.id}
+                                                            className={`flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}
+                                                        >
+                                                            {!isOwn && (
+                                                                <Avatar className="w-8 h-8 shrink-0">
+                                                                    <AvatarFallback className="text-xs bg-muted">
+                                                                        {message.senderName
+                                                                            .split(" ")
+                                                                            .map((n) => n[0])
+                                                                            .join("")
+                                                                            .slice(0, 2) || "?"}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                            )}
+                                                            <div
+                                                                className={`flex flex-col max-w-[75%] sm:max-w-[65%] ${
+                                                                    isOwn ? "items-end" : "items-start"
+                                                                }`}
+                                                            >
+                                                                {!isOwn && activeConversation?.type === "group" && (
+                                                                    <span className="text-xs font-medium text-muted-foreground mb-0.5 px-1">
+                                                                        {message.senderName}
+                                                                    </span>
+                                                                )}
+                                                                <div
+                                                                    className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
+                                                                        isOwn
+                                                                            ? "bg-primary text-primary-foreground rounded-br-md"
+                                                                            : "bg-muted rounded-bl-md"
+                                                                    }`}
+                                                                >
+                                                                    <p className="break-words whitespace-pre-wrap">
+                                                                        {message.content}
+                                                                    </p>
+                                                                </div>
+                                                                <span
+                                                                    className={`text-[10px] text-muted-foreground mt-1 px-1 ${
+                                                                        isOwn ? "text-right" : "text-left"
+                                                                    }`}
+                                                                >
+                                                                    {formatTime(message.createdAt)}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <p className="text-sm">{message.content}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <div ref={messagesEndRef} />
+                                                    );
+                                                })}
+                                                <div ref={messagesEndRef} />
+                                            </div>
+                                        )}
                                         </div>
-                                    )}
-                                </ScrollArea>
+                                    </ScrollArea>
+                                </div>
                                 {/* Message Input */}
-                                <div className="p-4 border-t">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-1 relative">
-                                            <Input
+                                <div className="p-4 border-t bg-background/80 backdrop-blur-sm">
+                                    <div className="flex items-end gap-2">
+                                        <div className="flex-1 flex items-center gap-1 rounded-2xl border bg-muted/50 px-3 py-2 focus-within:bg-background focus-within:ring-2 focus-within:ring-primary/20">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
+                                                <Paperclip className="w-4 h-4 text-muted-foreground" />
+                                            </Button>
+                                            <input
                                                 placeholder="Type a message..."
                                                 value={messageText}
                                                 onChange={(e) => setMessageText(e.target.value)}
-                                                onKeyPress={(e) =>
-                                                    e.key === "Enter" && handleSendMessage()
-                                                }
-                                                className="pr-12"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage();
+                                                    }
+                                                }}
+                                                className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground py-1.5"
                                             />
-                                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0"
-                                                >
-                                                    <Paperclip className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0"
-                                                >
-                                                    <Smile className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full">
+                                                <Smile className="w-4 h-4 text-muted-foreground" />
+                                            </Button>
                                         </div>
                                         <Button
+                                            size="icon"
                                             onClick={handleSendMessage}
-                                            disabled={!messageText.trim()}
+                                            disabled={!messageText.trim() || sending}
+                                            className="h-10 w-10 shrink-0 rounded-full shadow-sm"
                                         >
                                             <Send className="w-4 h-4" />
                                         </Button>
@@ -712,18 +778,17 @@ export default function MessagingCenter() {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="text-center space-y-4">
-                                    <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-semibold">
-                                            Select a chat to start messaging
-                                        </h3>
-                                        <p className="text-muted-foreground">
-                                            Choose from your existing conversations or start a new
-                                            one
-                                        </p>
+                            <div className="flex-1 flex items-center justify-center p-8">
+                                <div className="text-center max-w-sm">
+                                    <div className="mx-auto w-20 h-20 rounded-full bg-muted/80 flex items-center justify-center mb-6">
+                                        <MessageCircle className="w-10 h-10 text-muted-foreground" />
                                     </div>
+                                    <h3 className="text-lg font-semibold">
+                                        Select a conversation
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground mt-2">
+                                        Choose a chat from the list or start a new one to begin messaging.
+                                    </p>
                                 </div>
                             </div>
                         )}
