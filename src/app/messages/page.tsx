@@ -1,39 +1,24 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
     Plus,
     Search,
     Send,
     Paperclip,
-    Image as ImageIcon,
-    Video,
     FileText,
     Users,
-    Settings,
-    MoreHorizontal,
     Phone,
     VideoIcon,
     Info,
     Smile,
-    X,
-    Edit,
-    UserPlus,
-    UserMinus,
-    Crown,
-    Shield,
-    Trash2,
-    Download,
     MessageCircle,
     Hash,
-    Lock,
-    Globe,
-    Camera,
-    Mic
+    Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -54,49 +39,73 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { useAppContext } from "@/app/context/AppContext";
-import type { Message, ChatGroup, User } from "@/types";
-
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 
-interface ChatParticipant extends User {
-    lastSeen?: string;
-    isOnline?: boolean;
-    role?: "admin" | "member" | "owner" | "instructor" | "student";
-    studioId?: string;
+/** Conversation list item from API */
+interface ConversationItem {
+    id: string;
+    type: "direct" | "group";
+    name: string | null;
+    displayName: string;
+    description: string | null;
+    isPrivate: boolean;
+    createdAt: string;
+    updatedAt: string;
+    memberCount: number;
+    lastMessage: {
+        id: string;
+        senderId: string;
+        content: string;
+        createdAt: string;
+    } | null;
 }
 
-interface FileAttachment {
+/** Message from API */
+interface ApiMessage {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    senderName: string;
+    senderHandle: string;
+    content: string;
+    type: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/** Studio member for New Chat picker */
+interface StudioMemberOption {
     id: string;
     name: string;
-    type: "image" | "video" | "document";
-    size: number;
-    url: string;
-    uploadedAt: string;
+    handle: string;
+    email: string;
+    role: string;
 }
 
-interface ExtendedMessage extends Message {
-    replyTo?: string;
-    isEdited?: boolean;
-    editedAt?: string;
-    reactions?: { emoji: string; users: string[] }[];
-    attachments?: FileAttachment[];
-}
+const roleConfig: Record<string, { label: string; variant: string }> = {
+    owner: { label: "Owner", variant: "default" },
+    admin: { label: "Admin", variant: "destructive" },
+    manager: { label: "Manager", variant: "default" },
+    instructor: { label: "Instructor", variant: "secondary" },
+    employee: { label: "Employee", variant: "secondary" },
+    member: { label: "Member", variant: "outline" }
+};
 
 export default function MessagingCenter() {
-    const { currentUser, currentStudio } = useAppContext();
+    const { currentUser, currentStudio, authToken } = useAppContext();
+    const [conversations, setConversations] = useState<ConversationItem[]>([]);
+    const [conversationsLoading, setConversationsLoading] = useState(false);
+    const [members, setMembers] = useState<StudioMemberOption[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+    const [messages, setMessages] = useState<ApiMessage[]>([]);
+    const [messagesLoading, setMessagesLoading] = useState(false);
     const [activeChat, setActiveChat] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [messageText, setMessageText] = useState("");
+    const [sending, setSending] = useState(false);
     const [showNewChatDialog, setShowNewChatDialog] = useState(false);
     const [chatType, setChatType] = useState<"direct" | "group">("direct");
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -104,199 +113,183 @@ export default function MessagingCenter() {
     const [groupDescription, setGroupDescription] = useState("");
     const [isPrivateGroup, setIsPrivateGroup] = useState(false);
     const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("all");
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [creatingChat, setCreatingChat] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Mock data
-    const [chats] = useState<ChatGroup[]>([
-        {
-            id: "chat1",
-            name: "Beginner Wheel Throwing",
-            type: "class",
-            members: ["user1", "instructor1", "student1", "student2"],
-            adminIds: ["instructor1"],
-            description: "Class discussion and updates",
-            isPrivate: false,
-            createdAt: "2025-06-01",
-            relatedId: "class1",
-            autoCreated: true
-        },
-        {
-            id: "chat2",
-            name: "Studio Announcements",
-            type: "announcement",
-            members: ["user1", "manager1", "instructor1", "student1", "student2"],
-            adminIds: ["manager1"],
-            description: "Important studio updates and announcements",
-            isPrivate: false,
-            createdAt: "2025-06-01"
-        },
-        {
-            id: "chat3",
-            name: "Firing Squad",
-            type: "general",
-            members: ["user1", "student1", "student2", "student3"],
-            adminIds: ["user1", "student1"],
-            description: "Coordinating firing schedules and sharing tips",
-            isPrivate: false,
-            createdAt: "2025-06-05"
+    const studioId = currentStudio?.id;
+    const activeConversation = conversations.find((c) => c.id === activeChat);
+    const activeChatMessages = activeChat ? messages.filter((m) => m.conversationId === activeChat) : [];
+
+    const fetchConversations = useCallback(async () => {
+        if (!studioId || !authToken) return;
+        setConversationsLoading(true);
+        try {
+            const res = await fetch(`/api/studios/${studioId}/conversations`, {
+                headers: { Authorization: `Bearer ${authToken}` }
+            });
+            if (!res.ok) throw new Error("Failed to load conversations");
+            const data = await res.json();
+            setConversations(data.conversations ?? []);
+        } catch (e) {
+            console.error(e);
+            setConversations([]);
+        } finally {
+            setConversationsLoading(false);
         }
-    ]);
+    }, [studioId, authToken]);
 
-    const [messages, setMessages] = useState<ExtendedMessage[]>([
-        {
-            id: "msg1",
-            senderId: "instructor1",
-            senderName: "Emma Davis",
-            senderHandle: "emmadavis",
-            groupId: "chat1",
-            content:
-                "Welcome to our Beginner Wheel Throwing class! Feel free to ask questions and share your progress here.",
-            type: "text",
-            timestamp: "2025-06-14T09:00:00Z",
-            readBy: ["user1", "student1"],
-            reactions: [{ emoji: "👋", users: ["user1", "student1"] }]
-        },
-        {
-            id: "msg2",
-            senderId: "student1",
-            senderName: "Alex Johnson",
-            senderHandle: "alexj",
-            groupId: "chat1",
-            content:
-                "Thanks Emma! I'm excited to get started. When do we begin working on the wheel?",
-            type: "text",
-            timestamp: "2025-06-14T09:15:00Z",
-            readBy: ["user1", "instructor1"]
+    const fetchMessages = useCallback(async (conversationId: string) => {
+        if (!studioId || !authToken) return;
+        setMessagesLoading(true);
+        try {
+            const res = await fetch(
+                `/api/studios/${studioId}/conversations/${conversationId}/messages`,
+                { headers: { Authorization: `Bearer ${authToken}` } }
+            );
+            if (!res.ok) throw new Error("Failed to load messages");
+            const data = await res.json();
+            setMessages(data.messages ?? []);
+        } catch (e) {
+            console.error(e);
+            setMessages([]);
+        } finally {
+            setMessagesLoading(false);
         }
-    ]);
+    }, [studioId, authToken]);
 
-    const [allUsers] = useState<ChatParticipant[]>([
-        {
-            id: "instructor1",
-            name: "Emma Davis",
-            email: "emma@artisanclay.com",
-            handle: "emmadavis",
-            phone: "",
-            type: "artist",
-            role: "instructor",
-            studioId: currentStudio?.id,
-            isOnline: true,
-            lastSeen: "2025-06-14T11:30:00Z",
-            createdAt: "2025-06-01",
-            isActive: true
-        },
-        {
-            id: "manager1",
-            name: "Sarah Wilson",
-            email: "sarah@artisanclay.com",
-            handle: "sarahwilson",
-            phone: "",
-            type: "artist",
-            role: "admin",
-            studioId: currentStudio?.id,
-            isOnline: true,
-            lastSeen: "2025-06-14T11:25:00Z",
-            createdAt: "2025-06-01",
-            isActive: true
-        },
-        {
-            id: "student1",
-            name: "Alex Johnson",
-            email: "alex@example.com",
-            handle: "alexj",
-            phone: "",
-            type: "artist",
-            role: "student",
-            studioId: currentStudio?.id,
-            isOnline: false,
-            lastSeen: "2025-06-14T10:00:00Z",
-            createdAt: "2025-06-01",
-            isActive: true
+    const fetchMembers = useCallback(async () => {
+        if (!studioId || !authToken) return;
+        setMembersLoading(true);
+        try {
+            const res = await fetch(`/api/studios/${studioId}/conversations/members`, {
+                headers: { Authorization: `Bearer ${authToken}` }
+            });
+            if (!res.ok) throw new Error("Failed to load members");
+            const data = await res.json();
+            setMembers(data.members ?? []);
+        } catch (e) {
+            console.error(e);
+            setMembers([]);
+        } finally {
+            setMembersLoading(false);
         }
-    ]);
+    }, [studioId, authToken]);
 
-    const activeGroup = chats.find((chat) => chat.id === activeChat);
-    const activeChatMessages = messages.filter(
-        (msg) => msg.groupId === activeChat || msg.recipientId === activeChat
-    );
+    useEffect(() => {
+        fetchConversations();
+    }, [fetchConversations]);
 
-    const isGroupAdmin = activeGroup && activeGroup.adminIds.includes(currentUser?.id || "");
+    useEffect(() => {
+        if (activeChat) fetchMessages(activeChat);
+        else setMessages([]);
+    }, [activeChat, fetchMessages]);
+
+    useEffect(() => {
+        if (showNewChatDialog) fetchMembers();
+    }, [showNewChatDialog, fetchMembers]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChatMessages]);
 
-    const handleSendMessage = () => {
-        if (!messageText.trim() || !activeChat) return;
+    const handleSendMessage = async () => {
+        const content = messageText.trim();
+        if (!content || !activeChat || !studioId || !authToken || sending) return;
 
-        const newMessage: ExtendedMessage = {
-            id: `msg${Date.now()}`,
-            senderId: currentUser?.id || "",
-            senderName: currentUser?.name || "",
-            senderHandle: currentUser?.handle || "",
-            groupId: activeChat,
-            content: messageText,
+        const optimistic: ApiMessage = {
+            id: `temp-${Date.now()}`,
+            conversationId: activeChat,
+            senderId: currentUser?.id ?? "",
+            senderName: currentUser?.name ?? "",
+            senderHandle: currentUser?.handle ?? "",
+            content,
             type: "text",
-            timestamp: new Date().toISOString(),
-            readBy: [currentUser?.id || ""]
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
-
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => [...prev, optimistic]);
         setMessageText("");
+        setSending(true);
+
+        try {
+            const res = await fetch(
+                `/api/studios/${studioId}/conversations/${activeChat}/messages`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ content })
+                }
+            );
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error ?? "Failed to send");
+            }
+            const data = await res.json();
+            setMessages((prev) =>
+                prev.map((m) => (m.id === optimistic.id ? { ...data.message, id: data.message.id } : m))
+            );
+            fetchConversations();
+        } catch (e) {
+            setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+            setMessageText(content);
+            console.error(e);
+        } finally {
+            setSending(false);
+        }
     };
 
-    const handleCreateChat = () => {
+    const handleCreateChat = async () => {
         if (chatType === "direct" && selectedUsers.length !== 1) return;
-        if (chatType === "group" && (selectedUsers.length < 2 || !groupName.trim())) return;
+        if (chatType === "group" && (selectedUsers.length < 1 || !groupName.trim())) return;
+        if (!studioId || !authToken) return;
 
-        const newChat: ChatGroup = {
-            id: `chat${Date.now()}`,
-            name:
-                chatType === "direct"
-                    ? allUsers.find((u) => u.id === selectedUsers[0])?.name || "Direct Message"
-                    : groupName,
-            type: "general",
-            members: [...selectedUsers, currentUser?.id || ""],
-            adminIds: [currentUser?.id || ""],
-            description: groupDescription,
-            isPrivate: isPrivateGroup,
-            createdAt: new Date().toISOString()
-        };
-
-        console.log("Creating new chat:", newChat);
-
-        setSelectedUsers([]);
-        setGroupName("");
-        setGroupDescription("");
-        setIsPrivateGroup(false);
-        setShowNewChatDialog(false);
-        setActiveChat(newChat.id);
+        setCreatingChat(true);
+        try {
+            const res = await fetch(`/api/studios/${studioId}/conversations`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`
+                },
+                body: JSON.stringify({
+                    type: chatType,
+                    participantIds: selectedUsers,
+                    name: chatType === "group" ? groupName : undefined,
+                    description: chatType === "group" ? groupDescription || undefined : undefined
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error ?? "Failed to create chat");
+            }
+            const data = await res.json();
+            const convId = data.conversation?.id;
+            setSelectedUsers([]);
+            setGroupName("");
+            setGroupDescription("");
+            setIsPrivateGroup(false);
+            setShowNewChatDialog(false);
+            if (convId) {
+                await fetchConversations();
+                setActiveChat(convId);
+                fetchMessages(convId);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setCreatingChat(false);
+        }
     };
 
     const getRoleBadge = (role?: string) => {
         if (!role) return null;
-
-        const roleConfig = {
-            owner: { label: "Owner", variant: "default" },
-            admin: { label: "Admin", variant: "destructive" },
-            manager: { label: "Manager", variant: "default" },
-            instructor: { label: "Instructor", variant: "secondary" },
-            member: { label: "Member", variant: "outline" },
-            student: { label: "Student", variant: "secondary" },
-            buyer: { label: "Buyer", variant: "outline" },
-            guest: { label: "Guest", variant: "outline" },
-            "future-member": { label: "Future Member", variant: "secondary" }
-        };
-
-        const config = roleConfig[role as keyof typeof roleConfig];
+        const config = roleConfig[role];
         if (!config) return null;
-
         return (
-            <Badge
-                variant={config.variant as any}
-                className="text-xs"
-            >
+            <Badge variant={config.variant as "default" | "destructive" | "secondary" | "outline"} className="text-xs">
                 {config.label}
             </Badge>
         );
@@ -304,21 +297,12 @@ export default function MessagingCenter() {
 
     const getRoleFilterOptions = () => [
         { value: "all", label: "All Users" },
-        { value: "admin", label: "Admins" },
-        { value: "manager", label: "Managers" },
-        { value: "instructor", label: "Instructors" },
-        { value: "member", label: "Members" },
-        { value: "student", label: "Students" },
-        { value: "buyer", label: "Buyers" },
-        { value: "guest", label: "Guests" },
-        { value: "future-member", label: "Future Members" }
+        ...Object.entries(roleConfig).map(([value, { label }]) => ({ value, label }))
     ];
 
-    const getFilteredUsers = () => {
-        return allUsers.filter((user) => {
-            if (selectedRoleFilter === "all") return true;
-            return user.role === selectedRoleFilter;
-        });
+    const getFilteredMembers = () => {
+        if (selectedRoleFilter === "all") return members.filter((m) => m.id !== currentUser?.id);
+        return members.filter((m) => m.id !== currentUser?.id && m.role === selectedRoleFilter);
     };
 
     const formatTime = (timestamp: string) => {
@@ -326,28 +310,32 @@ export default function MessagingCenter() {
         const now = new Date();
         const diff = now.getTime() - date.getTime();
         const hours = diff / (1000 * 60 * 60);
-
-        if (hours < 24) {
-            return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        } else {
-            return date.toLocaleDateString();
-        }
+        if (hours < 24) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return date.toLocaleDateString();
     };
 
-    const getChatIcon = (type: ChatGroup["type"]) => {
-        switch (type) {
-            case "class":
-                return <Users className="w-4 h-4" />;
-            case "announcement":
-                return <Hash className="w-4 h-4" />;
-            case "project":
-                return <FileText className="w-4 h-4" />;
-            default:
-                return <MessageCircle className="w-4 h-4" />;
-        }
+    const getChatIcon = (type: "direct" | "group") => {
+        return type === "group" ? <Users className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />;
     };
+
+    if (!studioId) {
+        return (
+            <RequireAuth>
+                <DefaultLayout>
+                    <div className="max-w-7xl mx-auto p-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
+                        <MessageCircle className="w-16 h-16 text-muted-foreground opacity-50 mb-4" />
+                        <h2 className="text-xl font-semibold">Select a studio</h2>
+                        <p className="text-muted-foreground mt-2">
+                            Switch to a studio from the menu to view and send messages with studio members.
+                        </p>
+                    </div>
+                </DefaultLayout>
+            </RequireAuth>
+        );
+    }
 
     return (
+        <RequireAuth>
         <DefaultLayout>
             <div className="max-w-7xl mx-auto p-8 space-y-8">
                 {/* Header */}
@@ -410,51 +398,34 @@ export default function MessagingCenter() {
                                             </Select>
                                         </div>
                                         <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-4">
-                                            {getFilteredUsers()
-                                                .filter((user) => user.id !== currentUser?.id)
-                                                .map((user) => (
+                                            {membersLoading ? (
+                                                <p className="text-sm text-muted-foreground">Loading members...</p>
+                                            ) : (
+                                                getFilteredMembers().map((user) => (
                                                     <div
                                                         key={user.id}
                                                         className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                                                         onClick={() => setSelectedUsers([user.id])}
                                                     >
                                                         <Checkbox
-                                                            checked={selectedUsers.includes(
-                                                                user.id
-                                                            )}
+                                                            checked={selectedUsers.includes(user.id)}
                                                             onChange={() => {}}
                                                         />
                                                         <Avatar className="w-10 h-10">
                                                             <AvatarFallback>
-                                                                {user.name
-                                                                    .split(" ")
-                                                                    .map((n) => n[0])
-                                                                    .join("")}
+                                                                {user.name.split(" ").map((n) => n[0]).join("") || "?"}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 space-y-1">
                                                             <div className="flex items-center space-x-2">
-                                                                <p className="font-medium">
-                                                                    {user.name}
-                                                                </p>
+                                                                <p className="font-medium">{user.name}</p>
                                                                 {getRoleBadge(user.role)}
                                                             </div>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                @{user.handle}
-                                                            </p>
-                                                            {user.studioId && (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    Studio Member
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <div
-                                                                className={`w-3 h-3 rounded-full ${user.isOnline ? "bg-green-500" : "bg-gray-300"}`}
-                                                            />
+                                                            <p className="text-sm text-muted-foreground">@{user.handle}</p>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                ))
+                                            )}
                                         </div>
                                     </div>
                                 </TabsContent>
@@ -513,79 +484,54 @@ export default function MessagingCenter() {
                                             </Select>
                                         </div>
                                         <div className="space-y-3 max-h-64 overflow-y-auto border rounded-lg p-4">
-                                            {getFilteredUsers()
-                                                .filter((user) => user.id !== currentUser?.id)
-                                                .map((user) => (
+                                            {membersLoading ? (
+                                                <p className="text-sm text-muted-foreground">Loading members...</p>
+                                            ) : (
+                                                getFilteredMembers().map((user) => (
                                                     <div
                                                         key={user.id}
                                                         className="flex items-center space-x-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
                                                         onClick={() => {
                                                             setSelectedUsers((prev) =>
                                                                 prev.includes(user.id)
-                                                                    ? prev.filter(
-                                                                          (id) => id !== user.id
-                                                                      )
+                                                                    ? prev.filter((id) => id !== user.id)
                                                                     : [...prev, user.id]
                                                             );
                                                         }}
                                                     >
-                                                        <Checkbox
-                                                            checked={selectedUsers.includes(
-                                                                user.id
-                                                            )}
-                                                            onChange={() => {}}
-                                                        />
+                                                        <Checkbox checked={selectedUsers.includes(user.id)} onChange={() => {}} />
                                                         <Avatar className="w-10 h-10">
                                                             <AvatarFallback>
-                                                                {user.name
-                                                                    .split(" ")
-                                                                    .map((n) => n[0])
-                                                                    .join("")}
+                                                                {user.name.split(" ").map((n) => n[0]).join("") || "?"}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 space-y-1">
                                                             <div className="flex items-center space-x-2">
-                                                                <p className="font-medium">
-                                                                    {user.name}
-                                                                </p>
+                                                                <p className="font-medium">{user.name}</p>
                                                                 {getRoleBadge(user.role)}
                                                             </div>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                @{user.handle}
-                                                            </p>
-                                                            {user.studioId && (
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    Studio Member
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <div
-                                                                className={`w-3 h-3 rounded-full ${user.isOnline ? "bg-green-500" : "bg-gray-300"}`}
-                                                            />
+                                                            <p className="text-sm text-muted-foreground">@{user.handle}</p>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                ))
+                                            )}
                                         </div>
                                     </div>
                                 </TabsContent>
                             </Tabs>
                             <div className="flex justify-end space-x-3">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setShowNewChatDialog(false)}
-                                >
+                                <Button variant="outline" onClick={() => setShowNewChatDialog(false)}>
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleCreateChat}
                                     disabled={
+                                        creatingChat ||
                                         (chatType === "direct" && selectedUsers.length !== 1) ||
-                                        (chatType === "group" &&
-                                            (selectedUsers.length < 2 || !groupName.trim()))
+                                        (chatType === "group" && (selectedUsers.length < 1 || !groupName.trim()))
                                     }
                                 >
-                                    Create Chat
+                                    {creatingChat ? "Creating…" : "Create Chat"}
                                 </Button>
                             </div>
                         </DialogContent>
@@ -605,30 +551,16 @@ export default function MessagingCenter() {
                             />
                         </div>
                         <div className="space-y-2">
-                            {chats
-                                .filter(
-                                    (chat) =>
-                                        chat.name
-                                            .toLowerCase()
-                                            .includes(searchTerm.toLowerCase()) ||
-                                        chat.description
-                                            ?.toLowerCase()
-                                            .includes(searchTerm.toLowerCase())
-                                )
-                                .map((chat) => {
-                                    const lastMessage = messages
-                                        .filter((msg) => msg.groupId === chat.id)
-                                        .sort(
-                                            (a, b) =>
-                                                new Date(b.timestamp).getTime() -
-                                                new Date(a.timestamp).getTime()
-                                        )[0];
-                                    const unreadCount = messages.filter(
-                                        (msg) =>
-                                            msg.groupId === chat.id &&
-                                            !(msg.readBy ?? []).includes(currentUser?.id || "")
-                                    ).length;
-                                    return (
+                            {conversationsLoading ? (
+                                <p className="text-sm text-muted-foreground p-4">Loading conversations...</p>
+                            ) : (
+                                conversations
+                                    .filter(
+                                        (c) =>
+                                            c.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            (c.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+                                    )
+                                    .map((chat) => (
                                         <div
                                             key={chat.id}
                                             className={`flex items-center space-x-3 p-4 rounded-lg cursor-pointer transition-colors border ${
@@ -648,38 +580,25 @@ export default function MessagingCenter() {
                                             </div>
                                             <div className="flex-1 min-w-0 space-y-1">
                                                 <div className="flex items-center justify-between">
-                                                    <p className="font-medium truncate">
-                                                        {chat.name}
-                                                    </p>
-                                                    {lastMessage && (
+                                                    <p className="font-medium truncate">{chat.displayName}</p>
+                                                    {chat.lastMessage && (
                                                         <span className="text-xs text-muted-foreground">
-                                                            {formatTime(lastMessage.timestamp)}
+                                                            {formatTime(chat.lastMessage.createdAt)}
                                                         </span>
                                                     )}
                                                 </div>
-                                                {lastMessage && (
+                                                {chat.lastMessage && (
                                                     <p className="text-sm text-muted-foreground truncate">
-                                                        {lastMessage.senderName}:{" "}
-                                                        {lastMessage.content}
+                                                        {chat.lastMessage.content}
                                                     </p>
                                                 )}
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {chat.members.length} members
-                                                    </p>
-                                                    {unreadCount > 0 && (
-                                                        <Badge
-                                                            variant="destructive"
-                                                            className="text-xs h-5 w-5 flex items-center justify-center p-0"
-                                                        >
-                                                            {unreadCount > 9 ? "9+" : unreadCount}
-                                                        </Badge>
-                                                    )}
-                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {chat.memberCount} member{chat.memberCount !== 1 ? "s" : ""}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ))
+                            )}
                         </div>
                     </div>
                     {/* Chat Messages Area */}
@@ -690,12 +609,12 @@ export default function MessagingCenter() {
                                 <div className="flex items-center justify-between p-4 border-b">
                                     <div className="flex items-center space-x-3">
                                         <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                                            {getChatIcon(activeGroup?.type || "general")}
+                                            {getChatIcon(activeConversation?.type ?? "direct")}
                                         </div>
                                         <div className="space-y-1">
-                                            <h3 className="font-semibold">{activeGroup?.name}</h3>
+                                            <h3 className="font-semibold">{activeConversation?.displayName}</h3>
                                             <p className="text-sm text-muted-foreground">
-                                                {activeGroup?.members.length} members
+                                                {activeConversation?.memberCount ?? 0} member{(activeConversation?.memberCount ?? 0) !== 1 ? "s" : ""}
                                             </p>
                                         </div>
                                     </div>
@@ -722,53 +641,36 @@ export default function MessagingCenter() {
                                 </div>
                                 {/* Messages */}
                                 <ScrollArea className="flex-1 p-4">
-                                    <div className="space-y-4">
-                                        {activeChatMessages.map((message) => (
-                                            <div
-                                                key={message.id}
-                                                className="flex items-start space-x-3"
-                                            >
-                                                <Avatar className="w-8 h-8">
-                                                    <AvatarFallback>
-                                                        {message.senderName
-                                                            .split(" ")
-                                                            .map((n) => n[0])
-                                                            .join("")}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1 space-y-1">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="font-medium text-sm">
-                                                            {message.senderName}
-                                                        </span>
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {formatTime(message.timestamp)}
-                                                        </span>
+                                    {messagesLoading ? (
+                                        <p className="text-sm text-muted-foreground">Loading messages...</p>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {activeChatMessages.map((message) => (
+                                                <div key={message.id} className="flex items-start space-x-3">
+                                                    <Avatar className="w-8 h-8">
+                                                        <AvatarFallback>
+                                                            {message.senderName
+                                                                .split(" ")
+                                                                .map((n) => n[0])
+                                                                .join("") || "?"}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1 space-y-1">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="font-medium text-sm">
+                                                                {message.senderName}
+                                                            </span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {formatTime(message.createdAt)}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm">{message.content}</p>
                                                     </div>
-                                                    <p className="text-sm">{message.content}</p>
-                                                    {message.reactions &&
-                                                        message.reactions.length > 0 && (
-                                                            <div className="flex items-center space-x-1 mt-2">
-                                                                {message.reactions.map(
-                                                                    (reaction, index) => (
-                                                                        <Button
-                                                                            key={index}
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-6 px-2 text-xs"
-                                                                        >
-                                                                            {reaction.emoji}{" "}
-                                                                            {reaction.users.length}
-                                                                        </Button>
-                                                                    )
-                                                                )}
-                                                            </div>
-                                                        )}
                                                 </div>
-                                            </div>
-                                        ))}
-                                        <div ref={messagesEndRef} />
-                                    </div>
+                                            ))}
+                                            <div ref={messagesEndRef} />
+                                        </div>
+                                    )}
                                 </ScrollArea>
                                 {/* Message Input */}
                                 <div className="p-4 border-t">
@@ -829,5 +731,6 @@ export default function MessagingCenter() {
                 </div>
             </div>
         </DefaultLayout>
+        </RequireAuth>
     );
 }
