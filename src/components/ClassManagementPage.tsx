@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     ArrowLeft,
     Users,
@@ -33,7 +33,9 @@ import {
     Trash2,
     Copy,
     Trophy,
-    Award
+    Award,
+    Loader2,
+    Save
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -61,13 +63,28 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger
+    DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent
 } from "./ui/dropdown-menu";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ClassPreview } from "./ClassPreview";
 import { ClassSettingsBadges } from "./ClassSettingsBadges";
-import type { ClassBadge, BadgeDesign, StudentBadge, User } from "@/app/context/AppContext";
 import { toast } from "sonner";
+import { useAppContext } from "@/app/context/AppContext";
+import type {
+    ClassEnrollment,
+    ClassWaitlistEntry,
+    ClassAttendanceRecord,
+    ClassPricingTier,
+    ClassDiscountCode,
+    ClassImage as ClassImageType,
+    ClassReview,
+    BadgeDesign,
+    StudentBadge
+} from "@/types";
+import type { User } from "@/types";
 
 interface ClassManagementPageProps {
     classId: string;
@@ -149,59 +166,243 @@ interface StudentReview {
 }
 
 export function ClassManagementPage({ classId, onBack }: ClassManagementPageProps) {
+    const context = useAppContext();
     const [activeTab, setActiveTab] = useState("enrollments");
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
     const [showNotificationDialog, setShowNotificationDialog] = useState(false);
     const [showAddStudentDialog, setShowAddStudentDialog] = useState(false);
+    const [showAddToWaitlistDialog, setShowAddToWaitlistDialog] = useState(false);
+    const [showMarkAttendanceDialog, setShowMarkAttendanceDialog] = useState(false);
     const [showRosterDialog, setShowRosterDialog] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    
+    // Dialog form states
+    const [addStudentForm, setAddStudentForm] = useState({
+        studentId: "",
+        pricingTierId: "",
+        discountCodeId: "",
+        emergencyContact: "",
+        phone: ""
+    });
+    const [addToWaitlistForm, setAddToWaitlistForm] = useState({
+        studentId: ""
+    });
+    const [markAttendanceForm, setMarkAttendanceForm] = useState({
+        sessionDate: new Date().toISOString().split("T")[0],
+        selectedStudents: [] as string[],
+        status: "present" as "present" | "absent" | "late" | "excused",
+        notes: ""
+    });
+    
+    // Students/members for selection
+    const [availableStudents, setAvailableStudents] = useState<Array<{
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    }>>([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(false);
     const [selectedPricingTier, setSelectedPricingTier] = useState<string>("");
     const [selectedDiscountCode, setSelectedDiscountCode] = useState<string>("");
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
+    const [isLoadingWaitlist, setIsLoadingWaitlist] = useState(false);
+    const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+    const [instructors, setInstructors] = useState<Array<{ id: string; name: string; email?: string }>>([]);
+    
+    // Settings form state
+    const [settingsForm, setSettingsForm] = useState({
+        name: "",
+        description: "",
+        instructorId: ""
+    });
 
-    // Mock enrollment data with pricing info
-    const mockEnrollments: Enrollment[] = [
-        {
-            id: "1",
-            studentName: "Alice Johnson",
-            studentEmail: "alice@example.com",
-            enrolledDate: "2025-01-10",
-            status: "active",
-            paymentStatus: "paid",
-            phone: "(555) 123-4567",
-            emergencyContact: "Bob Johnson - (555) 987-6543",
-            pricingTier: "Early Bird Special",
-            discountApplied: "EARLY20",
-            amountPaid: 224
-        },
-        {
-            id: "2",
-            studentName: "Mark Chen",
-            studentEmail: "mark@example.com",
-            enrolledDate: "2025-01-12",
-            status: "active",
-            paymentStatus: "paid",
-            phone: "(555) 234-5678",
-            pricingTier: "Standard Price",
-            amountPaid: 320
-        },
-        {
-            id: "3",
-            studentName: "Emma Wilson",
-            studentEmail: "emma@example.com",
-            enrolledDate: "2025-01-08",
-            status: "active",
-            paymentStatus: "pending",
-            phone: "(555) 345-6789",
-            pricingTier: "Premium Package",
-            discountApplied: "STUDENT50",
-            amountPaid: 330
+    // Class data state
+    const [classData, setClassData] = useState<any>(null);
+    const [enrollments, setEnrollments] = useState<ClassEnrollment[]>([]);
+    const [waitlist, setWaitlist] = useState<ClassWaitlistEntry[]>([]);
+    const [attendance, setAttendance] = useState<ClassAttendanceRecord[]>([]);
+
+    // Fetch class data and all related data
+    const fetchClassData = useCallback(async () => {
+        if (!context.currentStudio?.id || !context.authToken) return;
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}`,
+                {
+                    headers: { Authorization: `Bearer ${context.authToken}` }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to load class");
+            }
+
+            const data = await res.json();
+            setClassData(data.class);
+            setEnrollments(data.enrollments || []);
+            setWaitlist(data.waitlist || []);
+            setAttendance(data.attendance || []);
+            // Initialize settings form with current class data
+            if (data.class) {
+                setSettingsForm({
+                    name: data.class.name || "",
+                    description: data.class.description || "",
+                    instructorId: data.class.instructor_id || ""
+                });
+            }
+            setPricingTiers(
+                (data.pricingTiers || []).map((tier: any) => ({
+                    id: tier.id,
+                    name: tier.name,
+                    price: tier.price_cents / 100,
+                    description: tier.description || "",
+                    isDefault: tier.is_default,
+                    isActive: tier.is_active,
+                    enrollmentCount: tier.enrollment_count || 0
+                }))
+            );
+            setDiscountCodes(
+                (data.discountCodes || []).map((code: any) => ({
+                    id: code.id,
+                    code: code.code,
+                    type: code.type,
+                    value: code.value,
+                    description: code.description || "",
+                    expiryDate: code.expiry_date || "",
+                    usageLimit: code.usage_limit || 0,
+                    usageCount: code.usage_count || 0,
+                    isActive: code.is_active
+                }))
+            );
+            setClassImages(
+                (data.images || []).map((img: any) => ({
+                    id: img.id,
+                    url: img.url,
+                    alt: img.alt_text || "",
+                    isMain: img.is_main,
+                    uploadDate: img.upload_date
+                }))
+            );
+            setStudentReviews(
+                (data.reviews || []).map((review: any) => ({
+                    id: review.id,
+                    studentName: review.studentName || "",
+                    studentEmail: review.studentEmail || "",
+                    rating: review.rating,
+                    comment: review.comment || "",
+                    date: review.date || review.created_at,
+                    isPublic: review.isPublic || review.is_public
+                }))
+            );
+        } catch (err: any) {
+            console.error("Error fetching class data", err);
+            toast.error(err.message || "Failed to load class");
+        } finally {
+            setIsLoading(false);
         }
-    ];
+    }, [context.currentStudio?.id, context.authToken, classId]);
 
-    // Badge system state
-    const [classBadges, setClassBadges] = useState<ClassBadge[]>([
+    // Fetch instructors
+    const fetchInstructors = useCallback(async () => {
+        if (!context.currentStudio?.id || !context.authToken) return;
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/staff`,
+                {
+                    headers: { Authorization: `Bearer ${context.authToken}` }
+                }
+            );
+
+            if (!res.ok) {
+                console.error("Failed to fetch instructors");
+                return;
+            }
+
+            const data = await res.json();
+            // Filter for instructors only and map to the format we need
+            setInstructors(
+                (data.staff || [])
+                    // .filter((staff: any) => staff.role === "instructor")
+                    .map((staff: any) => ({
+                        id: staff.userId || staff.id,
+                        name: staff.name || staff.email?.split("@")[0] || "Unnamed Instructor",
+                        email: staff.email
+                    }))
+            );
+        } catch (err) {
+            console.error("Error fetching instructors", err);
+        }
+    }, [context.currentStudio?.id, context.authToken]);
+
+    // Fetch available students/members for enrollment (filtered by class location)
+    const fetchAvailableStudents = useCallback(async () => {
+        if (!context.currentStudio?.id || !context.authToken || !classData?.location_id) return;
+
+        setIsLoadingStudents(true);
+        try {
+            // Fetch members for the class's location
+            const url = new URL(
+                `/api/studios/${context.currentStudio.id}/members`,
+                window.location.origin
+            );
+            url.searchParams.set("locationId", classData.location_id);
+
+            const res = await fetch(url.toString(), {
+                headers: { Authorization: `Bearer ${context.authToken}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                // Filter out students already enrolled or on waitlist
+                const enrolledStudentIds = new Set(enrollments.map((e) => e.studentId));
+                const waitlistedStudentIds = new Set(waitlist.map((w) => w.studentId));
+                
+                setAvailableStudents(
+                    (data.members || [])
+                        .filter((member: any) => {
+                            const userId = member.user_id || member.profiles?.id;
+                            return (
+                                !enrolledStudentIds.has(userId) &&
+                                !waitlistedStudentIds.has(userId)
+                            );
+                        })
+                        .map((member: any) => ({
+                            id: member.user_id || member.profiles?.id,
+                            name: member.profiles?.name || member.profiles?.email?.split("@")[0] || "Unnamed",
+                            email: member.profiles?.email || "",
+                            phone: member.profiles?.phone || ""
+                        }))
+                );
+            }
+        } catch (err) {
+            console.error("Error fetching students", err);
+        } finally {
+            setIsLoadingStudents(false);
+        }
+    }, [context.currentStudio?.id, context.authToken, classData?.location_id, enrollments, waitlist]);
+
+    useEffect(() => {
+        fetchClassData();
+        fetchInstructors();
+    }, [fetchClassData, fetchInstructors]);
+
+    // Fetch available students when dialogs open
+    useEffect(() => {
+        if ((showAddStudentDialog || showAddToWaitlistDialog) && classData?.location_id) {
+            fetchAvailableStudents();
+        }
+    }, [showAddStudentDialog, showAddToWaitlistDialog, classData?.location_id, fetchAvailableStudents]);
+
+
+    // Badge system state - using any type for now as ClassBadge is not exported
+    const [classBadges, setClassBadges] = useState<any[]>([
         {
             id: "badge_completion",
             classId: classId,
@@ -271,103 +472,103 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
             projectsCompleted: 4,
             skillsAchieved: ["centering", "pulling", "shaping"],
             instructorNotes: "Excellent progress throughout the course.",
-            displayOnProfile: true
+            displayOnProfile: true,
+            shareCount: 0,
+            viewCount: 0,
+            createdAt: "2025-01-15T10:00:00Z",
+            updatedAt: "2025-01-15T10:00:00Z"
         }
     ]);
 
-    // Mock student data for badge system
-    const mockStudents: User[] = mockEnrollments.map((enrollment) => ({
-        id: enrollment.id,
-        name: enrollment.studentName,
-        email: enrollment.studentEmail,
-        handle: enrollment.studentName.toLowerCase().replace(" ", ""),
-        type: "artist",
-        subscription: "free",
-        createdAt: "2025-01-01",
-        profile: {
-            bio: "",
-            socialMedia: {},
-            branding: { primaryColor: "#030213" }
-        }
-    }));
-
-    // Mock attendance and grade records for badge system
-    const mockAttendanceRecords = {
-        "1": { percentage: 90, sessionsAttended: 14, totalSessions: 16 },
-        "2": { percentage: 85, sessionsAttended: 13, totalSessions: 16 },
-        "3": { percentage: 75, sessionsAttended: 12, totalSessions: 16 }
-    };
-
-    const mockGradeRecords = {
-        "1": { finalGrade: 87, projectsCompleted: 4 },
-        "2": { finalGrade: 82, projectsCompleted: 3 },
-        "3": { finalGrade: 78, projectsCompleted: 5 }
-    };
-
-    const mockSkillsRecords = {
-        "1": ["centering", "pulling", "shaping"],
-        "2": ["centering", "pulling"],
-        "3": ["centering", "pulling", "shaping", "trimming"]
-    };
-
-    // Mock class data
-    const classData = {
-        id: classId,
-        name: "Wheel Throwing Fundamentals",
-        instructor: "Sarah Martinez",
-        level: "Beginner",
-        capacity: 12,
-        enrolled: 10,
-        waitlist: 3,
-        schedule: "Tuesdays & Thursdays, 6:00 PM - 8:00 PM",
-        duration: "8 weeks",
-        startDate: "2025-01-15",
-        endDate: "2025-03-06",
-        location: "Studio A",
-        price: "$320",
-        description:
-            "Learn the fundamentals of wheel throwing pottery including centering, pulling walls, and basic forms.",
-        materials: "Clay, glazes, and tools included",
-        status: "active",
-        sessionsCompleted: 3,
-        totalSessions: 16,
-        thumbnail: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
-        averageRating: 4.8,
-        totalReviews: 24
-    };
-
-    // Mock pricing tiers
-    const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([
-        {
-            id: "1",
-            name: "Early Bird Special",
-            price: 280,
-            description: "Save $40 with early registration",
-            isDefault: false,
+    // Student data for badge system (using real enrollments)
+    // Transform enrollments to User format for badge system
+    const students: User[] = enrollments
+        .filter((enrollment) => enrollment.studentName) // Filter out enrollments without student names
+        .map((enrollment) => ({
+            id: enrollment.studentId,
+            name: enrollment.studentName || "Unnamed Student",
+            email: enrollment.studentEmail || "",
+            handle: (enrollment.studentName || "unnamed")
+                .toLowerCase()
+                .replace(/\s+/g, ""),
+            phone: enrollment.phone || "",
+            type: "artist" as const,
+            subscription: "free",
+            createdAt: enrollment.enrolledDate || new Date().toISOString(),
             isActive: true,
-            enrollmentCount: 3
-        },
-        {
-            id: "2",
-            name: "Standard Price",
-            price: 320,
-            description: "Regular class price includes all materials",
-            isDefault: true,
-            isActive: true,
-            enrollmentCount: 6
-        },
-        {
-            id: "3",
-            name: "Premium Package",
-            price: 380,
-            description: "Includes extra studio time and advanced glazing",
-            isDefault: false,
-            isActive: true,
-            enrollmentCount: 1
-        }
-    ]);
+            profile: {
+                bio: "",
+                socialMedia: {},
+                branding: { primaryColor: "#030213" }
+            }
+        }));
 
-    // Mock discount codes
+    // Calculate attendance statistics from actual attendance data
+    const studentAttendanceStats: Record<string, { percentage: number; sessionsAttended: number; totalSessions: number }> = {};
+    const totalSessions = classData?.total_sessions || 0;
+    
+    enrollments.forEach((enrollment) => {
+        const studentId = enrollment.studentId;
+        const studentAttendance = attendance.filter((a) => a.studentId === studentId && a.status === "present");
+        const sessionsAttended = studentAttendance.length;
+        const percentage = totalSessions > 0 ? Math.round((sessionsAttended / totalSessions) * 100) : 0;
+        
+        studentAttendanceStats[studentId] = {
+            percentage,
+            sessionsAttended,
+            totalSessions
+        };
+    });
+
+    // Grade records - placeholder until grade system is implemented
+    const studentGradeStats: Record<string, { finalGrade: number; projectsCompleted: number }> = {};
+    enrollments.forEach((enrollment) => {
+        studentGradeStats[enrollment.studentId] = {
+            finalGrade: 0,
+            projectsCompleted: 0
+        };
+    });
+
+    // Skills records - placeholder until skills system is implemented
+    const studentSkillsStats: Record<string, string[]> = {};
+    enrollments.forEach((enrollment) => {
+        studentSkillsStats[enrollment.studentId] = [];
+    });
+
+    // Transform class data for display
+    const displayClassData = classData
+        ? {
+              id: classData.id,
+              name: classData.name,
+              instructor: classData.instructor?.name || "TBD",
+              level: classData.level || "",
+              capacity: classData.capacity || 0,
+              enrolled: classData.enrolled_count || 0,
+              waitlist: classData.waitlist_count || 0,
+              schedule: classData.schedule || "",
+              duration: classData.total_sessions
+                  ? `${classData.total_sessions} sessions`
+                  : "TBD",
+              startDate: classData.start_date || "",
+              endDate: classData.end_date || "",
+              location: classData.location || "",
+              price: "$0", // Will be calculated from pricing tiers
+              description: classData.description || "",
+              materials: classData.materials || "",
+              status: classData.status || "draft",
+              sessionsCompleted: classData.sessions_completed || 0,
+              totalSessions: classData.total_sessions || 0,
+              thumbnail: classData.thumbnail_url || "",
+              averageRating: classData.average_rating || 0,
+              totalReviews: classData.total_reviews || 0
+          }
+        : null;
+
+    // Pricing tiers state
+    const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
+    const [editingTiers, setEditingTiers] = useState<Record<string, Partial<PricingTier>>>({});
+
+    // Discount codes state
     const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([
         {
             id: "1",
@@ -393,7 +594,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         }
     ]);
 
-    // Mock class images
+    // Class images state
     const [classImages, setClassImages] = useState<ClassImage[]>([
         {
             id: "1",
@@ -418,7 +619,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         }
     ]);
 
-    // Mock student reviews
+    // Student reviews state
     const [studentReviews, setStudentReviews] = useState<StudentReview[]>([
         {
             id: "1",
@@ -451,57 +652,33 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         }
     ]);
 
-    // Mock attendance data
-    const mockAttendance: AttendanceRecord[] = [
-        {
-            id: "1",
-            studentId: "1",
-            studentName: "Alice Johnson",
-            date: "2025-01-15",
-            status: "present"
-        },
-        {
-            id: "2",
-            studentId: "2",
-            studentName: "Mark Chen",
-            date: "2025-01-15",
-            status: "present"
-        },
-        {
-            id: "3",
-            studentId: "3",
-            studentName: "Emma Wilson",
-            date: "2025-01-15",
-            status: "late",
-            notes: "Arrived 15 minutes late due to traffic"
-        }
-    ];
+    // Attendance data (using real data from state)
+    const attendanceRecords: AttendanceRecord[] = attendance.map((record) => ({
+        id: record.id,
+        studentId: record.studentId,
+        studentName: record.studentName,
+        date: record.sessionDate,
+        status: record.status,
+        notes: record.notes || undefined
+    }));
 
-    // Mock waitlist data
-    const mockWaitlist: WaitlistEntry[] = [
-        {
-            id: "1",
-            studentName: "David Park",
-            studentEmail: "david@example.com",
-            waitlistedDate: "2025-01-13",
-            position: 1,
-            notifications: true
-        },
-        {
-            id: "2",
-            studentName: "Lisa Brown",
-            studentEmail: "lisa@example.com",
-            waitlistedDate: "2025-01-14",
-            position: 2,
-            notifications: true
-        }
-    ];
+    // Waitlist data (using real data from state)
+    const waitlistEntries: WaitlistEntry[] = waitlist.map((entry) => ({
+        id: entry.id,
+        studentName: entry.studentName,
+        studentEmail: entry.studentEmail,
+        waitlistedDate: entry.waitlistedDate,
+        position: entry.position,
+        notifications: entry.notificationsEnabled
+    }));
 
     const handleDownloadRoster = () => {
-        const csvContent = `Student Name,Email,Phone,Emergency Contact,Status,Pricing Tier,Amount Paid\n${mockEnrollments
+        if (!displayClassData) return;
+
+        const csvContent = `Student Name,Email,Phone,Emergency Contact,Status,Pricing Tier,Amount Paid\n${enrollments
             .map(
                 (e) =>
-                    `${e.studentName},${e.studentEmail},${e.phone || ""},${e.emergencyContact || ""},${e.status},${e.pricingTier || ""},${e.amountPaid || ""}`
+                    `${e.studentName},${e.studentEmail},${e.phone || ""},${e.emergencyContact || ""},${e.status},${e.pricingTier?.name || ""},${e.amountPaid || ""}`
             )
             .join("\n")}`;
 
@@ -509,7 +686,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${classData.name}_roster.csv`;
+        a.download = `${displayClassData.name}_roster.csv`;
         a.click();
         window.URL.revokeObjectURL(url);
 
@@ -530,97 +707,944 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         setSelectedStudents([]);
     };
 
-    const addPricingTier = () => {
-        const newTier: PricingTier = {
-            id: Date.now().toString(),
+    // Enrollment management handlers
+    const handleAddStudentSubmit = async () => {
+        if (!addStudentForm.studentId) {
+            toast.error("Please select a student");
+            return;
+        }
+
+        const selectedStudent = availableStudents.find((s) => s.id === addStudentForm.studentId);
+        if (!selectedStudent) {
+            toast.error("Selected student not found");
+            return;
+        }
+
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/enrollments`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        studentId: addStudentForm.studentId,
+                        pricingTierId: addStudentForm.pricingTierId || null,
+                        discountCodeId: addStudentForm.discountCodeId || null,
+                        emergencyContact: addStudentForm.emergencyContact || null,
+                        phone: addStudentForm.phone || null
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to enroll student");
+            }
+
+            toast.success(`Student "${selectedStudent.name}" enrolled successfully`);
+            setShowAddStudentDialog(false);
+            setAddStudentForm({
+                studentId: "",
+                pricingTierId: "",
+                discountCodeId: "",
+                emergencyContact: "",
+                phone: ""
+            });
+            fetchClassData(); // Refresh enrollments
+        } catch (err: any) {
+            console.error("Error enrolling student", err);
+            toast.error(err.message || "Failed to enroll student");
+        }
+    };
+
+    const handleRemoveEnrollment = async (enrollmentId: string, studentName: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to remove "${studentName}" from this class?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/enrollments/${enrollmentId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to remove enrollment");
+            }
+
+            toast.success(`Student "${studentName}" removed from class`);
+            fetchClassData(); // Refresh enrollments
+        } catch (err: any) {
+            console.error("Error removing enrollment", err);
+            toast.error(err.message || "Failed to remove enrollment");
+        }
+    };
+
+    // Waitlist management handlers
+    const handleAddToWaitlistSubmit = async () => {
+        if (!addToWaitlistForm.studentId) {
+            toast.error("Please select a student");
+            return;
+        }
+
+        const selectedStudent = availableStudents.find((s) => s.id === addToWaitlistForm.studentId);
+        if (!selectedStudent) {
+            toast.error("Selected student not found");
+            return;
+        }
+
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/waitlist`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        studentId: addToWaitlistForm.studentId,
+                        notificationsEnabled: true
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to add to waitlist");
+            }
+
+            toast.success(`Student "${selectedStudent.name}" added to waitlist`);
+            setShowAddToWaitlistDialog(false);
+            setAddToWaitlistForm({ studentId: "" });
+            fetchClassData(); // Refresh waitlist
+        } catch (err: any) {
+            console.error("Error adding to waitlist", err);
+            toast.error(err.message || "Failed to add to waitlist");
+        }
+    };
+
+    const handleRemoveFromWaitlist = async (waitlistId: string, studentName: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to remove "${studentName}" from the waitlist?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/waitlist/${waitlistId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to remove from waitlist");
+            }
+
+            toast.success(`Student "${studentName}" removed from waitlist`);
+            fetchClassData(); // Refresh waitlist
+        } catch (err: any) {
+            console.error("Error removing from waitlist", err);
+            toast.error(err.message || "Failed to remove from waitlist");
+        }
+    };
+
+    const handlePromoteFromWaitlist = async (waitlistId: string, studentName: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/waitlist/${waitlistId}/promote`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        pricingTierId: selectedPricingTier || null,
+                        discountCodeId: selectedDiscountCode || null
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to promote from waitlist");
+            }
+
+            toast.success(`Student "${studentName}" promoted from waitlist and enrolled`);
+            fetchClassData(); // Refresh enrollments and waitlist
+        } catch (err: any) {
+            console.error("Error promoting from waitlist", err);
+            toast.error(err.message || "Failed to promote from waitlist");
+        }
+    };
+
+    // Attendance management handlers
+    const handleMarkAttendanceSubmit = async () => {
+        if (markAttendanceForm.selectedStudents.length === 0) {
+            toast.error("Please select at least one student");
+            return;
+        }
+
+        if (!markAttendanceForm.sessionDate) {
+            toast.error("Please select a date");
+            return;
+        }
+
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            // Record attendance for all selected students
+            const studioId = context.currentStudio?.id;
+            if (!studioId) {
+                toast.error("Studio not found");
+                return;
+            }
+            
+            const attendancePromises = markAttendanceForm.selectedStudents.map((studentId) =>
+                fetch(
+                    `/api/admin/studios/${studioId}/classes/${classId}/attendance`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${context.authToken}`
+                        },
+                        body: JSON.stringify({
+                            studentId,
+                            sessionDate: markAttendanceForm.sessionDate,
+                            status: markAttendanceForm.status,
+                            notes: markAttendanceForm.notes || null
+                        })
+                    }
+                )
+            );
+
+            const results = await Promise.all(attendancePromises);
+            const errors = results.filter((res) => !res.ok);
+
+            if (errors.length > 0) {
+                throw new Error(`Failed to record attendance for ${errors.length} student(s)`);
+            }
+
+            toast.success(
+                `Attendance recorded for ${markAttendanceForm.selectedStudents.length} student(s)`
+            );
+            setShowMarkAttendanceDialog(false);
+            setMarkAttendanceForm({
+                sessionDate: new Date().toISOString().split("T")[0],
+                selectedStudents: [],
+                status: "present",
+                notes: ""
+            });
+            fetchClassData(); // Refresh attendance records
+        } catch (err: any) {
+            console.error("Error recording attendance", err);
+            toast.error(err.message || "Failed to record attendance");
+        }
+    };
+
+    // Update enrollment status
+    const handleUpdateEnrollmentStatus = async (
+        enrollmentId: string,
+        status: "active" | "dropped" | "completed"
+    ) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/enrollments/${enrollmentId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({ status })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update enrollment status");
+            }
+
+            toast.success("Enrollment status updated");
+            fetchClassData(); // Refresh enrollments
+        } catch (err: any) {
+            console.error("Error updating enrollment status", err);
+            toast.error(err.message || "Failed to update enrollment status");
+        }
+    };
+
+    // Update payment status
+    const handleUpdatePaymentStatus = async (
+        enrollmentId: string,
+        paymentStatus: "paid" | "pending" | "overdue",
+        amountPaid?: number
+    ) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const updateData: any = { paymentStatus };
+            if (amountPaid !== undefined) {
+                updateData.amountPaid = amountPaid;
+            }
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/enrollments/${enrollmentId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify(updateData)
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update payment status");
+            }
+
+            toast.success("Payment status updated");
+            fetchClassData(); // Refresh enrollments
+        } catch (err: any) {
+            console.error("Error updating payment status", err);
+            toast.error(err.message || "Failed to update payment status");
+        }
+    };
+
+    const addPricingTier = async () => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        // Use a default price of $100 (10000 cents) instead of 0
+        const defaultPriceCents = 10000; // $100.00
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/pricing-tiers`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
             name: "New Tier",
-            price: 0,
+                        priceCents: defaultPriceCents,
             description: "",
-            isDefault: false,
-            isActive: true,
-            enrollmentCount: 0
+                        isDefault: false
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to create pricing tier");
+            }
+
+            const data = await res.json();
+            const newTier: PricingTier = {
+                id: data.pricingTier.id,
+                name: data.pricingTier.name,
+                price: data.pricingTier.price,
+                description: data.pricingTier.description || "",
+                isDefault: data.pricingTier.isDefault,
+                isActive: data.pricingTier.isActive,
+                enrollmentCount: data.pricingTier.enrollmentCount || 0
         };
         setPricingTiers([...pricingTiers, newTier]);
+            toast.success("Pricing tier created");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error creating pricing tier", err);
+            toast.error(err.message || "Failed to create pricing tier");
+        }
     };
 
-    const updatePricingTier = (id: string, field: keyof PricingTier, value: any) => {
+    // Update local editing state (no API call)
+    const updatePricingTierLocal = (id: string, field: keyof PricingTier, value: any) => {
+        setEditingTiers((prev) => ({
+            ...prev,
+            [id]: {
+                ...prev[id],
+                [field]: value
+            }
+        }));
+    };
+
+    // Get the current value for a field (either edited or original)
+    const getTierFieldValue = (tier: PricingTier, field: keyof PricingTier): any => {
+        if (editingTiers[tier.id] && editingTiers[tier.id][field] !== undefined) {
+            return editingTiers[tier.id][field];
+        }
+        return tier[field];
+    };
+
+    // Check if a tier has unsaved changes
+    const hasUnsavedChanges = (tierId: string): boolean => {
+        return editingTiers[tierId] !== undefined && Object.keys(editingTiers[tierId]).length > 0;
+    };
+
+    // Save pricing tier changes
+    const savePricingTier = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        const tier = pricingTiers.find((t) => t.id === id);
+        if (!tier) {
+            toast.error("Pricing tier not found");
+            return;
+        }
+
+        const edits = editingTiers[id];
+        if (!edits || Object.keys(edits).length === 0) {
+            return; // No changes to save
+        }
+
+        try {
+            const updateData: any = {};
+            
+            if (edits.price !== undefined) {
+                const priceInCents = Math.round(edits.price * 100);
+                if (priceInCents <= 0) {
+                    toast.error("Price must be greater than 0");
+                    return;
+                }
+                updateData.price = edits.price;
+            }
+            if (edits.name !== undefined) updateData.name = edits.name;
+            if (edits.description !== undefined) updateData.description = edits.description;
+            if (edits.isDefault !== undefined) updateData.isDefault = edits.isDefault;
+            if (edits.isActive !== undefined) updateData.isActive = edits.isActive;
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/pricing-tiers/${id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify(updateData)
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update pricing tier");
+            }
+
+            const data = await res.json();
+            // Update local state with the response data
         setPricingTiers((prev) =>
-            prev.map((tier) => (tier.id === id ? { ...tier, [field]: value } : tier))
-        );
+                prev.map((t) => {
+                    if (t.id === id) {
+                        return {
+                            ...t,
+                            name: data.pricingTier?.name ?? t.name,
+                            price: data.pricingTier?.price ?? t.price,
+                            description: data.pricingTier?.description ?? t.description,
+                            isDefault: data.pricingTier?.isDefault ?? t.isDefault,
+                            isActive: data.pricingTier?.isActive ?? t.isActive,
+                            enrollmentCount: data.pricingTier?.enrollmentCount ?? t.enrollmentCount
+                        };
+                    }
+                    return t;
+                })
+            );
+
+            // Clear editing state for this tier
+            setEditingTiers((prev) => {
+                const newState = { ...prev };
+                delete newState[id];
+                return newState;
+            });
+
+            toast.success("Pricing tier updated");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error updating pricing tier", err);
+            toast.error(err.message || "Failed to update pricing tier");
+        }
     };
 
-    const deletePricingTier = (id: string) => {
+    // Cancel editing for a tier
+    const cancelPricingTierEdit = (id: string) => {
+        setEditingTiers((prev) => {
+            const newState = { ...prev };
+            delete newState[id];
+            return newState;
+        });
+    };
+
+    // Update class settings
+    const handleUpdateClassSettings = async () => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const updateData: any = {};
+            if (settingsForm.name !== classData?.name) {
+                updateData.name = settingsForm.name;
+            }
+            if (settingsForm.description !== classData?.description) {
+                updateData.description = settingsForm.description;
+            }
+            if (settingsForm.instructorId !== classData?.instructor_id) {
+                updateData.instructorId = settingsForm.instructorId || null;
+            }
+
+            if (Object.keys(updateData).length === 0) {
+                toast.info("No changes to save");
+                return;
+            }
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify(updateData)
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update class");
+            }
+
+            toast.success("Class information updated successfully");
+            fetchClassData(); // Refresh to get updated data
+        } catch (err: any) {
+            console.error("Error updating class settings", err);
+            toast.error(err.message || "Failed to update class");
+        }
+    };
+
+    const deletePricingTier = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm("Are you sure you want to delete this pricing tier?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/pricing-tiers/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to delete pricing tier");
+            }
+
         setPricingTiers((prev) => prev.filter((tier) => tier.id !== id));
         toast.success("Pricing tier deleted");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error deleting pricing tier", err);
+            toast.error(err.message || "Failed to delete pricing tier");
+        }
     };
 
-    const addDiscountCode = () => {
-        const newCode: DiscountCode = {
-            id: Date.now().toString(),
+    const addDiscountCode = async () => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/discount-codes`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
             code: "",
             type: "percentage",
             value: 0,
             description: "",
-            expiryDate: "",
-            usageLimit: 0,
-            usageCount: 0,
-            isActive: true
+                        expiryDate: null,
+                        usageLimit: 0
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to create discount code");
+            }
+
+            const data = await res.json();
+            const newCode: DiscountCode = {
+                id: data.code.id,
+                code: data.code.code,
+                type: data.code.type,
+                value: data.code.value,
+                description: data.code.description || "",
+                expiryDate: data.code.expiry_date || "",
+                usageLimit: data.code.usage_limit || 0,
+                usageCount: data.code.usage_count || 0,
+                isActive: data.code.is_active
         };
         setDiscountCodes([...discountCodes, newCode]);
-    };
-
-    const updateDiscountCode = (id: string, field: keyof DiscountCode, value: any) => {
-        setDiscountCodes((prev) =>
-            prev.map((code) => (code.id === id ? { ...code, [field]: value } : code))
-        );
-    };
-
-    const deleteDiscountCode = (id: string) => {
-        setDiscountCodes((prev) => prev.filter((code) => code.id !== id));
-        toast.success("Discount code deleted");
-    };
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (files) {
-            Array.from(files).forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const imageUrl = e.target?.result as string;
-                    const newImage: ClassImage = {
-                        id: `${Date.now()}-${index}`,
-                        url: imageUrl,
-                        alt: `Class image ${classImages.length + index + 1}`,
-                        isMain: false,
-                        uploadDate: new Date().toISOString().split("T")[0]
-                    };
-                    setClassImages((prev) => [...prev, newImage]);
-                };
-                reader.readAsDataURL(file);
-            });
-            toast.success("Images uploaded successfully");
+            toast.success("Discount code created");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error creating discount code", err);
+            toast.error(err.message || "Failed to create discount code");
         }
     };
 
-    const removeImage = (id: string) => {
+    const updateDiscountCode = async (id: string, field: keyof DiscountCode, value: any) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const updateData: any = {};
+            if (field === "code") {
+                updateData.code = value.toUpperCase();
+            } else if (field === "type") {
+                updateData.type = value;
+            } else if (field === "value") {
+                updateData.value = value;
+            } else if (field === "description") {
+                updateData.description = value;
+            } else if (field === "expiryDate") {
+                updateData.expiry_date = value || null;
+            } else if (field === "usageLimit") {
+                updateData.usage_limit = value;
+            } else if (field === "isActive") {
+                updateData.is_active = value;
+            }
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/discount-codes/${id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify(updateData)
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update discount code");
+            }
+
+        setDiscountCodes((prev) =>
+            prev.map((code) => (code.id === id ? { ...code, [field]: value } : code))
+        );
+            toast.success("Discount code updated");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error updating discount code", err);
+            toast.error(err.message || "Failed to update discount code");
+        }
+    };
+
+    const deleteDiscountCode = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm("Are you sure you want to delete this discount code?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/discount-codes/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to delete discount code");
+            }
+
+        setDiscountCodes((prev) => prev.filter((code) => code.id !== id));
+        toast.success("Discount code deleted");
+            fetchClassData(); // Refresh to get updated counts
+        } catch (err: any) {
+            console.error("Error deleting discount code", err);
+            toast.error(err.message || "Failed to delete discount code");
+        }
+    };
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        // For now, we'll convert to base64 and send URLs
+        // In production, you'd want to upload to a storage service first
+        const uploadPromises = Array.from(files).map(async (file) => {
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageUrl = e.target?.result as string;
+                    resolve(imageUrl);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        try {
+            const imageUrls = await Promise.all(uploadPromises);
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/images`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        images: imageUrls.map((url, index) => ({
+                            url,
+                            altText: `Class image ${classImages.length + index + 1}`,
+                            isMain: classImages.length === 0 && index === 0
+                        }))
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to upload images");
+            }
+
+            toast.success("Images uploaded successfully");
+            fetchClassData(); // Refresh to get updated images
+        } catch (err: any) {
+            console.error("Error uploading images", err);
+            toast.error(err.message || "Failed to upload images");
+        }
+    };
+
+    const removeImage = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm("Are you sure you want to remove this image?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/images/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to remove image");
+            }
+
         setClassImages((prev) => prev.filter((img) => img.id !== id));
         toast.success("Image removed");
+            fetchClassData(); // Refresh to get updated images
+        } catch (err: any) {
+            console.error("Error removing image", err);
+            toast.error(err.message || "Failed to remove image");
+        }
     };
 
-    const setMainImage = (id: string) => {
+    const setMainImage = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/images/${id}/set-main`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to set main image");
+            }
+
         setClassImages((prev) => prev.map((img) => ({ ...img, isMain: img.id === id })));
         toast.success("Main image updated");
+            fetchClassData(); // Refresh to get updated images
+        } catch (err: any) {
+            console.error("Error setting main image", err);
+            toast.error(err.message || "Failed to set main image");
+        }
     };
 
-    const updateReviewVisibility = (id: string, isPublic: boolean) => {
+    const updateReviewVisibility = async (id: string, isPublic: boolean) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/reviews/${id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({ isPublic })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to update review visibility");
+            }
+
         setStudentReviews((prev) =>
             prev.map((review) => (review.id === id ? { ...review, isPublic } : review))
         );
+            toast.success("Review visibility updated");
+            fetchClassData(); // Refresh to get updated reviews
+        } catch (err: any) {
+            console.error("Error updating review visibility", err);
+            toast.error(err.message || "Failed to update review visibility");
+        }
     };
 
-    const deleteReview = (id: string) => {
+    const deleteReview = async (id: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm("Are you sure you want to delete this review?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}/reviews/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to delete review");
+            }
+
         setStudentReviews((prev) => prev.filter((review) => review.id !== id));
         toast.success("Review deleted");
+            fetchClassData(); // Refresh to get updated reviews
+        } catch (err: any) {
+            console.error("Error deleting review", err);
+            toast.error(err.message || "Failed to delete review");
+        }
     };
 
     const getStatusBadge = (status: string) => {
@@ -679,29 +1703,34 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
     };
 
     // Badge system handlers
-    const handleUpdateClassBadges = (badges: ClassBadge[]) => {
+    const handleUpdateClassBadges = (badges: any[]) => {
         setClassBadges(badges);
     };
 
     const handleAwardBadge = (badgeId: string, studentId: string, studentName: string) => {
+        const now = new Date().toISOString();
         const newBadge: StudentBadge = {
             id: `sb_${Date.now()}`,
             badgeId,
             classId: classId,
             studentId,
             studentName,
-            awardedDate: new Date().toISOString(),
+            awardedDate: now,
             awardedBy: "Current Instructor",
             awardMethod: "manual",
             status: "active",
             verificationCode: `${classId.toUpperCase()}-${Date.now()}`,
             socialShareEnabled: true,
-            finalGrade: mockGradeRecords[studentId]?.finalGrade || 0,
-            finalAttendance: mockAttendanceRecords[studentId]?.percentage || 0,
-            projectsCompleted: mockGradeRecords[studentId]?.projectsCompleted || 0,
-            skillsAchieved: mockSkillsRecords[studentId] || [],
+            finalGrade: (studentGradeStats as any)[studentId]?.finalGrade || 0,
+            finalAttendance: (studentAttendanceStats as any)[studentId]?.percentage || 0,
+            projectsCompleted: (studentGradeStats as any)[studentId]?.projectsCompleted || 0,
+            skillsAchieved: (studentSkillsStats as any)[studentId] || [],
             instructorNotes: "Badge awarded for meeting all requirements",
-            displayOnProfile: true
+            displayOnProfile: true,
+            shareCount: 0,
+            viewCount: 0,
+            createdAt: now,
+            updatedAt: now
         };
 
         setStudentBadges((prev) => [...prev, newBadge]);
@@ -722,6 +1751,33 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
         );
     }
 
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading class data...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!displayClassData) {
+        return (
+            <div className="p-6">
+                <Button variant="ghost" onClick={onBack}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Classes
+                </Button>
+                <div className="text-center py-12">
+                    <AlertCircle className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">Class not found</h3>
+                    <p className="text-muted-foreground">The class you're looking for doesn't exist</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 space-y-6">
             {/* Header */}
@@ -735,8 +1791,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     Back to Classes
                 </Button>
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold">{classData.name}</h1>
-                    <p className="text-muted-foreground">Instructor: {classData.instructor}</p>
+                    <h1 className="text-2xl font-bold">{displayClassData.name}</h1>
+                    <p className="text-muted-foreground">Instructor: {displayClassData.instructor}</p>
                 </div>
                 <Button
                     variant="outline"
@@ -768,16 +1824,20 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {classData.enrolled}/{classData.capacity}
+                            {displayClassData.enrolled}/{displayClassData.capacity}
                         </div>
                         <div className="mt-2">
                             <Progress
-                                value={(classData.enrolled / classData.capacity) * 100}
+                                value={
+                                    displayClassData.capacity > 0
+                                        ? (displayClassData.enrolled / displayClassData.capacity) * 100
+                                        : 0
+                                }
                                 className="h-2"
                             />
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                            {classData.waitlist} on waitlist
+                            {displayClassData.waitlist} on waitlist
                         </p>
                     </CardContent>
                 </Card>
@@ -793,12 +1853,16 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {classData.sessionsCompleted}/{classData.totalSessions}
+                            {displayClassData.sessionsCompleted}/{displayClassData.totalSessions}
                         </div>
                         <div className="mt-2">
                             <Progress
                                 value={
-                                    (classData.sessionsCompleted / classData.totalSessions) * 100
+                                    displayClassData.totalSessions > 0
+                                        ? (displayClassData.sessionsCompleted /
+                                              displayClassData.totalSessions) *
+                                          100
+                                        : 0
                                 }
                                 className="h-2"
                             />
@@ -818,7 +1882,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            ${mockEnrollments.reduce((sum, e) => sum + (e.amountPaid || 0), 0)}
+                            ${(classData?.revenue_cents || 0) / 100}
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">Total revenue</p>
                     </CardContent>
@@ -835,13 +1899,13 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold flex items-center space-x-2">
-                            <span>{classData.averageRating}</span>
+                            <span>{displayClassData.averageRating.toFixed(1)}</span>
                             <div className="flex">
-                                {renderStars(Math.round(classData.averageRating))}
+                                {renderStars(Math.round(displayClassData.averageRating))}
                             </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                            {classData.totalReviews} reviews
+                            {displayClassData.totalReviews} reviews
                         </p>
                     </CardContent>
                 </Card>
@@ -923,7 +1987,9 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 <Download className="w-4 h-4 mr-2" />
                                 Download Roster
                             </Button>
-                            <Button onClick={() => setShowAddStudentDialog(true)}>
+                            <Button
+                                onClick={() => setShowAddStudentDialog(true)}
+                            >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Student
                             </Button>
@@ -937,12 +2003,13 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                     <TableHead className="w-12">
                                         <Checkbox
                                             checked={
-                                                selectedStudents.length === mockEnrollments.length
+                                                selectedStudents.length === enrollments.length &&
+                                                enrollments.length > 0
                                             }
                                             onCheckedChange={(checked) => {
                                                 if (checked) {
                                                     setSelectedStudents(
-                                                        mockEnrollments.map((e) => e.id)
+                                                        enrollments.map((e) => e.id)
                                                     );
                                                 } else {
                                                     setSelectedStudents([]);
@@ -959,7 +2026,38 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {mockEnrollments.map((enrollment) => (
+                                {isLoadingEnrollments ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center py-8"
+                                        >
+                                            <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : enrollments.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={7}
+                                            className="text-center py-8 text-muted-foreground"
+                                        >
+                                            No enrollments yet
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    <>
+                                        {enrollments
+                                            .filter((e) =>
+                                                searchTerm
+                                                    ? e.studentName
+                                                          .toLowerCase()
+                                                          .includes(searchTerm.toLowerCase()) ||
+                                                      e.studentEmail
+                                                          .toLowerCase()
+                                                          .includes(searchTerm.toLowerCase())
+                                                    : true
+                                            )
+                                            .map((enrollment) => (
                                     <TableRow key={enrollment.id}>
                                         <TableCell>
                                             <Checkbox
@@ -983,9 +2081,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
                                                 <Avatar className="w-8 h-8">
-                                                    <AvatarImage src={enrollment.avatar} />
                                                     <AvatarFallback>
-                                                        {enrollment.studentName
+                                                        {enrollment.studentName || "Unnamed Student"
                                                             .split(" ")
                                                             .map((n) => n[0])
                                                             .join("")}
@@ -1003,7 +2100,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                         </TableCell>
                                         <TableCell>
                                             <div className="text-sm">
-                                                <div>{enrollment.phone}</div>
+                                                <div>{enrollment.phone || "-"}</div>
                                                 {enrollment.emergencyContact && (
                                                     <div className="text-muted-foreground">
                                                         Emergency: {enrollment.emergencyContact}
@@ -1014,11 +2111,11 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                         <TableCell>
                                             <div className="text-sm">
                                                 <div className="font-medium">
-                                                    {enrollment.pricingTier}
+                                                    {enrollment.pricingTier?.name || "No tier"}
                                                 </div>
                                                 {enrollment.discountApplied && (
                                                     <div className="text-green-600">
-                                                        Discount: {enrollment.discountApplied}
+                                                        Discount: {enrollment.discountApplied.code}
                                                     </div>
                                                 )}
                                                 <div className="text-muted-foreground">
@@ -1047,10 +2144,89 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                     <DropdownMenuItem>
                                                         Send Message
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem>
+                                                    <DropdownMenuSub>
+                                                        <DropdownMenuSubTrigger>
+                                                            Update Status
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuSubContent>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdateEnrollmentStatus(
+                                                                        enrollment.id,
+                                                                        "active"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Active
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdateEnrollmentStatus(
+                                                                        enrollment.id,
+                                                                        "dropped"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Dropped
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdateEnrollmentStatus(
+                                                                        enrollment.id,
+                                                                        "completed"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Completed
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuSub>
+                                                    <DropdownMenuSub>
+                                                        <DropdownMenuSubTrigger>
                                                         Update Payment
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuSubContent>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdatePaymentStatus(
+                                                                        enrollment.id,
+                                                                        "paid"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Mark as Paid
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdatePaymentStatus(
+                                                                        enrollment.id,
+                                                                        "pending"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Mark as Pending
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleUpdatePaymentStatus(
+                                                                        enrollment.id,
+                                                                        "overdue"
+                                                                    )
+                                                                }
+                                                            >
+                                                                Mark as Overdue
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuSub>
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() =>
+                                                            handleRemoveEnrollment(
+                                                                enrollment.id,
+                                                                enrollment.studentName
+                                                            )
+                                                        }
+                                                    >
                                                         Remove from Class
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -1058,6 +2234,8 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                    </>
+                                )}
                             </TableBody>
                         </Table>
                     </Card>
@@ -1087,7 +2265,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 <Upload className="w-4 h-4 mr-2" />
                                 Upload Attendance
                             </Button>
-                            <Button>
+                            <Button onClick={() => setShowMarkAttendanceDialog(true)}>
                                 <Plus className="w-4 h-4 mr-2" />
                                 Mark Attendance
                             </Button>
@@ -1106,7 +2284,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {mockAttendance.map((record) => (
+                                {attendanceRecords.map((record) => (
                                     <TableRow key={record.id}>
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
@@ -1159,7 +2337,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Button>
+                            <Button onClick={() => setShowAddToWaitlistDialog(true)}>
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add to Waitlist
                             </Button>
@@ -1178,7 +2356,7 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {mockWaitlist.map((entry) => (
+                                {waitlistEntries.map((entry) => (
                                     <TableRow key={entry.id}>
                                         <TableCell>
                                             <Badge variant="secondary">#{entry.position}</Badge>
@@ -1216,7 +2394,14 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() =>
+                                                            handlePromoteFromWaitlist(
+                                                                entry.id,
+                                                                entry.studentName
+                                                            )
+                                                        }
+                                                    >
                                                         Move to Class
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem>
@@ -1225,7 +2410,15 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                     <DropdownMenuItem>
                                                         Toggle Notifications
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuItem
+                                                        className="text-destructive"
+                                                        onClick={() =>
+                                                            handleRemoveFromWaitlist(
+                                                                entry.id,
+                                                                entry.studentName
+                                                            )
+                                                        }
+                                                    >
                                                         Remove from Waitlist
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -1247,13 +2440,13 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                         classId={classId}
                         classBadges={classBadges}
                         onUpdateClassBadges={handleUpdateClassBadges}
-                        students={mockStudents}
+                        students={students}
                         studentBadges={studentBadges}
                         onAwardBadge={handleAwardBadge}
                         onRevokeBadge={handleRevokeBadge}
-                        attendanceRecords={mockAttendanceRecords}
-                        gradeRecords={mockGradeRecords}
-                        skillsRecords={mockSkillsRecords}
+                        attendanceRecords={studentAttendanceStats}
+                        gradeRecords={studentGradeStats}
+                        skillsRecords={studentSkillsStats}
                     />
                 </TabsContent>
 
@@ -1276,8 +2469,19 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                     </div>
 
                     <div className="grid gap-4">
-                        {pricingTiers.map((tier) => (
-                            <Card key={tier.id}>
+                        {pricingTiers.map((tier) => {
+                            const hasChanges = hasUnsavedChanges(tier.id);
+                            const displayTier = {
+                                ...tier,
+                                name: getTierFieldValue(tier, "name") as string,
+                                price: getTierFieldValue(tier, "price") as number,
+                                description: getTierFieldValue(tier, "description") as string,
+                                isDefault: getTierFieldValue(tier, "isDefault") as boolean,
+                                isActive: getTierFieldValue(tier, "isActive") as boolean
+                            };
+
+                            return (
+                                <Card key={tier.id} className={hasChanges ? "border-orange-500" : ""}>
                                 <CardContent className="pt-6">
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="flex-1 space-y-4">
@@ -1285,9 +2489,9 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                 <div className="space-y-2">
                                                     <Label>Tier Name</Label>
                                                     <Input
-                                                        value={tier.name}
+                                                            value={displayTier.name}
                                                         onChange={(e) =>
-                                                            updatePricingTier(
+                                                                updatePricingTierLocal(
                                                                 tier.id,
                                                                 "name",
                                                                 e.target.value
@@ -1301,10 +2505,11 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                         <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                                         <Input
                                                             type="number"
+                                                                step="0.01"
                                                             className="pl-10"
-                                                            value={tier.price}
+                                                                value={displayTier.price}
                                                             onChange={(e) =>
-                                                                updatePricingTier(
+                                                                    updatePricingTierLocal(
                                                                     tier.id,
                                                                     "price",
                                                                     Number(e.target.value)
@@ -1317,9 +2522,9 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                             <div className="space-y-2">
                                                 <Label>Description</Label>
                                                 <Textarea
-                                                    value={tier.description}
+                                                        value={displayTier.description}
                                                     onChange={(e) =>
-                                                        updatePricingTier(
+                                                            updatePricingTierLocal(
                                                             tier.id,
                                                             "description",
                                                             e.target.value
@@ -1332,26 +2537,22 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                 <div className="flex items-center space-x-4">
                                                     <div className="flex items-center space-x-2">
                                                         <Switch
-                                                            checked={tier.isDefault}
+                                                                checked={displayTier.isDefault}
                                                             onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    setPricingTiers((prev) =>
-                                                                        prev.map((t) => ({
-                                                                            ...t,
-                                                                            isDefault:
-                                                                                t.id === tier.id
-                                                                        }))
+                                                                    updatePricingTierLocal(
+                                                                        tier.id,
+                                                                        "isDefault",
+                                                                        checked
                                                                     );
-                                                                }
                                                             }}
                                                         />
                                                         <Label>Default pricing</Label>
                                                     </div>
                                                     <div className="flex items-center space-x-2">
                                                         <Switch
-                                                            checked={tier.isActive}
+                                                                checked={displayTier.isActive}
                                                             onCheckedChange={(checked) =>
-                                                                updatePricingTier(
+                                                                    updatePricingTierLocal(
                                                                     tier.id,
                                                                     "isActive",
                                                                     checked
@@ -1366,18 +2567,39 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                                 </div>
                                             </div>
                                         </div>
+                                            <div className="flex items-center space-x-2 ml-4">
+                                                {hasChanges && (
+                                                    <>
+                                                        <Button
+                                                            variant="default"
+                                                            size="sm"
+                                                            onClick={() => savePricingTier(tier.id)}
+                                                        >
+                                                            <Save className="w-4 h-4 mr-2" />
+                                                            Save
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => cancelPricingTierEdit(tier.id)}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    </>
+                                                )}
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => deletePricingTier(tier.id)}
-                                            className="ml-4"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
+                                            </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                        ))}
+                            );
+                        })}
                     </div>
                 </TabsContent>
 
@@ -1797,21 +3019,45 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                     <Label htmlFor="edit-class-name">Class Name *</Label>
                                     <Input
                                         id="edit-class-name"
-                                        defaultValue={classData.name}
+                                        value={settingsForm.name}
+                                        onChange={(e) =>
+                                            setSettingsForm((prev) => ({
+                                                ...prev,
+                                                name: e.target.value
+                                            }))
+                                        }
                                         placeholder="e.g., Wheel Throwing Fundamentals"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="edit-instructor">Instructor *</Label>
-                                    <Select defaultValue="sarah">
+                                    <Select
+                                        value={settingsForm.instructorId}
+                                        onValueChange={(value) =>
+                                            setSettingsForm((prev) => ({
+                                                ...prev,
+                                                instructorId: value
+                                            }))
+                                        }
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select instructor" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="sarah">Sarah Martinez</SelectItem>
-                                            <SelectItem value="michael">Michael Chen</SelectItem>
-                                            <SelectItem value="emma">Emma Rodriguez</SelectItem>
-                                            <SelectItem value="david">David Park</SelectItem>
+                                            {instructors.length === 0 ? (
+                                                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                    No instructors available
+                                                </div>
+                                            ) : (
+                                                instructors.map((instructor) => (
+                                                    <SelectItem
+                                                        key={instructor.id}
+                                                        value={instructor.id}
+                                                    >
+                                                        {instructor.name}
+                                                    </SelectItem>
+                                                ))
+                                            )}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1821,19 +3067,33 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                                 <Label htmlFor="edit-description">Description *</Label>
                                 <Textarea
                                     id="edit-description"
-                                    defaultValue={classData.description}
+                                    value={settingsForm.description}
+                                    onChange={(e) =>
+                                        setSettingsForm((prev) => ({
+                                            ...prev,
+                                            description: e.target.value
+                                        }))
+                                    }
                                     placeholder="Describe what students will learn in this class..."
                                     rows={4}
                                 />
                             </div>
 
                             <div className="flex justify-end space-x-2 pt-4 border-t">
-                                <Button variant="outline">Cancel Changes</Button>
                                 <Button
-                                    onClick={() =>
-                                        toast.success("Class information updated successfully")
-                                    }
+                                    variant="outline"
+                                    onClick={() => {
+                                        // Reset form to original values
+                                        setSettingsForm({
+                                            name: classData?.name || "",
+                                            description: classData?.description || "",
+                                            instructorId: classData?.instructor_id || ""
+                                        });
+                                    }}
                                 >
+                                    Cancel Changes
+                                </Button>
+                                <Button onClick={handleUpdateClassSettings}>
                                     Save Changes
                                 </Button>
                             </div>
@@ -1888,6 +3148,382 @@ export function ClassManagementPage({ classId, onBack }: ClassManagementPageProp
                             <Button onClick={handleSendNotification}>
                                 <Bell className="w-4 h-4 mr-2" />
                                 Send Notification
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Student Dialog */}
+            <Dialog
+                open={showAddStudentDialog}
+                onOpenChange={setShowAddStudentDialog}
+            >
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Add Student to Class</DialogTitle>
+                        <DialogDescription>
+                            Select a student and configure their enrollment details
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="student-select">Student *</Label>
+                            {isLoadingStudents ? (
+                                <div className="flex items-center space-x-2 py-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span className="text-sm text-muted-foreground">Loading students...</span>
+                                </div>
+                            ) : (
+                                <Select
+                                    value={addStudentForm.studentId}
+                                    onValueChange={(value) =>
+                                        setAddStudentForm((prev) => ({ ...prev, studentId: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a student" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableStudents.length === 0 ? (
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                No available students
+                                            </div>
+                                        ) : (
+                                            availableStudents.map((student) => (
+                                                <SelectItem key={student.id} value={student.id}>
+                                                    {student.name} ({student.email})
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="pricing-tier-select">Pricing Tier</Label>
+                                <Select
+                                    value={addStudentForm.pricingTierId || undefined}
+                                    onValueChange={(value) =>
+                                        setAddStudentForm((prev) => ({ ...prev, pricingTierId: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select pricing tier (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {pricingTiers
+                                            .filter((tier) => tier.isActive)
+                                            .map((tier) => (
+                                                <SelectItem key={tier.id} value={tier.id}>
+                                                    {tier.name} - ${tier.price}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="discount-code-select">Discount Code</Label>
+                                <Select
+                                    value={addStudentForm.discountCodeId || undefined}
+                                    onValueChange={(value) =>
+                                        setAddStudentForm((prev) => ({ ...prev, discountCodeId: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select discount code (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {discountCodes
+                                            .filter((code) => code.isActive)
+                                            .map((code) => (
+                                                <SelectItem key={code.id} value={code.id}>
+                                                    {code.code} - {code.type === "percentage" ? `${code.value}%` : `$${code.value}`}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                    id="phone"
+                                    value={addStudentForm.phone}
+                                    onChange={(e) =>
+                                        setAddStudentForm((prev) => ({ ...prev, phone: e.target.value }))
+                                    }
+                                    placeholder="(555) 123-4567"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="emergency-contact">Emergency Contact</Label>
+                                <Input
+                                    id="emergency-contact"
+                                    value={addStudentForm.emergencyContact}
+                                    onChange={(e) =>
+                                        setAddStudentForm((prev) => ({
+                                            ...prev,
+                                            emergencyContact: e.target.value
+                                        }))
+                                    }
+                                    placeholder="Name and phone"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowAddStudentDialog(false);
+                                    setAddStudentForm({
+                                        studentId: "",
+                                        pricingTierId: "",
+                                        discountCodeId: "",
+                                        emergencyContact: "",
+                                        phone: ""
+                                    });
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddStudentSubmit}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Student
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add to Waitlist Dialog */}
+            <Dialog
+                open={showAddToWaitlistDialog}
+                onOpenChange={setShowAddToWaitlistDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Student to Waitlist</DialogTitle>
+                        <DialogDescription>
+                            Select a student to add to the waitlist
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="waitlist-student-select">Student *</Label>
+                            {isLoadingStudents ? (
+                                <div className="flex items-center space-x-2 py-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span className="text-sm text-muted-foreground">Loading students...</span>
+                                </div>
+                            ) : (
+                                <Select
+                                    value={addToWaitlistForm.studentId}
+                                    onValueChange={(value) =>
+                                        setAddToWaitlistForm((prev) => ({ ...prev, studentId: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a student" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableStudents.length === 0 ? (
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                No available students
+                                            </div>
+                                        ) : (
+                                            availableStudents.map((student) => (
+                                                <SelectItem key={student.id} value={student.id}>
+                                                    {student.name} ({student.email})
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowAddToWaitlistDialog(false);
+                                    setAddToWaitlistForm({ studentId: "" });
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddToWaitlistSubmit}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add to Waitlist
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Mark Attendance Dialog */}
+            <Dialog
+                open={showMarkAttendanceDialog}
+                onOpenChange={setShowMarkAttendanceDialog}
+            >
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Mark Attendance</DialogTitle>
+                        <DialogDescription>
+                            Select a date and students to record attendance
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="attendance-date">Session Date *</Label>
+                                <Input
+                                    id="attendance-date"
+                                    type="date"
+                                    value={markAttendanceForm.sessionDate}
+                                    onChange={(e) =>
+                                        setMarkAttendanceForm((prev) => ({
+                                            ...prev,
+                                            sessionDate: e.target.value
+                                        }))
+                                    }
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="attendance-status">Status *</Label>
+                                <Select
+                                    value={markAttendanceForm.status}
+                                    onValueChange={(value: "present" | "absent" | "late" | "excused") =>
+                                        setMarkAttendanceForm((prev) => ({ ...prev, status: value }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="present">Present</SelectItem>
+                                        <SelectItem value="absent">Absent</SelectItem>
+                                        <SelectItem value="late">Late</SelectItem>
+                                        <SelectItem value="excused">Excused</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Select Students *</Label>
+                            <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
+                                {enrollments.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                        No enrolled students
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center space-x-2 pb-2 border-b">
+                                            <Checkbox
+                                                checked={
+                                                    markAttendanceForm.selectedStudents.length ===
+                                                        enrollments.length && enrollments.length > 0
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setMarkAttendanceForm((prev) => ({
+                                                            ...prev,
+                                                            selectedStudents: enrollments.map((e) => e.studentId)
+                                                        }));
+                                                    } else {
+                                                        setMarkAttendanceForm((prev) => ({
+                                                            ...prev,
+                                                            selectedStudents: []
+                                                        }));
+                                                    }
+                                                }}
+                                            />
+                                            <Label className="text-sm font-medium">
+                                                Select All ({enrollments.length})
+                                            </Label>
+                                        </div>
+                                        {enrollments.map((enrollment) => (
+                                            <div
+                                                key={enrollment.id}
+                                                className="flex items-center space-x-2"
+                                            >
+                                                <Checkbox
+                                                    checked={markAttendanceForm.selectedStudents.includes(
+                                                        enrollment.studentId
+                                                    )}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            setMarkAttendanceForm((prev) => ({
+                                                                ...prev,
+                                                                selectedStudents: [
+                                                                    ...prev.selectedStudents,
+                                                                    enrollment.studentId
+                                                                ]
+                                                            }));
+                                                        } else {
+                                                            setMarkAttendanceForm((prev) => ({
+                                                                ...prev,
+                                                                selectedStudents: prev.selectedStudents.filter(
+                                                                    (id) => id !== enrollment.studentId
+                                                                )
+                                                            }));
+                                                        }
+                                                    }}
+                                                />
+                                                <Label className="text-sm">
+                                                    {enrollment.studentName}
+                                                </Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {markAttendanceForm.selectedStudents.length} student(s) selected
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="attendance-notes">Notes (optional)</Label>
+                            <Textarea
+                                id="attendance-notes"
+                                value={markAttendanceForm.notes}
+                                onChange={(e) =>
+                                    setMarkAttendanceForm((prev) => ({ ...prev, notes: e.target.value }))
+                                }
+                                placeholder="Add any notes about this attendance session..."
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowMarkAttendanceDialog(false);
+                                    setMarkAttendanceForm({
+                                        sessionDate: new Date().toISOString().split("T")[0],
+                                        selectedStudents: [],
+                                        status: "present",
+                                        notes: ""
+                                    });
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleMarkAttendanceSubmit}>
+                                <Check className="w-4 h-4 mr-2" />
+                                Mark Attendance
                             </Button>
                         </div>
                     </div>

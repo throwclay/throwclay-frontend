@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Plus,
     Search,
@@ -12,7 +12,8 @@ import {
     Eye,
     Settings,
     FileText,
-    Copy
+    Copy,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,55 +55,21 @@ import { ClassManagementPage } from "@/components/ClassManagementPage";
 import { ClassPreview } from "@/components/ClassPreview";
 import { ClassTemplateManager } from "@/components/ClassTemplateManager";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { PageLoadingProgress } from "@/components/ui/page-loading-progress";
 import { toast } from "sonner";
-
-interface Class {
-    id: string;
-    name: string;
-    instructor: string;
-    schedule: string;
-    capacity: number;
-    enrolled: number;
-    waitlist: number;
-    startDate: string;
-    endDate: string;
-    status: "draft" | "published" | "in-session" | "completed" | "cancelled";
-    level: string;
-    price: string;
-    thumbnail?: string;
-    revenue?: number;
-    templateId?: string;
-    templateName?: string;
-}
-
-interface ClassTemplate {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    level: string;
-    duration: string;
-    capacity: number;
-    materials: string;
-    prerequisites: string;
-    whatYouLearn: string[];
-    pricingTiers: PricingTier[];
-    discountCodes: DiscountCode[];
-    images: string[];
-    thumbnail: string;
-    createdBy: string;
-    createdDate: string;
-    lastModified: string;
-    version: string;
-    isPublic: boolean;
-    usageCount: number;
-    tags: string[];
-}
+import { useAppContext } from "@/app/context/AppContext";
+import type {
+    Class as ClassType,
+    ClassTemplate,
+    ClassStats,
+    StudioLocation
+} from "@/types";
 
 interface PricingTier {
     id: string;
     name: string;
     price: number;
+    priceCents?: number;
     description: string;
     isDefault: boolean;
 }
@@ -113,7 +80,7 @@ interface DiscountCode {
     type: "percentage" | "fixed";
     value: number;
     description: string;
-    expiryDate: string;
+    expiryDate?: string;
     usageLimit: number;
     isActive: boolean;
 }
@@ -125,15 +92,53 @@ interface ClassImage {
     isMain: boolean;
 }
 
+// Frontend display class (transformed from API)
+interface DisplayClass {
+    id: string;
+    name: string;
+    instructor: string | null;
+    schedule: string;
+    capacity: number;
+    enrolled: number;
+    waitlist: number;
+    startDate: string;
+    endDate: string;
+    status: "draft" | "published" | "in-session" | "completed" | "cancelled";
+    level: string;
+    price: string;
+    thumbnail?: string;
+    revenue: number;
+    templateId?: string | null;
+    templateName?: string | null;
+}
+
 export function ClassesManagement() {
+    const context = useAppContext();
     const [searchTerm, setSearchTerm] = useState("");
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [showTemplateSelector, setShowTemplateSelector] = useState(false);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<"list" | "manage" | "preview" | "templates">("list");
     const [activeStatusTab, setActiveStatusTab] = useState("all");
-    const [selectedTemplate, setSelectedTemplate] = useState<ClassTemplate | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
     const [createFormTab, setCreateFormTab] = useState("basic");
+    const [selectedLocationId, setSelectedLocationId] = useState<string>("");
+    const [locations, setLocations] = useState<StudioLocation[]>([]);
+    const [classes, setClasses] = useState<DisplayClass[]>([]);
+    const [stats, setStats] = useState<ClassStats>({
+        total: 0,
+        draft: 0,
+        published: 0,
+        inSession: 0,
+        completed: 0,
+        cancelled: 0,
+        totalStudents: 0,
+        totalWaitlist: 0,
+        totalRevenue: 0
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+    const [instructors, setInstructors] = useState<Array<{ id: string; name: string }>>([]);
 
     // Form state
     const [classForm, setClassForm] = useState({
@@ -164,163 +169,150 @@ export function ClassesManagement() {
     const [classImages, setClassImages] = useState<ClassImage[]>([]);
     const [thumbnailImage, setThumbnailImage] = useState<string>("");
 
-    // Mock classes data with different statuses
-    const mockClasses: Class[] = [
-        {
-            id: "1",
-            name: "Wheel Throwing Fundamentals",
-            instructor: "Sarah Martinez",
-            schedule: "Tue & Thu, 6:00-8:00 PM",
-            capacity: 12,
-            enrolled: 10,
-            waitlist: 3,
-            startDate: "2025-01-15",
-            endDate: "2025-03-06",
-            status: "in-session",
-            level: "Beginner",
-            price: "$320",
-            thumbnail: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
-            revenue: 3200,
-            templateId: "1",
-            templateName: "Beginner Wheel Throwing"
-        },
-        {
-            id: "2",
-            name: "Advanced Glazing Techniques",
-            instructor: "Michael Chen",
-            schedule: "Sat, 10:00 AM-1:00 PM",
-            capacity: 8,
-            enrolled: 6,
-            waitlist: 0,
-            startDate: "2025-02-01",
-            endDate: "2025-04-05",
-            status: "published",
-            level: "Advanced",
-            price: "$280",
-            thumbnail: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400",
-            revenue: 1680,
-            templateId: "2",
-            templateName: "Advanced Glazing Workshop"
-        },
-        {
-            id: "3",
-            name: "Handbuilding Workshop",
-            instructor: "Emma Rodriguez",
-            schedule: "Wed, 7:00-9:00 PM",
-            capacity: 15,
-            enrolled: 15,
-            waitlist: 5,
-            startDate: "2025-01-08",
-            endDate: "2025-02-26",
-            status: "in-session",
-            level: "All Levels",
-            price: "$240",
-            thumbnail: "https://images.unsplash.com/photo-1594736797933-d0c6ba7a6d48?w=400",
-            revenue: 3600
-        },
-        {
-            id: "4",
-            name: "Pottery for Kids",
-            instructor: "David Park",
-            schedule: "Sat, 2:00-3:30 PM",
-            capacity: 10,
-            enrolled: 8,
-            waitlist: 2,
-            startDate: "2025-01-11",
-            endDate: "2025-03-01",
-            status: "in-session",
-            level: "Kids (8-12)",
-            price: "$180",
-            thumbnail: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-            revenue: 1440,
-            templateId: "3",
-            templateName: "Kids Pottery Fun"
-        },
-        {
-            id: "5",
-            name: "Sculpture Intensive",
-            instructor: "Sarah Martinez",
-            schedule: "Mon & Wed, 10:00 AM-12:00 PM",
-            capacity: 6,
-            enrolled: 4,
-            waitlist: 0,
-            startDate: "2025-02-15",
-            endDate: "2025-04-15",
-            status: "draft",
-            level: "Intermediate",
-            price: "$450",
-            thumbnail: "https://images.unsplash.com/photo-1594736797933-d0c6ba7a6d48?w=400",
-            revenue: 0
-        },
-        {
-            id: "6",
-            name: "Beginner Pottery Series",
-            instructor: "Michael Chen",
-            schedule: "Fri, 6:00-8:00 PM",
-            capacity: 12,
-            enrolled: 12,
-            waitlist: 0,
-            startDate: "2024-10-01",
-            endDate: "2024-12-15",
-            status: "completed",
-            level: "Beginner",
-            price: "$300",
-            thumbnail: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
-            revenue: 3600
-        },
-        {
-            id: "7",
-            name: "Holiday Pottery Workshop",
-            instructor: "Emma Rodriguez",
-            schedule: "Dec 20-22, 2:00-5:00 PM",
-            capacity: 15,
-            enrolled: 8,
-            waitlist: 0,
-            startDate: "2024-12-20",
-            endDate: "2024-12-22",
-            status: "cancelled",
-            level: "All Levels",
-            price: "$120",
-            thumbnail: "https://images.unsplash.com/photo-1594736797933-d0c6ba7a6d48?w=400",
-            revenue: 0
+    // Fetch locations for the studio
+    useEffect(() => {
+        const fetchLocations = async () => {
+            if (!context.currentStudio?.id || !context.authToken) {
+                setIsLoadingLocations(false);
+                return;
+            }
+
+            setIsLoadingLocations(true);
+            try {
+                const res = await fetch(`/api/studios/${context.currentStudio.id}/locations`, {
+                    headers: { Authorization: `Bearer ${context.authToken}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setLocations(data.locations || []);
+                    // Set first location as default if available
+                    if (data.locations && data.locations.length > 0 && !selectedLocationId) {
+                        setSelectedLocationId(data.locations[0].id);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching locations", err);
+            } finally {
+                setIsLoadingLocations(false);
+            }
+        };
+
+        fetchLocations();
+    }, [context.currentStudio?.id, context.authToken]);
+
+    // Fetch staff/instructors for the studio
+    useEffect(() => {
+        const fetchInstructors = async () => {
+            if (!context.currentStudio?.id || !context.authToken) return;
+
+            try {
+                const res = await fetch(
+                    `/api/admin/studios/${context.currentStudio.id}/staff`,
+                    {
+                        headers: { Authorization: `Bearer ${context.authToken}` }
+                    }
+                );
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setInstructors(
+                        (data.staff || []).map((s: any) => ({
+                            id: s.userId || s.id,
+                            name: s.name
+                        }))
+                    );
+                }
+            } catch (err) {
+                console.error("Error fetching instructors", err);
+            }
+        };
+
+        fetchInstructors();
+    }, [context.currentStudio?.id, context.authToken]);
+
+    // Fetch classes
+    const fetchClasses = useCallback(async () => {
+        if (!context.currentStudio?.id || !context.authToken || !selectedLocationId) {
+            setClasses([]);
+            return;
         }
-    ];
+
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams({
+                locationId: selectedLocationId
+            });
+            if (activeStatusTab !== "all") {
+                params.append("status", activeStatusTab);
+            }
+            if (searchTerm) {
+                params.append("search", searchTerm);
+            }
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes?${params.toString()}`,
+                {
+                    headers: { Authorization: `Bearer ${context.authToken}` }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to load classes");
+            }
+
+            const data = await res.json();
+            const transformedClasses: DisplayClass[] = (data.classes || []).map((cls: any) => ({
+                id: cls.id,
+                name: cls.name,
+                instructor: cls.instructor?.name || null,
+                schedule: cls.schedule || "",
+                capacity: cls.capacity,
+                enrolled: cls.enrolled,
+                waitlist: cls.waitlist,
+                startDate: cls.startDate,
+                endDate: cls.endDate,
+                status: cls.status,
+                level: cls.level || "",
+                price: cls.price || "$0",
+                thumbnail: cls.thumbnail || undefined,
+                revenue: cls.revenue || 0,
+                templateId: cls.templateId,
+                templateName: cls.templateName
+            }));
+
+            setClasses(transformedClasses);
+            setStats(data.stats || stats);
+        } catch (err: any) {
+            console.error("Error fetching classes", err);
+            toast.error(err.message || "Failed to load classes");
+            setClasses([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [context.currentStudio?.id, context.authToken, selectedLocationId, activeStatusTab, searchTerm]);
+
+    useEffect(() => {
+        fetchClasses();
+    }, [fetchClasses]);
+
 
     const statusTabs = [
-        { id: "all", label: "All Classes", count: mockClasses.length },
-        {
-            id: "draft",
-            label: "Draft",
-            count: mockClasses.filter((c) => c.status === "draft").length
-        },
-        {
-            id: "published",
-            label: "Published",
-            count: mockClasses.filter((c) => c.status === "published").length
-        },
-        {
-            id: "in-session",
-            label: "In Session",
-            count: mockClasses.filter((c) => c.status === "in-session").length
-        },
-        {
-            id: "completed",
-            label: "Completed",
-            count: mockClasses.filter((c) => c.status === "completed").length
-        },
-        {
-            id: "cancelled",
-            label: "Cancelled",
-            count: mockClasses.filter((c) => c.status === "cancelled").length
-        }
+        { id: "all", label: "All Classes", count: stats.total },
+        { id: "draft", label: "Draft", count: stats.draft },
+        { id: "published", label: "Published", count: stats.published },
+        { id: "in-session", label: "In Session", count: stats.inSession },
+        { id: "completed", label: "Completed", count: stats.completed },
+        { id: "cancelled", label: "Cancelled", count: stats.cancelled }
     ];
 
-    const filteredClasses = mockClasses.filter((cls) => {
+    // Filter classes client-side (API already filters by status, but we filter by search)
+    const filteredClasses = classes.filter((cls) => {
         const matchesSearch =
             cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cls.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = activeStatusTab === "all" || cls.status === activeStatusTab;
-        return matchesSearch && matchesStatus;
+            (cls.instructor && cls.instructor.toLowerCase().includes(searchTerm.toLowerCase()));
+        return matchesSearch;
     });
 
     const getStatusBadge = (status: string) => {
@@ -355,7 +347,7 @@ export function ClassesManagement() {
         setViewMode("list");
     };
 
-    const handleSelectTemplate = (template: ClassTemplate) => {
+    const handleSelectTemplate = (template: any) => {
         setSelectedTemplate(template);
         setShowTemplateSelector(false);
         setShowCreateDialog(true);
@@ -364,37 +356,46 @@ export function ClassesManagement() {
         setClassForm({
             name: template.name,
             instructor: "",
-            description: template.description,
-            level: template.level,
-            capacity: template.capacity.toString(),
+            description: template.description || "",
+            level: template.level || "",
+            capacity: (template.capacity || 0).toString(),
             startDate: "",
             endDate: "",
             schedule: "",
             location: "",
-            materials: template.materials,
-            prerequisites: template.prerequisites
+            materials: template.materials || "",
+            prerequisites: template.prerequisites || ""
         });
 
         // Set pricing tiers from template
         setPricingTiers(
-            template.pricingTiers.map((tier) => ({
-                ...tier,
-                id: Date.now().toString() + Math.random()
+            (template.pricingTiers || []).map((tier: any) => ({
+                id: Date.now().toString() + Math.random(),
+                name: tier.name,
+                price: tier.price,
+                priceCents: tier.priceCents,
+                description: tier.description || "",
+                isDefault: tier.isDefault
             }))
         );
 
         // Set discount codes from template
         setDiscountCodes(
-            template.discountCodes.map((code) => ({
-                ...code,
+            (template.discountCodes || []).map((code: any) => ({
                 id: Date.now().toString() + Math.random(),
-                usageCount: 0
+                code: code.code,
+                type: code.type,
+                value: code.value,
+                description: code.description || "",
+                expiryDate: code.expiryDate || undefined,
+                usageLimit: code.usageLimit,
+                isActive: true
             }))
         );
 
-        setThumbnailImage(template.thumbnail);
+        setThumbnailImage(template.thumbnailUrl || "");
         setClassImages(
-            template.images.map((url, index) => ({
+            (template.images || []).map((url: string, index: number) => ({
                 id: `${Date.now()}-${index}`,
                 url,
                 alt: `Class image ${index + 1}`,
@@ -436,63 +437,310 @@ export function ClassesManagement() {
         setThumbnailImage("");
     };
 
-    const handleCreateClass = () => {
-        // Validation and creation logic here
-        const templateText = selectedTemplate ? ` using template "${selectedTemplate.name}"` : "";
-        toast.success(`Class "${classForm.name}" created successfully${templateText}!`);
-        setShowCreateDialog(false);
-        setSelectedTemplate(null);
+    const handleCreateClass = async () => {
+        if (!context.currentStudio?.id || !context.authToken || !selectedLocationId) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        // Validation
+        if (!classForm.name || !classForm.instructor || !classForm.level || !classForm.capacity || !classForm.startDate || !classForm.endDate) {
+            toast.error("Please fill in all required fields");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: classForm.name,
+                        description: classForm.description,
+                        instructorId: classForm.instructor,
+                        level: classForm.level === "all" ? "all-levels" : classForm.level,
+                        capacity: parseInt(classForm.capacity),
+                        startDate: classForm.startDate,
+                        endDate: classForm.endDate,
+                        schedule: classForm.schedule,
+                        location: classForm.location,
+                        locationId: selectedLocationId,
+                        materials: classForm.materials,
+                        prerequisites: classForm.prerequisites,
+                        templateId: selectedTemplate?.id,
+                        pricingTiers: pricingTiers.map((tier) => ({
+                            name: tier.name,
+                            priceCents: (tier.priceCents || tier.price * 100),
+                            description: tier.description,
+                            isDefault: tier.isDefault
+                        })),
+                        discountCodes: discountCodes.map((code) => ({
+                            code: code.code,
+                            type: code.type,
+                            value: code.value,
+                            description: code.description,
+                            expiryDate: code.expiryDate,
+                            usageLimit: code.usageLimit
+                        })),
+                        images: classImages.map((img) => img.url),
+                        thumbnail: thumbnailImage
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to create class");
+            }
+
+            const templateText = selectedTemplate ? ` using template "${selectedTemplate.name}"` : "";
+            toast.success(`Class "${classForm.name}" created successfully${templateText}!`);
+            setShowCreateDialog(false);
+            setSelectedTemplate(null);
+            // Reset form
+            setClassForm({
+                name: "",
+                instructor: "",
+                description: "",
+                level: "",
+                capacity: "",
+                startDate: "",
+                endDate: "",
+                schedule: "",
+                location: "",
+                materials: "",
+                prerequisites: ""
+            });
+            setPricingTiers([{
+                id: "1",
+                name: "Standard",
+                price: 320,
+                description: "Regular class price",
+                isDefault: true
+            }]);
+            setDiscountCodes([]);
+            setClassImages([]);
+            setThumbnailImage("");
+            // Refresh classes list
+            fetchClasses();
+        } catch (err: any) {
+            console.error("Error creating class", err);
+            toast.error(err.message || "Failed to create class");
+        }
     };
 
-    const handleDuplicateClass = (classItem: Class) => {
-        toast.success(`Class "${classItem.name}" duplicated successfully`);
+    const handleDuplicateClass = async (classItem: DisplayClass) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classItem.id}/duplicate`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: `${classItem.name} (Copy)`
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to duplicate class");
+            }
+
+            toast.success(`Class "${classItem.name}" duplicated successfully`);
+            fetchClasses();
+        } catch (err: any) {
+            console.error("Error duplicating class", err);
+            toast.error(err.message || "Failed to duplicate class");
+        }
     };
 
-    const handleDeleteClass = (classId: string, className: string) => {
-        toast.success(`Class "${className}" deleted successfully`);
+    const handleDeleteClass = async (classId: string, className: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete "${className}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/classes/${classId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to delete class");
+            }
+
+            toast.success(`Class "${className}" deleted successfully`);
+            fetchClasses();
+        } catch (err: any) {
+            console.error("Error deleting class", err);
+            toast.error(err.message || "Failed to delete class");
+        }
     };
+
+    const isPageLoading = isLoading || isLoadingLocations;
 
     // Navigation handlers
     if (viewMode === "manage" && selectedClass) {
         return (
-            <ClassManagementPage
-                classId={selectedClass}
-                onBack={handleBackToList}
-            />
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <ClassManagementPage
+                    classId={selectedClass}
+                    onBack={handleBackToList}
+                />
+            </>
         );
     }
 
     if (viewMode === "preview" && selectedClass) {
-        const classData = mockClasses.find((c) => c.id === selectedClass);
+        const classData = classes.find((c) => c.id === selectedClass);
+        if (!classData) {
+            return (
+                <>
+                    <PageLoadingProgress isLoading={isPageLoading} />
+                    <div className="p-6">
+                        <Button variant="ghost" onClick={handleBackToList}>
+                            Back to Classes
+                        </Button>
+                        <p>Class not found</p>
+                    </div>
+                </>
+            );
+        }
+        // Transform DisplayClass to match ClassPreview expectations
+        const previewData = {
+            ...classData,
+            instructor: classData.instructor || "TBD"
+        };
         return (
-            <ClassPreview
-                classData={classData}
-                onBack={handleBackToList}
-            />
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <ClassPreview
+                    classData={previewData as any}
+                    onBack={handleBackToList}
+                />
+            </>
         );
     }
 
     if (viewMode === "templates") {
         return (
-            <ClassTemplateManager
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <ClassTemplateManager
                 onBack={handleBackToList}
                 mode="manage"
-            />
+                />
+            </>
         );
     }
 
     if (showTemplateSelector) {
         return (
-            <ClassTemplateManager
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <ClassTemplateManager
                 onBack={() => setShowTemplateSelector(false)}
                 onSelectTemplate={handleSelectTemplate}
                 mode="select"
-            />
+                />
+            </>
+        );
+    }
+
+    // Show location selection message if no location selected (and done loading)
+    if (locations.length === 0 && !isLoadingLocations) {
+        return (
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <div className="p-6">
+                <div className="text-center py-12">
+                    <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="text-lg font-medium mb-2">No locations available</h3>
+                    <p className="text-muted-foreground">
+                        Please create a location for your studio first
+                    </p>
+                </div>
+            </div>
+            </>
+        );
+    }
+
+    if (!selectedLocationId && locations.length > 0) {
+        return (
+            <>
+                <PageLoadingProgress isLoading={isPageLoading} />
+                <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold">Classes Management</h1>
+                        <p className="text-muted-foreground">
+                            Manage your studio's classes and workshops
+                        </p>
+                    </div>
+                </div>
+                <Card>
+                    <CardContent className="py-12">
+                        <div className="text-center">
+                            <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                            <h3 className="text-lg font-medium mb-2">Select a Location</h3>
+                            <p className="text-muted-foreground mb-4">
+                                Please select a location to view and manage classes
+                            </p>
+                            <Select
+                                value={selectedLocationId}
+                                onValueChange={setSelectedLocationId}
+                            >
+                                <SelectTrigger className="w-64 mx-auto">
+                                    <SelectValue placeholder="Select location" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {locations.map((location) => (
+                                        <SelectItem
+                                            key={location.id}
+                                            value={location.id}
+                                        >
+                                            {location.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            </>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
+        <>
+            <PageLoadingProgress isLoading={isPageLoading} />
+            <div className="p-6 space-y-6">
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
@@ -502,6 +750,26 @@ export function ClassesManagement() {
                     </p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    {locations.length > 0 && (
+                        <Select
+                            value={selectedLocationId}
+                            onValueChange={setSelectedLocationId}
+                        >
+                            <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {locations.map((location) => (
+                                    <SelectItem
+                                        key={location.id}
+                                        value={location.id}
+                                    >
+                                        {location.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                     <Button
                         variant="outline"
                         onClick={() => setViewMode("templates")}
@@ -566,10 +834,9 @@ export function ClassesManagement() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{filteredClasses.length}</div>
+                            <div className="text-2xl font-bold">{stats.total}</div>
                             <p className="text-xs text-muted-foreground">
-                                {filteredClasses.filter((c) => c.status === "in-session").length} in
-                                session
+                                {stats.inSession} in session
                             </p>
                         </CardContent>
                     </Card>
@@ -584,12 +851,9 @@ export function ClassesManagement() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                {filteredClasses.reduce((sum, cls) => sum + cls.enrolled, 0)}
-                            </div>
+                            <div className="text-2xl font-bold">{stats.totalStudents}</div>
                             <p className="text-xs text-muted-foreground">
-                                Capacity:{" "}
-                                {filteredClasses.reduce((sum, cls) => sum + cls.capacity, 0)}
+                                Across all classes
                             </p>
                         </CardContent>
                     </Card>
@@ -604,12 +868,9 @@ export function ClassesManagement() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">
-                                {filteredClasses.reduce((sum, cls) => sum + cls.waitlist, 0)}
-                            </div>
+                            <div className="text-2xl font-bold">{stats.totalWaitlist}</div>
                             <p className="text-xs text-muted-foreground">
-                                {filteredClasses.filter((c) => c.waitlist > 0).length} classes with
-                                waitlist
+                                Students waiting
                             </p>
                         </CardContent>
                     </Card>
@@ -625,10 +886,7 @@ export function ClassesManagement() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                $
-                                {filteredClasses
-                                    .reduce((sum, cls) => sum + (cls.revenue || 0), 0)
-                                    .toLocaleString()}
+                                ${(stats.totalRevenue / 100).toLocaleString()}
                             </div>
                             <p className="text-xs text-muted-foreground">Total revenue</p>
                         </CardContent>
@@ -646,29 +904,51 @@ export function ClassesManagement() {
                             className="pl-10"
                         />
                     </div>
-                    <Button variant="outline">
+                    {/* <Button variant="outline">
                         <Filter className="w-4 h-4 mr-2" />
                         Filter
-                    </Button>
+                    </Button> */}
                 </div>
 
                 {/* Classes Table */}
                 <Card>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Class</TableHead>
-                                <TableHead>Instructor</TableHead>
-                                <TableHead>Schedule</TableHead>
-                                <TableHead>Enrollment</TableHead>
-                                <TableHead>Dates</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Revenue</TableHead>
-                                <TableHead className="w-12"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredClasses.map((classItem) => (
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-muted-foreground">Loading classes...</span>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Class</TableHead>
+                                    <TableHead>Instructor</TableHead>
+                                    <TableHead>Schedule</TableHead>
+                                    <TableHead>Enrollment</TableHead>
+                                    <TableHead>Dates</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Revenue</TableHead>
+                                    <TableHead className="w-12"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredClasses.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={8}
+                                            className="text-center py-12"
+                                        >
+                                            <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                                            <h3 className="text-lg font-medium mb-2">No classes found</h3>
+                                            <p className="text-muted-foreground">
+                                                {searchTerm || activeStatusTab !== "all"
+                                                    ? "Try adjusting your search or filter criteria"
+                                                    : "Create your first class to get started"}
+                                            </p>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredClasses.map((classItem) => (
                                 <TableRow key={classItem.id}>
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
@@ -765,22 +1045,12 @@ export function ClassesManagement() {
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
                 </Card>
-
-                {filteredClasses.length === 0 && (
-                    <div className="text-center py-12">
-                        <Calendar className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                        <h3 className="text-lg font-medium mb-2">No classes found</h3>
-                        <p className="text-muted-foreground">
-                            {searchTerm || activeStatusTab !== "all"
-                                ? "Try adjusting your search or filter criteria"
-                                : "Create your first class to get started"}
-                        </p>
-                    </div>
-                )}
             </Tabs>
 
             {/* Create Class Dialog */}
@@ -844,10 +1114,14 @@ export function ClassesManagement() {
                                             <SelectValue placeholder="Select instructor" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="sarah">Sarah Martinez</SelectItem>
-                                            <SelectItem value="michael">Michael Chen</SelectItem>
-                                            <SelectItem value="emma">Emma Rodriguez</SelectItem>
-                                            <SelectItem value="david">David Park</SelectItem>
+                                            {instructors.map((instructor) => (
+                                                <SelectItem
+                                                    key={instructor.id}
+                                                    value={instructor.id}
+                                                >
+                                                    {instructor.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -887,7 +1161,7 @@ export function ClassesManagement() {
                                                 Intermediate
                                             </SelectItem>
                                             <SelectItem value="advanced">Advanced</SelectItem>
-                                            <SelectItem value="all">All Levels</SelectItem>
+                                            <SelectItem value="all-levels">All Levels</SelectItem>
                                             <SelectItem value="kids">Kids (8-12)</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -908,7 +1182,7 @@ export function ClassesManagement() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="location">Location</Label>
+                                    <Label htmlFor="location">Location Name</Label>
                                     <Input
                                         id="location"
                                         placeholder="Studio A"
@@ -920,6 +1194,9 @@ export function ClassesManagement() {
                                             }))
                                         }
                                     />
+                                    <p className="text-xs text-muted-foreground">
+                                        Physical location within the studio
+                                    </p>
                                 </div>
                             </div>
 
@@ -1052,5 +1329,6 @@ export function ClassesManagement() {
                 </DialogContent>
             </Dialog>
         </div>
+        </>
     );
 }

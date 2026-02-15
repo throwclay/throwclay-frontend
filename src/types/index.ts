@@ -1309,3 +1309,214 @@ export interface MemberData extends User {
 }
 
 export type InviteRole = "member";
+
+// ============================================================================
+// Classes Management Types
+// ============================================================================
+
+export interface Class {
+    id: string;
+    studioId: string;
+    locationId: string;
+    templateId?: string | null;
+    name: string;
+    description?: string | null;
+    instructorId: string;
+    instructor?: {
+        id: string;
+        name: string;
+        email?: string;
+    } | null;
+    level: "beginner" | "intermediate" | "advanced" | "all-levels" | "kids";
+    capacity: number;
+    enrolledCount: number;
+    waitlistCount: number;
+    startDate: string;
+    endDate: string;
+    schedule?: string | null;
+    location?: string | null;
+    materials?: string | null;
+    prerequisites?: string | null;
+    status: "draft" | "published" | "in-session" | "completed" | "cancelled";
+    thumbnailUrl?: string | null;
+    totalSessions?: number | null;
+    sessionsCompleted: number;
+    revenueCents: number;
+    averageRating?: number | null;
+    totalReviews: number;
+    templateName?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassPricingTier {
+    id: string;
+    classId: string;
+    name: string;
+    priceCents: number;
+    price: number; // Calculated from priceCents
+    description?: string | null;
+    isDefault: boolean;
+    isActive: boolean;
+    enrollmentCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassDiscountCode {
+    id: string;
+    classId: string;
+    code: string;
+    type: "percentage" | "fixed";
+    value: number;
+    description?: string | null;
+    expiryDate?: string | null;
+    usageLimit: number;
+    usageCount: number;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassEnrollment {
+    id: string;
+    classId: string;
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    pricingTierId?: string | null;
+    pricingTier?: {
+        id: string;
+        name: string;
+        price: number;
+    } | null;
+    discountCodeId?: string | null;
+    discountApplied?: {
+        id: string;
+        code: string;
+        type: "percentage" | "fixed";
+        value: number;
+    } | null;
+    enrolledDate: string;
+    status: "active" | "dropped" | "completed";
+    paymentStatus: "paid" | "pending" | "overdue";
+    amountPaid: number;
+    emergencyContact?: string | null;
+    phone?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassWaitlistEntry {
+    id: string;
+    classId: string;
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    waitlistedDate: string;
+    position: number;
+    notificationsEnabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassAttendanceRecord {
+    id: string;
+    classId: string;
+    studentId: string;
+    studentName: string;
+    sessionDate: string;
+    status: "present" | "absent" | "late" | "excused";
+    notes?: string | null;
+    recordedBy?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassImage {
+    id: string;
+    classId: string;
+    url: string;
+    altText?: string | null;
+    isMain: boolean;
+    uploadDate: string;
+    createdAt: string;
+}
+
+export interface ClassReview {
+    id: string;
+    classId: string;
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    rating: number; // 1-5
+    comment?: string | null;
+    isPublic: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ClassTemplate {
+    id: string;
+    studioId: string;
+    name: string;
+    description?: string | null;
+    category?: string | null;
+    level?: "beginner" | "intermediate" | "advanced" | "all-levels" | "kids" | null;
+    duration?: string | null;
+    capacity?: number | null;
+    materials?: string | null;
+    prerequisites?: string | null;
+    whatYouLearn: string[];
+    pricingTiers: TemplatePricingTier[];
+    discountCodes: TemplateDiscountCode[];
+    images: string[];
+    thumbnailUrl?: string | null;
+    isPublic: boolean;
+    usageCount: number;
+    version: string;
+    baseTemplateId?: string | null;
+    createdBy: string;
+    createdByUser?: {
+        id: string;
+        name: string;
+    } | null;
+    createdAt: string;
+    updatedAt: string;
+    lastModified: string;
+}
+
+export interface TemplatePricingTier {
+    id: string;
+    templateId: string;
+    name: string;
+    priceCents: number;
+    price: number; // Calculated from priceCents
+    description?: string | null;
+    isDefault: boolean;
+    createdAt: string;
+}
+
+export interface TemplateDiscountCode {
+    id: string;
+    templateId: string;
+    code: string;
+    type: "percentage" | "fixed";
+    value: number;
+    description?: string | null;
+    expiryDate?: string | null;
+    usageLimit: number;
+    createdAt: string;
+}
+
+export interface ClassStats {
+    total: number;
+    draft: number;
+    published: number;
+    inSession: number;
+    completed: number;
+    cancelled: number;
+    totalStudents: number;
+    totalWaitlist: number;
+    totalRevenue: number;
+}
