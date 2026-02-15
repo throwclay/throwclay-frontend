@@ -70,6 +70,23 @@ export async function getMembershipsForUser(userId: string) {
     return memberships;
 }
 
+/** Asserts the user is an active member of the studio (any role). Use for messaging, etc. */
+export async function assertStudioMember(userId: string, studioId: string) {
+    const { data, error } = await supabaseAdmin
+        .from("studio_memberships")
+        .select("role")
+        .eq("studio_id", studioId)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+
+    if (error || !data) {
+        throw new Error("Not authorized for this studio");
+    }
+    return data.role as StudioRole;
+}
+
 export async function assertStudioAdmin(userId: string, studioId: string) {
     const { data, error } = await supabaseAdmin
         .from("studio_memberships")

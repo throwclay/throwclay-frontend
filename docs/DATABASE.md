@@ -59,12 +59,18 @@
 ### Integrations
 - **ring_integrations** – Ring (e.g. doorbell) per studio; studio_id, is_enabled, api_key, refresh_token, connected_devices (jsonb), settings (jsonb), webhook_url, last_sync, sync_status, error_log (jsonb).
 
+### Messaging (studio-scoped, retained)
+- **studio_conversations** – Conversations within a studio; studio_id, type ('direct' | 'group'), name (null for direct), description, is_private, created_at, updated_at.
+- **studio_conversation_participants** – Who is in each conversation; conversation_id, user_id, role ('admin' | 'member'), joined_at. Unique (conversation_id, user_id).
+- **studio_messages** – Messages (retained); conversation_id, sender_id, content, type ('text' | 'image' | 'file'), created_at, updated_at. Trigger bumps conversation updated_at on insert.
+- **studio_message_read_receipts** – Optional read tracking; message_id, user_id, read_at.
+
 ---
 
 ## Key foreign key relationships (public)
 
-- **profiles** – Referenced by: class_attendance (student_id, recorded_by), class_enrollments (student_id), class_reviews (student_id), class_templates (created_by), class_waitlist (student_id), custom_firing_types (created_by), kiln_assignments (assigned_employee_id, assigned_by), kiln_assignment_cover_requests (requested_by, covered_by), kiln_firing_templates (created_by), kiln_firings (operator_id, created_by), kiln_load_items (artist_id, loaded_by), kiln_loads (loaded_by, assigned_employee_id), kiln_performance_logs (recorded_by), studio_classes (instructor_id, created_by), studio_invites (invited_by, accepted_by), studio_membership_applications (profile_id, decided_by), studio_memberships (user_id).
-- **studios** – Referenced by: class_templates, custom_firing_types, kiln_firing_templates, kilns, ring_integrations, studio_classes, studio_invites, studio_membership_applications, studio_memberships, studio_locations.
+- **profiles** – Referenced by: class_attendance (student_id, recorded_by), class_enrollments (student_id), class_reviews (student_id), class_templates (created_by), class_waitlist (student_id), custom_firing_types (created_by), kiln_assignments (assigned_employee_id, assigned_by), kiln_assignment_cover_requests (requested_by, covered_by), kiln_firing_templates (created_by), kiln_firings (operator_id, created_by), kiln_load_items (artist_id, loaded_by), kiln_loads (loaded_by, assigned_employee_id), kiln_performance_logs (recorded_by), studio_classes (instructor_id, created_by), studio_conversation_participants (user_id), studio_invites (invited_by, accepted_by), studio_membership_applications (profile_id, decided_by), studio_memberships (user_id), studio_messages (sender_id), studio_message_read_receipts (user_id).
+- **studios** – Referenced by: class_templates, custom_firing_types, kiln_firing_templates, kilns, ring_integrations, studio_classes, studio_conversations, studio_invites, studio_membership_applications, studio_memberships, studio_locations.
 - **studio_locations** – Referenced by: kilns, studio_classes, studio_invites, studio_membership_applications, studio_memberships.
 - **studio_classes** – Referenced by: class_attendance, class_discount_codes, class_enrollments, class_images, class_pricing_tiers, class_reviews, class_waitlist.
 - **class_templates** – Referenced by: studio_classes (template_id), template_discount_codes, template_pricing_tiers; self: base_template_id.
@@ -73,6 +79,8 @@
 - **kiln_assignments** – Referenced by: kiln_assignment_cover_requests, kiln_assignment_notifications, kiln_assignment_tasks.
 - **kiln_loads** – Referenced by: kiln_shelves.
 - **kiln_shelves** – Referenced by: kiln_load_items.
+- **studio_conversations** – Referenced by: studio_conversation_participants (conversation_id), studio_messages (conversation_id).
+- **studio_messages** – Referenced by: studio_message_read_receipts (message_id).
 
 ---
 
