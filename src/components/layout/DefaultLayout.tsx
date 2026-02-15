@@ -1,3 +1,4 @@
+import { MudlyOverlay } from "@/components/mudly/MudlyOverlay";
 import { NavigationLandingPage } from "@/components/NavigationLandingPage";
 import { NavigationPrimary } from "@/components/NavigationPrimary";
 import { Button } from "@/components/ui/button";
@@ -166,6 +167,9 @@ export function DefaultLayout(props: LayoutProps) {
                     </div>
                 </div>
             </footer>
+
+            {/* Mudly AI overlay: bottom-right when logged in (artist or studio mode) */}
+            <MudlyOverlay />
         </div>
     );
 }
