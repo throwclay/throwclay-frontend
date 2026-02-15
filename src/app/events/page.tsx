@@ -47,7 +47,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { useAppContext, type Event } from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { Event } from "@/types";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
@@ -236,8 +237,8 @@ export default function EventsManagement() {
         if (!newEvent.title || !newEvent.date) return;
 
         const eventToCreate: Event = {
-            id: Date.now().toString(),
-            ...(newEvent as Event)
+            ...(newEvent as Event),
+            id: Date.now().toString()
         };
 
         setEvents((prev) => [eventToCreate, ...prev]);
@@ -274,18 +275,22 @@ export default function EventsManagement() {
         setEvents((prev) =>
             prev.map((e) =>
                 e.id === event.id
-                    ? { ...e, currentParticipants: [...e.currentParticipants, currentUser.id] }
+                    ? { ...e, currentParticipants: [...(e.currentParticipants ?? []), currentUser.id] }
                     : e
             )
         );
     };
 
     const isParticipating = (event: Event) => {
-        return currentUser && event.currentParticipants.includes(currentUser.id);
+        return currentUser && (event.currentParticipants ?? []).includes(currentUser.id);
     };
 
     const canManageEvents =
-        currentUser?.type === "studio_admin" || currentUser?.type === "instructor";
+        !!currentUser &&
+        !!currentStudio &&
+        ["owner", "admin", "manager", "instructor"].includes(
+            currentStudio.roleForCurrentUser ?? ""
+        );
 
     return (
         <DefaultLayout>
@@ -630,7 +635,7 @@ export default function EventsManagement() {
                                             <div className="flex items-center space-x-2">
                                                 <Users className="w-4 h-4 text-muted-foreground" />
                                                 <span>
-                                                    {event.currentParticipants.length}/
+                                                    {(event.currentParticipants ?? []).length}/
                                                     {event.maxParticipants} participants
                                                 </span>
                                             </div>
@@ -684,13 +689,15 @@ export default function EventsManagement() {
                                                 size="sm"
                                                 onClick={() => handleJoinEvent(event)}
                                                 disabled={
-                                                    event.maxParticipants &&
-                                                    event.currentParticipants.length >=
-                                                        event.maxParticipants
+                                                    !!(
+                                                        event.maxParticipants &&
+                                                        (event.currentParticipants ?? []).length >=
+                                                            event.maxParticipants
+                                                    )
                                                 }
                                             >
                                                 {event.maxParticipants &&
-                                                event.currentParticipants.length >=
+                                                (event.currentParticipants ?? []).length >=
                                                     event.maxParticipants
                                                     ? "Full"
                                                     : "Join Event"}
@@ -766,7 +773,7 @@ export default function EventsManagement() {
                                             <div className="flex justify-between text-sm mb-1">
                                                 <span>Registration</span>
                                                 <span>
-                                                    {event.currentParticipants.length}/
+                                                    {(event.currentParticipants ?? []).length}/
                                                     {event.maxParticipants}
                                                 </span>
                                             </div>
@@ -774,7 +781,7 @@ export default function EventsManagement() {
                                                 <div
                                                     className="bg-primary h-2 rounded-full transition-all"
                                                     style={{
-                                                        width: `${(event.currentParticipants.length / event.maxParticipants) * 100}%`
+                                                        width: `${((event.currentParticipants ?? []).length / event.maxParticipants) * 100}%`
                                                     }}
                                                 />
                                             </div>

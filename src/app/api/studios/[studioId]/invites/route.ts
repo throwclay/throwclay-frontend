@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: { studioId: strin
         return NextResponse.json({ error: "email and role are required" }, { status: 400 });
     }
 
-    if (!MEMBERSHIP_ROLES.includes(role)) {
+    if (!(MEMBERSHIP_ROLES as readonly string[]).includes(role)) {
         return NextResponse.json({ error: `Invalid role: ${role}` }, { status: 400 });
     }
 

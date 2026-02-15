@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import type { StudentBadge, ClassBadge, BadgeRequirement, User } from "@/app/context/AppContext";
+import type { StudentBadge, ClassBadge, BadgeRequirement, User } from "@/types";
 import { toast } from "sonner";
 
 interface BadgeAwardingServiceProps {
@@ -97,7 +97,7 @@ export function BadgeAwardingService({
                         case "attendance":
                             const attendanceRecord = attendanceRecords[student.id];
                             currentValue = attendanceRecord?.percentage || 0;
-                            targetValue = req.criteria.attendancePercentage;
+                            targetValue = (req.criteria as { attendancePercentage?: number })?.attendancePercentage ?? 0;
                             isMet = currentValue >= targetValue;
                             details = `${attendanceRecord?.sessionsAttended || 0}/${attendanceRecord?.totalSessions || 0} sessions`;
                             break;
@@ -105,14 +105,14 @@ export function BadgeAwardingService({
                         case "grade":
                             const gradeRecord = gradeRecords[student.id];
                             currentValue = gradeRecord?.finalGrade || 0;
-                            targetValue = req.criteria.minimumGrade;
+                            targetValue = (req.criteria as { minimumGrade?: number })?.minimumGrade ?? 0;
                             isMet = currentValue >= targetValue;
                             details = `Final grade: ${currentValue}%`;
                             break;
 
                         case "skill":
                             const studentSkills = skillsRecords[student.id] || [];
-                            const requiredSkills = req.criteria.skillsRequired || [];
+                            const requiredSkills = (req.criteria as { skillsRequired?: string[] })?.skillsRequired || [];
                             const acquiredSkills = requiredSkills.filter((skill) =>
                                 studentSkills.includes(skill)
                             );
@@ -125,7 +125,7 @@ export function BadgeAwardingService({
                         case "project":
                             const projectRecord = gradeRecords[student.id];
                             currentValue = projectRecord?.projectsCompleted || 0;
-                            targetValue = req.criteria.minimumProjects;
+                            targetValue = (req.criteria as { minimumProjects?: number })?.minimumProjects ?? 0;
                             isMet = currentValue >= targetValue;
                             details = `${currentValue} projects completed`;
                             break;
@@ -133,7 +133,7 @@ export function BadgeAwardingService({
 
                     return {
                         requirementId: req.id,
-                        type: req.type,
+                        type: req.type as "skill" | "attendance" | "grade" | "project",
                         description: req.description,
                         isRequired: req.isRequired,
                         isMet,

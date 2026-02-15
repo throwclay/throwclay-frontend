@@ -133,7 +133,11 @@ export default function ArtistProfile() {
             projectsCompleted: 5,
             skillsAchieved: ["centering", "pulling", "shaping", "trimming"],
             instructorNotes: "Excellent progress throughout the course.",
-            displayOnProfile: true
+            displayOnProfile: true,
+            shareCount: 0,
+            viewCount: 0,
+            createdAt: "2025-01-15T10:00:00Z",
+            updatedAt: "2025-01-15T10:00:00Z"
         },
         {
             id: "badge_2",
@@ -152,7 +156,11 @@ export default function ArtistProfile() {
             projectsCompleted: 8,
             skillsAchieved: ["glazing", "color-mixing", "layering"],
             instructorNotes: "Demonstrated advanced understanding of glaze chemistry.",
-            displayOnProfile: true
+            displayOnProfile: true,
+            shareCount: 0,
+            viewCount: 0,
+            createdAt: "2025-01-10T14:30:00Z",
+            updatedAt: "2025-01-10T14:30:00Z"
         },
         {
             id: "badge_3",
@@ -166,6 +174,10 @@ export default function ArtistProfile() {
             status: "active",
             verificationCode: "RM-2024-003-DEF",
             socialShareEnabled: true,
+            shareCount: 0,
+            viewCount: 0,
+            createdAt: "2024-12-20T10:00:00Z",
+            updatedAt: "2024-12-20T10:00:00Z",
             finalGrade: 95,
             finalAttendance: 100,
             projectsCompleted: 6,
@@ -1369,7 +1381,7 @@ export default function ArtistProfile() {
                                                 </div>
                                                 <div className="absolute inset-0 bg-black/80 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
                                                     <p className="text-white text-xs text-center">
-                                                        {badge.skillsAchieved.join(", ")}
+                                                        {(badge.skillsAchieved ?? []).join(", ")}
                                                     </p>
                                                 </div>
                                             </div>

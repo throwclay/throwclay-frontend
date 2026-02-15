@@ -14,7 +14,7 @@ import {
     AlertDialogTrigger
 } from "./ui/alert-dialog";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import type { PotteryEntry } from "@/app/context/AppContext";
+import type { PotteryEntry } from "@/types";
 
 interface EntryCardProps {
     entry: PotteryEntry;

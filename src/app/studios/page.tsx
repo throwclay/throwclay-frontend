@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MapPin, Star, Users, Phone, Globe, Instagram, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,11 +32,8 @@ import { PriceRange, PublicStudioLocationCard } from "@/types";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
-export default function PublicStudiosDirectory({
-    onNavigate
-}: {
-    onNavigate?: (page: string) => void;
-}) {
+export default function PublicStudiosDirectory() {
+    const router = useRouter();
     const context = useAppContext();
 
     const [locations, setLocations] = useState<PublicStudioLocationCard[]>([]);
@@ -594,14 +592,7 @@ export default function PublicStudiosDirectory({
 
                                                 const handlePrimaryClick = () => {
                                                     if (isMember || isStaff) {
-                                                        // Route to My Studios view
-                                                        if (onNavigate) {
-                                                            onNavigate("mystudios");
-                                                        } else {
-                                                            // fallback for when this is used as a standalone page
-                                                            window.location.href =
-                                                                "/?tab=mystudios";
-                                                        }
+                                                        router.push("/?tab=mystudios");
                                                         return;
                                                     }
 

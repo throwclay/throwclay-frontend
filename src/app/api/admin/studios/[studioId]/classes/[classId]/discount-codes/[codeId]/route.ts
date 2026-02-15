@@ -46,7 +46,7 @@ export async function PATCH(
         // Verify code belongs to class
         const { data: codeData, error: codeError } = await supabaseAdmin
             .from("class_discount_codes")
-            .select("id")
+            .select("id, code")
             .eq("id", params.codeId)
             .eq("class_id", params.classId)
             .single();

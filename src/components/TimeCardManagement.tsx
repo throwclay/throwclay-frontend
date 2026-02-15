@@ -70,13 +70,8 @@ import {
     DropdownMenuTrigger
 } from "./ui/dropdown-menu";
 import { Checkbox } from "./ui/checkbox";
-import {
-    useAppContext,
-    type TimeCard,
-    type TimeCardEntry,
-    type PayPeriod,
-    type User
-} from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { TimeCard, TimeCardEntry, PayPeriod, User } from "@/types";
 
 export function TimeCardManagement() {
     const { currentUser, currentStudio } = useAppContext();
@@ -230,15 +225,18 @@ export function TimeCardManagement() {
         }
     ]);
 
-    const [employees] = useState<User[]>([
+    const [employees] = useState<(User & { role?: string; studioId?: string; managerProfile?: unknown; instructorProfile?: unknown })[]>([
         {
             id: "emp1",
             name: "Sarah Wilson",
             email: "sarah@artisanclay.com",
             handle: "sarahwilson",
+            phone: "",
             type: "artist",
             role: "manager",
             studioId: currentStudio?.id,
+            createdAt: "",
+            isActive: true,
             managerProfile: {
                 id: "mgr1",
                 userId: "emp1",
@@ -284,9 +282,12 @@ export function TimeCardManagement() {
             name: "Mike Chen",
             email: "mike@artisanclay.com",
             handle: "mikechen",
+            phone: "",
             type: "artist",
             role: "instructor",
             studioId: currentStudio?.id,
+            createdAt: "",
+            isActive: true,
             instructorProfile: {
                 id: "inst1",
                 userId: "emp2",
@@ -314,9 +315,12 @@ export function TimeCardManagement() {
             name: "Emma Davis",
             email: "emma@artisanclay.com",
             handle: "emmadavis",
+            phone: "",
             type: "artist",
             role: "instructor",
             studioId: currentStudio?.id,
+            createdAt: "",
+            isActive: true,
             instructorProfile: {
                 id: "inst2",
                 userId: "emp3",
@@ -389,7 +393,7 @@ export function TimeCardManagement() {
         }
     };
 
-    const calculateHourlyPay = (employee: User, regularHours: number, overtimeHours: number) => {
+    const calculateHourlyPay = (employee: User & { managerProfile?: { hourlyRate?: number }; instructorProfile?: { hourlyRate?: number } }, regularHours: number, overtimeHours: number) => {
         const hourlyRate =
             employee.managerProfile?.hourlyRate || employee.instructorProfile?.hourlyRate || 20;
         const regularPay = regularHours * hourlyRate;
@@ -443,10 +447,11 @@ export function TimeCardManagement() {
 
     const stats = getSummaryStats();
 
+    const currentUserExtended = currentUser as (User & { managerProfile?: { permissions?: { approveTimeCards?: boolean } }; role?: string }) | null;
     const canApproveTimeCards =
-        currentUser?.managerProfile?.permissions?.approveTimeCards ||
-        currentUser?.role === "owner" ||
-        currentUser?.role === "admin";
+        currentUserExtended?.managerProfile?.permissions?.approveTimeCards ||
+        currentUserExtended?.role === "owner" ||
+        currentUserExtended?.role === "admin";
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -667,7 +672,7 @@ export function TimeCardManagement() {
                                 );
                                 const pay = employee
                                     ? calculateHourlyPay(
-                                          employee,
+                                          employee as User & { managerProfile?: { hourlyRate?: number }; instructorProfile?: { hourlyRate?: number } },
                                           timeCard.totalRegularHours,
                                           timeCard.totalOvertimeHours
                                       )

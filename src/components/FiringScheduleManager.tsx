@@ -56,7 +56,7 @@ import type {
     FiringSchedule,
     KilnFiringTemplate,
     CustomFiringType
-} from "@/app/context/AppContext";
+} from "@/types";
 
 interface FiringScheduleForm {
     id?: string;
@@ -1144,7 +1144,7 @@ export function FiringScheduleManager() {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
-                                                    variant={getStatusBadge(schedule.status) as any}
+                                                    variant={getStatusBadge(schedule.status ?? "scheduled") as "default" | "secondary" | "destructive" | "outline"}
                                                 >
                                                     {schedule.status}
                                                 </Badge>

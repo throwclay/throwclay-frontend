@@ -421,7 +421,7 @@ Today, Sarah is working on a series of large platters with intricate carved desi
             case "draft":
                 return "secondary";
             case "review":
-                return "warning";
+                return "outline";
             case "published":
                 return "default";
             case "archived":

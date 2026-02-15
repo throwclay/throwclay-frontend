@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Checkbox } from "./ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { useAppContext } from "@/app/context/AppContext";
-import type { EnrollmentFormField, StudioEnrollmentForm } from "@/app/context/AppContext";
+import type { EnrollmentFormField, StudioEnrollmentForm } from "@/types";
 
 export function MemberIntakeFormBuilder() {
     const { currentStudio } = useAppContext();

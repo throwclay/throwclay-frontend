@@ -24,7 +24,8 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import { useAppContext, type PotteryEntry } from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { PotteryEntry } from "@/types";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";

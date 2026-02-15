@@ -26,7 +26,7 @@ import { Switch } from "./ui/switch";
 import { Separator } from "./ui/separator";
 import { Badge } from "./ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import type { BadgeDesign } from "@/app/context/AppContext";
+import type { BadgeDesign } from "@/types";
 import { toast } from "sonner";
 
 interface BadgeDesignerProps {

@@ -44,7 +44,7 @@ import type {
     BadgeRequirement,
     User,
     StudentBadge
-} from "@/app/context/AppContext";
+} from "@/types";
 import { toast } from "sonner";
 
 interface ClassSettingsBadgesProps {

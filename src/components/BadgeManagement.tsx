@@ -47,7 +47,7 @@ import {
 import { Progress } from "./ui/progress";
 import { Separator } from "./ui/separator";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import type { StudentBadge, BadgeDesign, ClassBadge } from "@/app/context/AppContext";
+import type { StudentBadge, BadgeDesign, ClassBadge } from "@/types";
 import { toast } from "sonner";
 
 interface BadgeManagementProps {
@@ -681,11 +681,11 @@ export function BadgeManagement({
                             </div>
 
                             {/* Skills Achieved */}
-                            {selectedBadge.skillsAchieved.length > 0 && (
+                            {(selectedBadge.skillsAchieved ?? []).length > 0 && (
                                 <div className="space-y-3">
                                     <h4 className="font-medium">Skills Achieved</h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {selectedBadge.skillsAchieved.map((skill) => (
+                                        {(selectedBadge.skillsAchieved ?? []).map((skill) => (
                                             <Badge
                                                 key={skill}
                                                 variant="secondary"
