@@ -14,16 +14,16 @@ export function NavigationLandingPage() {
                         <span className="text-xl font-bold">Throw Clay</span>
                     </div>
                     <div className="hidden md:flex items-center space-x-8">
-                        <Link href="studios">
+                        <Link href="/studios">
                             <Button variant="ghost">Find Studios</Button>
                         </Link>
-                        <Link href="ceramics">
+                        <Link href="/ceramics">
                             <Button variant="ghost">Ceramics Marketplace</Button>
                         </Link>
                         <Link href="/login">
                             <Button variant="outline">Sign In</Button>
                         </Link>
-                        <Link href="login">
+                        <Link href="/login?mode=signup">
                             <Button>Get Started</Button>
                         </Link>
                     </div>

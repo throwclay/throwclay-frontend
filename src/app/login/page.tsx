@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { DefaultLayout } from "@/components/layout/DefaultLayout";
 import type { User as UserType, Studio, StudioLocation, StudioMembership } from "@/types";
 
 
-export default function LoginForm() {
+function LoginFormInner() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -36,6 +36,28 @@ export default function LoginForm() {
 
     const context = useAppContext();
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Open signup flow when arriving via "Get Started" (e.g. /login?mode=signup)
+    useEffect(() => {
+        if (searchParams.get("mode") === "signup") {
+            setShowSignup(true);
+        }
+    }, [searchParams]);
+
+    // Redirect after login/session: verify phone first if needed, then app home
+    useEffect(() => {
+        if (context.isInitializing) return;
+        if (!context.currentUser) return;
+        // If phone is required but missing, go to verify-phone before any app page
+        if (!context.currentUser.phone) {
+            router.replace("/verify-phone");
+            return;
+        }
+        const destination =
+            context.currentUser.activeMode === "studio" ? "/dashboard" : "/profile";
+        router.replace(destination);
+    }, [context.isInitializing, context.currentUser, router]);
 
     const fetchLocationsForStudio = async (
         studioId: string,
@@ -264,22 +286,18 @@ export default function LoginForm() {
             tokenOverride: accessToken
         });
 
-        const userPhone = user?.phone ?? phone ?? null;
-        if (!userPhone) {
-            // No phone on file -> send them to phone verification
-            router.push("/verify-phone");
-            return;
-        }
-       router.push("/dashboard");
+        // Redirect is handled by the useEffect above: it checks currentUser.phone
+        // and sends to /verify-phone or dashboard/profile, so we don't navigate here.
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         context.setCurrentUser(null);
         context.setCurrentStudio(null);
-        context.setAuthToken(null); // clear token
-        context.setPendingInvites([]); // clear invites for previous user
+        context.setAuthToken(null);
+        context.setPendingInvites([]);
         setIsLoggedIn(false);
-        router.push("/landing");
+        router.push("/");
     };
 
     const resetStatus = () => {
@@ -466,6 +484,17 @@ export default function LoginForm() {
             setIsLoading(false);
         }
     };
+
+    // Don't show login/signup UI while checking session or when redirecting logged-in users
+    if (context.isInitializing || context.currentUser) {
+        return (
+            <DefaultLayout>
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </DefaultLayout>
+        );
+    }
 
     if (showSignup) {
         return (
@@ -737,5 +766,21 @@ export default function LoginForm() {
                 </div>
             </div>
         </DefaultLayout>
+    );
+}
+
+export default function LoginForm() {
+    return (
+        <Suspense
+            fallback={
+                <DefaultLayout>
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                        <p className="text-muted-foreground">Loading...</p>
+                    </div>
+                </DefaultLayout>
+            }
+        >
+            <LoginFormInner />
+        </Suspense>
     );
 }

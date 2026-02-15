@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useAppContext } from "@/app/context/AppContext";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -158,18 +159,8 @@ export default function InvitesPanel() {
         </div>
     );
 
-    if (!context.currentUser) {
-        return (
-            <DefaultLayout>
-                <div className="max-w-4xl mx-auto p-8 text-center">
-                    <h1 className="text-2xl font-semibold mb-2">Studio Invites</h1>
-                    <p className="text-muted-foreground">Please log in to view invites.</p>
-                </div>
-            </DefaultLayout>
-        );
-    }
-
     return (
+        <RequireAuth>
         <DefaultLayout>
             <div className="max-w-4xl mx-auto p-8 space-y-4">
                 {renderHeader()}
@@ -256,5 +247,6 @@ export default function InvitesPanel() {
                 )}
             </div>
         </DefaultLayout>
+        </RequireAuth>
     );
 }

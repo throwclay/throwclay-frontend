@@ -1,3 +1,4 @@
+import { LandingRedirectGuard } from "@/components/auth/LandingRedirectGuard";
 import { DashboardMockup } from "@/components/DashboardMockup";
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 import { Badge } from "@/components/ui/badge";
@@ -15,16 +16,8 @@ import {
 import Link from "next/link";
 
 export default function LandingPage() {
-    // const [email, setEmail] = useState("");
-
-    // const handleWaitlistSubmit = (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     // Handle waitlist signup
-    //     alert(`Thank you! We'll notify ${email} when we launch.`);
-    //     setEmail("");
-    // };
-
     return (
+        <LandingRedirectGuard>
         <DefaultLayout headerType="landingPage">
             <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
                 {/* Hero Section */}
@@ -793,5 +786,6 @@ export default function LandingPage() {
                 </section>
             </div>
         </DefaultLayout>
+        </LandingRedirectGuard>
     );
 }

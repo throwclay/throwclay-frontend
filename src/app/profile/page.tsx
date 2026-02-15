@@ -38,6 +38,7 @@ import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { StudentBadge, ArtistProfile as ArtistProfileType } from "@/types";
 import { toast } from "sonner";
 import { useAppContext } from "@/app/context/AppContext";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
@@ -372,19 +373,8 @@ export default function ArtistProfile() {
         setIsEditing(false);
     };
 
-    if (!context.currentUser) {
-        return (
-            <div className="max-w-4xl mx-auto p-8 text-center py-16">
-                <User className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">Not Logged In</h3>
-                    <p className="text-muted-foreground">Please log in to view your profile.</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
+        <RequireAuth>
         <DefaultLayout>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1506,5 +1496,6 @@ export default function ArtistProfile() {
             </Tabs>
         </div>
         </DefaultLayout>
+        </RequireAuth>
     );
 }
