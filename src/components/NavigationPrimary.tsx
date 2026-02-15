@@ -42,6 +42,7 @@ import {
 import { useAppContext } from "@/app/context/AppContext";
 import { supabase } from "@/lib/apis/supabaseClient";
 import { NotificationItem, StudioRole } from "@/types";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 // Custom 3x3 grid component
@@ -137,7 +138,9 @@ const AppGridIcon = ({ className }: { className?: string }) => (
 export function NavigationPrimary() {
     const router = useRouter();
     const pathname = usePathname();
-    const { currentUser, setCurrentUser, currentStudio, pendingInvites } = useAppContext();
+    const { currentUser, setCurrentUser, currentStudio, pendingInvites, isInitializing } =
+        useAppContext();
+    const isGuest = !currentUser;
     const pendingInvitesCount = pendingInvites.filter((i) => i.status === "pending").length;
 
 
@@ -531,24 +534,83 @@ export function NavigationPrimary() {
         <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center py-4">
-                    {/* Left Section - Brand Only */}
+                    {/* Left Section - Brand (link to home when guest) */}
                     <div className="flex items-center">
-                        <div className="flex items-center space-x-3">
-                            <div
-                                className="w-8 h-8 bg-primary flex items-center justify-center"
-                                style={{ borderRadius: "68% 32% 62% 38% / 55% 48% 52% 45%" }}
-                            ></div>
-                            <span className="text-xl font-bold">Throw Clay</span>
-                        </div>
+                        {isGuest ? (
+                            <Link
+                                href="/"
+                                className="flex items-center space-x-3 hover:opacity-90 transition-opacity"
+                            >
+                                <div
+                                    className="w-8 h-8 bg-primary flex items-center justify-center"
+                                    style={{
+                                        borderRadius: "68% 32% 62% 38% / 55% 48% 52% 45%"
+                                    }}
+                                />
+                                <span className="text-xl font-bold">Throw Clay</span>
+                            </Link>
+                        ) : (
+                            <div className="flex items-center space-x-3">
+                                <div
+                                    className="w-8 h-8 bg-primary flex items-center justify-center"
+                                    style={{
+                                        borderRadius: "68% 32% 62% 38% / 55% 48% 52% 45%"
+                                    }}
+                                />
+                                <span className="text-xl font-bold">Throw Clay</span>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Desktop Navigation */}
-                    <div className="hidden lg:flex">
-                        <NavigationContent />
+                    {/* Desktop Navigation - app pages when logged in, public links when guest */}
+                    <div className="hidden lg:flex items-center gap-2">
+                        {isGuest ? (
+                            <>
+                                <Link href="/studios">
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                                        Find Studios
+                                    </Button>
+                                </Link>
+                                <Link href="/ceramics">
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                                        Ceramics
+                                    </Button>
+                                </Link>
+                            </>
+                        ) : (
+                            <NavigationContent />
+                        )}
                     </div>
 
-                    {/* Right Section - Studio Menu + User Menu */}
+                    {/* Right Section - Sign In / Get Started when guest; Studio + User when logged in */}
                     <div className="flex items-center space-x-4">
+                        {isGuest ? (
+                            <>
+                                <div className="hidden md:flex items-center gap-2">
+                                    <Link href="/login">
+                                        <Button variant="outline" size="sm">
+                                            Sign In
+                                        </Button>
+                                    </Link>
+                                    <Link href="/login?mode=signup">
+                                        <Button size="sm">Get Started</Button>
+                                    </Link>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="lg:hidden"
+                                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                >
+                                    {isMobileMenuOpen ? (
+                                        <X className="w-5 h-5" />
+                                    ) : (
+                                        <Menu className="w-5 h-5" />
+                                    )}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
                         {/* Studio Menu for Studio Users (guarded) */}
                         {currentUser?.activeMode === "studio" &&
                             currentStudio &&
@@ -848,10 +910,10 @@ export function NavigationPrimary() {
                                 >
                                     Logout
                                 </DropdownMenuItem>
-                            </DropdownMenuContent>
+                                </DropdownMenuContent>
                         </DropdownMenu>
 
-                        {/* Mobile menu button */}
+                        {/* Mobile menu button (logged in) */}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -864,6 +926,8 @@ export function NavigationPrimary() {
                                 <Menu className="w-5 h-5" />
                             )}
                         </Button>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -871,50 +935,90 @@ export function NavigationPrimary() {
                 {isMobileMenuOpen && (
                     <div className="lg:hidden border-t">
                         <div className="px-2 py-6 space-y-6">
-                            {/* Mobile Menu Items - All Items */}
-                            <div className="grid grid-cols-1 gap-2">
-                                {allNavigationItems.map((item) => {
-                                    const Icon = item.icon;
-                                    const isActive = currentPage === item.id;
-                                    const isInvites = item.id === "invites";
-
-                                    return (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                router.push(`/${item.id}`);
-                                                setIsMobileMenuOpen(false);
-                                            }}
-                                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                                isActive
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                                            }`}
+                            {isGuest ? (
+                                <div className="grid grid-cols-1 gap-2">
+                                    <Link
+                                        href="/studios"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <div className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent">
+                                            <Building2 className="w-5 h-5" />
+                                            <span>Find Studios</span>
+                                        </div>
+                                    </Link>
+                                    <Link
+                                        href="/ceramics"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <div className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent">
+                                            <Grid3X3 className="w-5 h-5" />
+                                            <span>Ceramics</span>
+                                        </div>
+                                    </Link>
+                                    <div className="pt-4 space-y-2 border-t">
+                                        <Link
+                                            href="/login"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block"
                                         >
-                                            <Icon className="w-5 h-5" />
-                                            <span className="flex-1 text-left">{item.label}</span>
-                                            {item.id === "staff" &&
-                                                currentUser?.activeMode === "studio" &&
-                                                currentStudio && (
+                                            <Button variant="outline" className="w-full">
+                                                Sign In
+                                            </Button>
+                                        </Link>
+                                        <Link
+                                            href="/login?mode=signup"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block"
+                                        >
+                                            <Button className="w-full">Get Started</Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-2">
+                                    {allNavigationItems.map((item) => {
+                                        const Icon = item.icon;
+                                        const isActive = currentPage === item.id;
+                                        const isInvites = item.id === "invites";
+
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => {
+                                                    router.push(`/${item.id}`);
+                                                    setIsMobileMenuOpen(false);
+                                                }}
+                                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                    isActive
+                                                        ? "bg-primary text-primary-foreground"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                                }`}
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                                <span className="flex-1 text-left">{item.label}</span>
+                                                {item.id === "staff" &&
+                                                    currentUser?.activeMode === "studio" &&
+                                                    currentStudio && (
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="text-xs px-1.5 py-0.5"
+                                                        >
+                                                            5
+                                                        </Badge>
+                                                    )}
+                                                {isInvites && pendingInvitesCount > 0 && (
                                                     <Badge
                                                         variant="secondary"
                                                         className="text-xs px-1.5 py-0.5"
                                                     >
-                                                        5
+                                                        {pendingInvitesCount}
                                                     </Badge>
                                                 )}
-                                            {isInvites && pendingInvitesCount > 0 && (
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="text-xs px-1.5 py-0.5"
-                                                >
-                                                    {pendingInvitesCount}
-                                                </Badge>
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

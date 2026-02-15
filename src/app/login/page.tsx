@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,14 @@ export default function LoginForm() {
 
     const context = useAppContext();
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Open signup flow when arriving via "Get Started" (e.g. /login?mode=signup)
+    useEffect(() => {
+        if (searchParams.get("mode") === "signup") {
+            setShowSignup(true);
+        }
+    }, [searchParams]);
 
     // Redirect to app home if user already has an active session
     useEffect(() => {
