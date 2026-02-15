@@ -56,6 +56,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppContext } from "@/app/context/AppContext";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { StudioSettings } from "@/components/StudioSettings";
 import { InvoicePreview } from "@/components/InvoicePreview";
 
@@ -579,22 +580,8 @@ export default function Settings() {
             ? currentStudio?.subscription !== "free"
             : currentUser?.subscription !== "free";
 
-    if (!currentUser) {
-        return (
-            <DefaultLayout>
-                (
-                <div className="max-w-4xl mx-auto p-6">
-                    <div className="text-center">
-                        <h1>Settings</h1>
-                        <p className="text-muted-foreground">Please log in to access settings</p>
-                    </div>
-                </div>
-                )
-            </DefaultLayout>
-        );
-    }
-
     return (
+        <RequireAuth>
         <DefaultLayout>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
@@ -3611,5 +3598,6 @@ export default function Settings() {
                 </Dialog>
             </div>
         </DefaultLayout>
+        </RequireAuth>
     );
 }

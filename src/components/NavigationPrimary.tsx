@@ -40,6 +40,7 @@ import {
 } from "./ui/dropdown-menu";
 
 import { useAppContext } from "@/app/context/AppContext";
+import { supabase } from "@/lib/apis/supabaseClient";
 import { NotificationItem, StudioRole } from "@/types";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -839,7 +840,10 @@ export function NavigationPrimary() {
                                 <DropdownMenuSeparator />
 
                                 <DropdownMenuItem
-                                    onClick={() => router.push("/login")}
+                                    onClick={async () => {
+                                        await supabase.auth.signOut();
+                                        router.replace("/");
+                                    }}
                                     className="cursor-pointer text-destructive focus:text-destructive"
                                 >
                                     Logout

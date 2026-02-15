@@ -20,7 +20,13 @@ export default function VerifyPhonePage() {
             const { data, error } = await supabase.auth.getUser();
 
             if (error || !data.user) {
-                router.push("/login");
+                router.replace("/login");
+                return;
+            }
+
+            // User already has phone verified → skip this page and go to app home
+            if (data.user.phone) {
+                router.replace("/dashboard");
                 return;
             }
 
@@ -29,7 +35,7 @@ export default function VerifyPhonePage() {
         };
 
         loadUser();
-    }, []);
+    }, [router]);
 
     const handleVerified = () => {
         const nextRoute = context.currentUser?.activeMode === "studio" ? "/dashboard" : "/profile";

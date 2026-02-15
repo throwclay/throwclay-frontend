@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,16 @@ export default function LoginForm() {
 
     const context = useAppContext();
     const router = useRouter();
+
+    // Redirect to app home if user already has an active session
+    useEffect(() => {
+        if (context.isInitializing) return;
+        if (context.currentUser) {
+            const destination =
+                context.currentUser.activeMode === "studio" ? "/dashboard" : "/profile";
+            router.replace(destination);
+        }
+    }, [context.isInitializing, context.currentUser, router]);
 
     const fetchLocationsForStudio = async (
         studioId: string,
@@ -273,13 +283,14 @@ export default function LoginForm() {
        router.push("/dashboard");
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         context.setCurrentUser(null);
         context.setCurrentStudio(null);
-        context.setAuthToken(null); // clear token
-        context.setPendingInvites([]); // clear invites for previous user
+        context.setAuthToken(null);
+        context.setPendingInvites([]);
         setIsLoggedIn(false);
-        router.push("/landing");
+        router.push("/");
     };
 
     const resetStatus = () => {
@@ -466,6 +477,17 @@ export default function LoginForm() {
             setIsLoading(false);
         }
     };
+
+    // Don't show login/signup UI while checking session or when redirecting logged-in users
+    if (context.isInitializing || context.currentUser) {
+        return (
+            <DefaultLayout>
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </DefaultLayout>
+        );
+    }
 
     if (showSignup) {
         return (
