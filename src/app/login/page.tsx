@@ -45,14 +45,18 @@ export default function LoginForm() {
         }
     }, [searchParams]);
 
-    // Redirect to app home if user already has an active session
+    // Redirect after login/session: verify phone first if needed, then app home
     useEffect(() => {
         if (context.isInitializing) return;
-        if (context.currentUser) {
-            const destination =
-                context.currentUser.activeMode === "studio" ? "/dashboard" : "/profile";
-            router.replace(destination);
+        if (!context.currentUser) return;
+        // If phone is required but missing, go to verify-phone before any app page
+        if (!context.currentUser.phone) {
+            router.replace("/verify-phone");
+            return;
         }
+        const destination =
+            context.currentUser.activeMode === "studio" ? "/dashboard" : "/profile";
+        router.replace(destination);
     }, [context.isInitializing, context.currentUser, router]);
 
     const fetchLocationsForStudio = async (
@@ -282,13 +286,8 @@ export default function LoginForm() {
             tokenOverride: accessToken
         });
 
-        const userPhone = user?.phone ?? phone ?? null;
-        if (!userPhone) {
-            // No phone on file -> send them to phone verification
-            router.push("/verify-phone");
-            return;
-        }
-       router.push("/dashboard");
+        // Redirect is handled by the useEffect above: it checks currentUser.phone
+        // and sends to /verify-phone or dashboard/profile, so we don't navigate here.
     };
 
     const handleLogout = async () => {
