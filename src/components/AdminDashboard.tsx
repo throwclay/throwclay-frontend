@@ -22,12 +22,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
-import {
-    useAppContext,
-    type Studio,
-    type FiringSchedule,
-    type User
-} from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { Studio, FiringSchedule, User } from "@/types";
 
 export function AdminDashboard() {
     const { currentStudio, setCurrentStudio } = useAppContext();
@@ -38,30 +34,40 @@ export function AdminDashboard() {
     const [editingFiring, setEditingFiring] = useState<FiringSchedule | null>(null);
 
     // Mock members data
-    const [members, setMembers] = useState<User[]>([
+    const [members, setMembers] = useState<(User & { studioId?: string })[]>([
         {
             id: "artist1",
             name: "Jane Potter",
+            handle: "janepotter",
             email: "jane@studio.com",
-            type: "studio_artist",
+            type: "artist",
             studioId: "1",
             subscription: "studio",
             profile: {
                 bio: "Ceramic artist specializing in functional pottery",
-                socialMedia: { instagram: "@janepotter" }
-            }
+                socialMedia: { instagram: "@janepotter" },
+                branding: { primaryColor: "#000000" }
+            },
+            createdAt: "",
+            isActive: true,
+            phone: ""
         },
         {
             id: "artist2",
             name: "Mike Clay",
+            handle: "mikeclay",
             email: "mike@studio.com",
-            type: "studio_artist",
+            type: "artist",
             studioId: "1",
             subscription: "studio",
             profile: {
                 bio: "Sculptor and ceramist exploring abstract forms",
-                socialMedia: { website: "mikeclay.art" }
-            }
+                socialMedia: { website: "mikeclay.art" },
+                branding: { primaryColor: "#000000" }
+            },
+            createdAt: "",
+            isActive: true,
+            phone: ""
         }
     ]);
 
@@ -85,7 +91,7 @@ export function AdminDashboard() {
 
         const updatedStudio = {
             ...currentStudio,
-            glazes: [...currentStudio.glazes, newGlaze.trim()]
+            glazes: [...(currentStudio.glazes ?? []), newGlaze.trim()]
         };
         setCurrentStudio(updatedStudio);
         setNewGlaze("");
@@ -97,7 +103,7 @@ export function AdminDashboard() {
 
         const updatedStudio = {
             ...currentStudio,
-            glazes: currentStudio.glazes.filter((g) => g !== glaze)
+            glazes: (currentStudio.glazes ?? []).filter((g) => g !== glaze)
         };
         setCurrentStudio(updatedStudio);
     };
@@ -112,7 +118,7 @@ export function AdminDashboard() {
 
         const updatedStudio = {
             ...currentStudio,
-            firingSchedule: [...currentStudio.firingSchedule, firing]
+            firingSchedule: [...(currentStudio.firingSchedule ?? []), firing]
         };
         setCurrentStudio(updatedStudio);
         setNewFiring({
@@ -131,7 +137,7 @@ export function AdminDashboard() {
 
         const updatedStudio = {
             ...currentStudio,
-            firingSchedule: currentStudio.firingSchedule.filter((f) => f.id !== firingId)
+            firingSchedule: (currentStudio.firingSchedule ?? []).filter((f) => f.id !== firingId)
         };
         setCurrentStudio(updatedStudio);
     };
@@ -139,13 +145,17 @@ export function AdminDashboard() {
     const handleAddMember = () => {
         if (!newMember.name.trim() || !newMember.email.trim()) return;
 
-        const member: User = {
+        const member: User & { studioId?: string } = {
             id: Date.now().toString(),
             name: newMember.name,
+            handle: newMember.name.toLowerCase().replace(/\s+/g, ""),
             email: newMember.email,
-            type: newMember.type,
+            phone: "",
+            type: "artist",
             studioId: currentStudio?.id,
-            subscription: "studio"
+            subscription: "studio",
+            createdAt: new Date().toISOString(),
+            isActive: true
         };
 
         setMembers((prev) => [...prev, member]);
@@ -446,11 +456,11 @@ export function AdminDashboard() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Available Glazes ({currentStudio.glazes.length})</CardTitle>
+                            <CardTitle>Available Glazes ({(currentStudio.glazes ?? []).length})</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-wrap gap-2">
-                                {currentStudio.glazes.map((glaze) => (
+                                {(currentStudio.glazes ?? []).map((glaze) => (
                                     <div
                                         key={glaze}
                                         className="flex items-center space-x-2 bg-muted rounded-lg px-3 py-2"
@@ -583,7 +593,7 @@ export function AdminDashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {currentStudio.firingSchedule.map((firing) => (
+                        {(currentStudio.firingSchedule ?? []).map((firing) => (
                             <Card key={firing.id}>
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
@@ -680,7 +690,7 @@ export function AdminDashboard() {
                                     type="number"
                                     min="0"
                                     max="50"
-                                    value={currentStudio.commissionRate}
+                                    value={(currentStudio.commissionRate ?? 0)}
                                     onChange={(e) =>
                                         handleCommissionChange(parseInt(e.target.value) || 0)
                                     }
@@ -696,19 +706,19 @@ export function AdminDashboard() {
                                 <div className="space-y-2 mt-2 text-sm">
                                     <div className="flex justify-between">
                                         <span>Artist receives:</span>
-                                        <span>{100 - currentStudio.commissionRate}%</span>
+                                        <span>{100 - (currentStudio.commissionRate ?? 0)}%</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Studio commission:</span>
-                                        <span>{currentStudio.commissionRate}%</span>
+                                        <span>{(currentStudio.commissionRate ?? 0)}%</span>
                                     </div>
                                 </div>
                                 <div className="mt-3 pt-2 border-t text-sm">
                                     <div className="flex justify-between">
                                         <span>Example: $100 sale</span>
                                         <span>
-                                            Artist: ${100 - currentStudio.commissionRate} | Studio:
-                                            ${currentStudio.commissionRate}
+                                            Artist: ${100 - (currentStudio.commissionRate ?? 0)} | Studio:
+                                            ${(currentStudio.commissionRate ?? 0)}
                                         </span>
                                     </div>
                                 </div>

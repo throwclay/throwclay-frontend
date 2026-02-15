@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
-import type { StudioInvite, User } from "@/types";
+import type { Studio, StudioInvite, User } from "@/types";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
@@ -97,52 +97,40 @@ export default function InvitesPanel() {
             await context.refreshInvites({ status: "pending" });
 
             // 3) Update current user modes / flags
-            context.setCurrentUser((prev) => {
-                if (!prev) return prev;
-                const updated: any = { ...prev };
-
-                updated.hasStudioMemberships = true;
-
-                const isStudioRole = ["owner", "admin"].includes(invite.role);
-
-                if (isStudioRole) {
-                    const currentModes = updated.availableModes ?? ["artist"];
-                    if (!currentModes.includes("studio")) {
-                        updated.availableModes = ["artist", "studio"];
-                    }
-
-                    // Keep them in artist mode by default, but ensure something is set
-                    if (!updated.activeMode) {
-                        updated.activeMode = "artist";
-                    }
-                }
-
-                return updated;
-            });
+            const prev = context.currentUser;
+            if (prev) {
+                const updated = {
+                    ...prev,
+                    hasStudioMemberships: true,
+                    availableModes: ["owner", "admin"].includes(invite.role)
+                        ? prev.availableModes?.includes("studio")
+                            ? prev.availableModes
+                            : (["artist", "studio"] as const)
+                        : prev.availableModes,
+                    activeMode: prev.activeMode ?? "artist"
+                };
+                context.setCurrentUser(updated as User);
+            }
 
             // 4) Seed context.currentStudio if they don't have one yet
             if (!context.currentStudio && invite.studios) {
-                context.setCurrentStudio((prev) => {
-                    if (prev) return prev;
-
-                    return {
-                        id: invite.studios?.id,
-                        name: invite.studios?.name,
-                        handle: invite.studios?.handle,
-                        email: "",
-                        website: "",
-                        description: "",
-                        locations: [],
-                        isActive: true,
-                        plan: "studio-solo",
-                        createdAt: new Date().toISOString(),
-                        memberCount: 0,
-                        classCount: 0,
-                        glazes: [],
-                        firingSchedule: [],
-                        roleForCurrentUser: invite.role as any
-                    };
-                });
+                context.setCurrentStudio({
+                    id: invite.studios?.id,
+                    name: invite.studios?.name,
+                    handle: invite.studios?.handle,
+                    email: "",
+                    website: "",
+                    description: "",
+                    locations: [],
+                    isActive: true,
+                    plan: "studio-solo",
+                    createdAt: new Date().toISOString(),
+                    memberCount: 0,
+                    classCount: 0,
+                    glazes: [],
+                    firingSchedule: [],
+                    roleForCurrentUser: invite.role
+                } as Studio);
             }
         } catch (err) {
             console.error("Error accepting invite", err);

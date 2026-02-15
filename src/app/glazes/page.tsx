@@ -70,7 +70,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAppContext, type GlazeExperiment, type PhotoEntry } from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { GlazeExperiment, PhotoEntry } from "@/types";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";

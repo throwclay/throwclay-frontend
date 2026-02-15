@@ -1,11 +1,7 @@
 "use client";
-import {
-    useAppContext,
-    type PotteryEntry,
-    type Project,
-    type UsageStats,
-    type WhiteboardPage
-} from "@/app/context/AppContext";
+import { useRouter } from "next/navigation";
+import { useAppContext } from "@/app/context/AppContext";
+import type { PotteryEntry, Project, UsageStats, WhiteboardPage } from "@/types";
 import {
     AlertCircle,
     BarChart3,
@@ -72,7 +68,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 export default function PotteryJournal() {
-    const { currentUser, currentStudio, setCurrentThrow, navigateToPage } = useAppContext();
+    const router = useRouter();
+    const { currentUser, currentStudio, setCurrentThrow } = useAppContext();
     const [activeTab, setActiveTab] = useState("throws");
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -499,7 +496,7 @@ export default function PotteryJournal() {
         // If whiteboard mode, navigate to whiteboard editor
         if (newThrowData.whiteboardMode) {
             setCurrentThrow(newThrow);
-            navigateToPage("whiteboard");
+            router.push("/whiteboard");
         }
     };
 
@@ -507,7 +504,7 @@ export default function PotteryJournal() {
         if (throwItem.whiteboardMode && throwItem.whiteboardPages.length > 0) {
             // Navigate to whiteboard editor
             setCurrentThrow(throwItem);
-            navigateToPage("whiteboard");
+            router.push("/whiteboard");
         } else {
             // Open traditional form editor
             setEditingThrow(throwItem);

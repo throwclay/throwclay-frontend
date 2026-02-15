@@ -9,7 +9,7 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Badge } from "./ui/badge";
 import { PhotoManager } from "./PhotoManager";
-import type { PotteryEntry, PhotoEntry } from "@/app/context/AppContext";
+import type { PotteryEntry, PhotoEntry } from "@/types";
 
 interface EntryFormProps {
     entry?: PotteryEntry | null;
@@ -80,18 +80,32 @@ const glazeOptions = [
 ];
 
 export function EntryForm({ entry, onSave, onCancel }: EntryFormProps) {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        date: string;
+        title: string;
+        potteryType: string;
+        clayType: string;
+        techniques: string[];
+        firingType: string;
+        firingTemp: string;
+        glazes: string[];
+        status: PotteryEntry["status"];
+        notes: string;
+        photos: PhotoEntry[];
+        challenges: string;
+        nextSteps: string;
+    }>({
         date: new Date().toISOString().split("T")[0],
         title: "",
         potteryType: "",
         clayType: "",
-        techniques: [] as string[],
+        techniques: [],
         firingType: "",
         firingTemp: "",
-        glazes: [] as string[],
-        status: "planning" as const,
+        glazes: [],
+        status: "planning",
         notes: "",
-        photos: [] as PhotoEntry[],
+        photos: [],
         challenges: "",
         nextSteps: ""
     });
@@ -121,7 +135,7 @@ export function EntryForm({ entry, onSave, onCancel }: EntryFormProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData);
+        onSave(formData as Omit<PotteryEntry, "id">);
     };
 
     const addTechnique = (technique: string) => {

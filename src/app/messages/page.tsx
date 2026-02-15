@@ -63,14 +63,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { useAppContext, type Message, type ChatGroup, type User } from "@/app/context/AppContext";
+import { useAppContext } from "@/app/context/AppContext";
+import type { Message, ChatGroup, User } from "@/types";
 
 import { DefaultLayout } from "@/components/layout/DefaultLayout";
 
 interface ChatParticipant extends User {
     lastSeen?: string;
     isOnline?: boolean;
-    role?: "admin" | "member" | "owner";
+    role?: "admin" | "member" | "owner" | "instructor" | "student";
+    studioId?: string;
 }
 
 interface FileAttachment {
@@ -175,33 +177,42 @@ export default function MessagingCenter() {
             name: "Emma Davis",
             email: "emma@artisanclay.com",
             handle: "emmadavis",
+            phone: "",
             type: "artist",
             role: "instructor",
             studioId: currentStudio?.id,
             isOnline: true,
-            lastSeen: "2025-06-14T11:30:00Z"
+            lastSeen: "2025-06-14T11:30:00Z",
+            createdAt: "2025-06-01",
+            isActive: true
         },
         {
             id: "manager1",
             name: "Sarah Wilson",
             email: "sarah@artisanclay.com",
             handle: "sarahwilson",
+            phone: "",
             type: "artist",
             role: "admin",
             studioId: currentStudio?.id,
             isOnline: true,
-            lastSeen: "2025-06-14T11:25:00Z"
+            lastSeen: "2025-06-14T11:25:00Z",
+            createdAt: "2025-06-01",
+            isActive: true
         },
         {
             id: "student1",
             name: "Alex Johnson",
             email: "alex@example.com",
             handle: "alexj",
+            phone: "",
             type: "artist",
             role: "student",
             studioId: currentStudio?.id,
             isOnline: false,
-            lastSeen: "2025-06-14T10:00:00Z"
+            lastSeen: "2025-06-14T10:00:00Z",
+            createdAt: "2025-06-01",
+            isActive: true
         }
     ]);
 
@@ -615,7 +626,7 @@ export default function MessagingCenter() {
                                     const unreadCount = messages.filter(
                                         (msg) =>
                                             msg.groupId === chat.id &&
-                                            !msg.readBy.includes(currentUser?.id || "")
+                                            !(msg.readBy ?? []).includes(currentUser?.id || "")
                                     ).length;
                                     return (
                                         <div

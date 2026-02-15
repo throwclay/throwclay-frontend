@@ -169,7 +169,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
     };
 
     const handleEnroll = () => {
-        if (mockClassData.enrolled >= mockClassData.capacity) {
+        if ((mockClassData.enrolled ?? 0) >= (mockClassData.capacity ?? 0)) {
             setShowWaitlistDialog(true);
         } else {
             setShowEnrollDialog(true);
@@ -316,7 +316,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                                 <div className="flex items-center space-x-2">
                                     <Avatar className="w-8 h-8">
                                         <AvatarFallback>
-                                            {mockClassData.instructor
+                                            {(mockClassData.instructor ?? "")
                                                 .split(" ")
                                                 .map((n) => n[0])
                                                 .join("")}
@@ -383,7 +383,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                                         <h3 className="font-medium text-sm text-muted-foreground">
                                             Class Size
                                         </h3>
-                                        <p>Maximum {mockClassData.capacity} students</p>
+                                        <p>Maximum {mockClassData.capacity ?? 0} students</p>
                                     </div>
                                 </div>
                                 <div className="space-y-3">
@@ -537,7 +537,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                                     <div className="flex items-center justify-between text-sm">
                                         <span>Enrollment:</span>
                                         <span>
-                                            {mockClassData.enrolled}/{mockClassData.capacity}{" "}
+                                            {mockClassData.enrolled ?? 0}/{mockClassData.capacity ?? 0}{" "}
                                             enrolled
                                         </span>
                                     </div>
@@ -545,13 +545,13 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                                         <div
                                             className="bg-primary h-2 rounded-full transition-all"
                                             style={{
-                                                width: `${(mockClassData.enrolled / mockClassData.capacity) * 100}%`
+                                                width: `${((mockClassData.enrolled ?? 0) / (mockClassData.capacity ?? 1)) * 100}%`
                                             }}
                                         />
                                     </div>
-                                    {mockClassData.waitlist > 0 && (
+                                    {(mockClassData.waitlist ?? 0) > 0 && (
                                         <p className="text-xs text-muted-foreground">
-                                            {mockClassData.waitlist} people on waitlist
+                                            {mockClassData.waitlist ?? 0} people on waitlist
                                         </p>
                                     )}
                                 </div>
@@ -563,7 +563,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                                     onClick={handleEnroll}
                                     disabled={!selectedPricing}
                                 >
-                                    {mockClassData.enrolled >= mockClassData.capacity
+                                    {(mockClassData.enrolled ?? 0) >= (mockClassData.capacity ?? 0)
                                         ? "Join Waitlist"
                                         : "Enroll Now"}
                                 </Button>
@@ -695,7 +695,7 @@ export function ClassPreview({ classData, onBack }: ClassPreviewProps) {
                             <div className="flex items-center space-x-2 mb-2">
                                 <Users className="w-4 h-4 text-muted-foreground" />
                                 <span className="text-sm">
-                                    Current waitlist position: #{mockClassData.waitlist + 1}
+                                    Current waitlist position: #{(mockClassData.waitlist ?? 0) + 1}
                                 </span>
                             </div>
                             <p className="text-sm text-muted-foreground">

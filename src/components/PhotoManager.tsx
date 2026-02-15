@@ -22,7 +22,7 @@ import {
 import { DrawingCanvas } from "./DrawingCanvas";
 import { PhotoEditor } from "./PhotoEditor";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import type { PhotoEntry } from "@/app/context/AppContext";
+import type { PhotoEntry } from "@/types";
 
 interface PhotoManagerProps {
     photos: PhotoEntry[];

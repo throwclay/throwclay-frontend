@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     ArrowLeft,
     Plus,
@@ -18,7 +18,8 @@ import {
     Save,
     FileText,
     History,
-    Tag
+    Tag,
+    Loader2
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -47,6 +48,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { toast } from "sonner";
+import { useAppContext } from "@/app/context/AppContext";
+import type { ClassTemplate as ClassTemplateType } from "@/types";
 
 interface ClassTemplate {
     id: string;
@@ -108,6 +111,7 @@ export function ClassTemplateManager({
     onSelectTemplate,
     mode = "manage"
 }: ClassTemplateManagerProps) {
+    const context = useAppContext();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -117,217 +121,80 @@ export function ClassTemplateManager({
     const [newTemplateDescription, setNewTemplateDescription] = useState("");
     const [newTemplateCategory, setNewTemplateCategory] = useState("");
     const [newTemplateTags, setNewTemplateTags] = useState("");
+    const [templates, setTemplates] = useState<ClassTemplate[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Mock template data
-    const mockTemplates: ClassTemplate[] = [
-        {
-            id: "1",
-            name: "Beginner Wheel Throwing",
-            description: "Perfect template for introductory wheel throwing classes",
-            category: "Wheel Throwing",
-            level: "Beginner",
-            duration: "8 weeks",
-            capacity: 12,
-            materials: "Clay, glazes, and tools included",
-            prerequisites: "No experience required",
-            whatYouLearn: [
-                "Clay preparation and wedging",
-                "Centering on the wheel",
-                "Basic pulling techniques",
-                "Trimming and finishing"
-            ],
-            pricingTiers: [
-                {
-                    name: "Early Bird",
-                    price: 280,
-                    description: "Early registration discount",
-                    isDefault: false
-                },
-                { name: "Standard", price: 320, description: "Regular pricing", isDefault: true }
-            ],
-            discountCodes: [
-                {
-                    code: "BEGINNER20",
-                    type: "percentage",
-                    value: 20,
-                    description: "First-time student discount"
-                }
-            ],
-            images: [
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
-                "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800"
-            ],
-            thumbnail: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
-            createdBy: "Sarah Martinez",
-            createdDate: "2024-12-15",
-            lastModified: "2025-01-08",
-            version: "2.1",
-            isPublic: true,
-            usageCount: 15,
-            tags: ["beginner", "wheel", "pottery", "fundamentals"],
-            versions: [
-                {
-                    id: "1",
-                    version: "2.1",
-                    description: "Updated pricing and materials list",
-                    createdBy: "Sarah Martinez",
-                    createdDate: "2025-01-08",
-                    isActive: true
-                },
-                {
-                    id: "2",
-                    version: "2.0",
-                    description: "Major update with new curriculum",
-                    createdBy: "Sarah Martinez",
-                    createdDate: "2024-12-20",
-                    isActive: false
-                },
-                {
-                    id: "3",
-                    version: "1.0",
-                    description: "Initial template creation",
-                    createdBy: "Sarah Martinez",
-                    createdDate: "2024-12-15",
-                    isActive: false
-                }
-            ]
-        },
-        {
-            id: "2",
-            name: "Advanced Glazing Workshop",
-            description: "Comprehensive glazing techniques for experienced potters",
-            category: "Glazing",
-            level: "Advanced",
-            duration: "4 weeks",
-            capacity: 8,
-            materials: "Glazes, brushes, and test tiles provided",
-            prerequisites: "Basic pottery experience required",
-            whatYouLearn: [
-                "Advanced glazing techniques",
-                "Layering and blending",
-                "Troubleshooting glaze issues",
-                "Creating custom glazes"
-            ],
-            pricingTiers: [
-                {
-                    name: "Standard",
-                    price: 280,
-                    description: "Regular workshop price",
-                    isDefault: true
-                },
-                {
-                    name: "Premium",
-                    price: 350,
-                    description: "Includes take-home materials",
-                    isDefault: false
-                }
-            ],
-            discountCodes: [],
-            images: ["https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800"],
-            thumbnail: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=400",
-            createdBy: "Michael Chen",
-            createdDate: "2024-11-20",
-            lastModified: "2024-12-05",
-            version: "1.2",
-            isPublic: true,
-            usageCount: 8,
-            tags: ["advanced", "glazing", "workshop", "techniques"],
-            versions: [
-                {
-                    id: "1",
-                    version: "1.2",
-                    description: "Added new glazing techniques",
-                    createdBy: "Michael Chen",
-                    createdDate: "2024-12-05",
-                    isActive: true
-                },
-                {
-                    id: "2",
-                    version: "1.1",
-                    description: "Updated materials list",
-                    createdBy: "Michael Chen",
-                    createdDate: "2024-11-25",
-                    isActive: false
-                },
-                {
-                    id: "3",
-                    version: "1.0",
-                    description: "Initial template",
-                    createdBy: "Michael Chen",
-                    createdDate: "2024-11-20",
-                    isActive: false
-                }
-            ]
-        },
-        {
-            id: "3",
-            name: "Kids Pottery Fun",
-            description: "Engaging pottery activities designed for children",
-            category: "Kids Classes",
-            level: "Kids (8-12)",
-            duration: "6 weeks",
-            capacity: 10,
-            materials: "Child-safe clay and tools provided",
-            prerequisites: "Ages 8-12, no experience needed",
-            whatYouLearn: [
-                "Basic clay handling",
-                "Simple handbuilding techniques",
-                "Painting and decorating",
-                "Safety in the studio"
-            ],
-            pricingTiers: [
-                {
-                    name: "Standard",
-                    price: 180,
-                    description: "Regular kids class price",
-                    isDefault: true
-                }
-            ],
-            discountCodes: [
-                {
-                    code: "SIBLING15",
-                    type: "percentage",
-                    value: 15,
-                    description: "Sibling discount"
-                }
-            ],
-            images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800"],
-            thumbnail: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-            createdBy: "Emma Rodriguez",
-            createdDate: "2024-10-10",
-            lastModified: "2024-12-01",
-            version: "1.3",
-            isPublic: true,
-            usageCount: 12,
-            tags: ["kids", "children", "fun", "handbuilding"],
-            versions: [
-                {
-                    id: "1",
-                    version: "1.3",
-                    description: "Updated safety protocols",
-                    createdBy: "Emma Rodriguez",
-                    createdDate: "2024-12-01",
-                    isActive: true
-                },
-                {
-                    id: "2",
-                    version: "1.2",
-                    description: "Added new activities",
-                    createdBy: "Emma Rodriguez",
-                    createdDate: "2024-11-15",
-                    isActive: false
-                },
-                {
-                    id: "3",
-                    version: "1.1",
-                    description: "Improved age guidelines",
-                    createdBy: "Emma Rodriguez",
-                    createdDate: "2024-10-25",
-                    isActive: false
-                }
-            ]
+    // Fetch templates from API
+    const fetchTemplates = useCallback(async () => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            setTemplates([]);
+            return;
         }
-    ];
+
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (selectedCategory !== "all") {
+                params.append("category", selectedCategory);
+            }
+            if (searchTerm) {
+                params.append("search", searchTerm);
+            }
+
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/class-templates?${params.toString()}`,
+                {
+                    headers: { Authorization: `Bearer ${context.authToken}` }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to load templates");
+            }
+
+            const data = await res.json();
+            // Transform API data to match component interface
+            const transformedTemplates: ClassTemplate[] = (data.templates || []).map((t: any) => ({
+                id: t.id,
+                name: t.name,
+                description: t.description || "",
+                category: t.category || "",
+                level: t.level || "",
+                duration: t.duration || "",
+                capacity: t.capacity || 0,
+                materials: t.materials || "",
+                prerequisites: t.prerequisites || "",
+                whatYouLearn: t.whatYouLearn || [],
+                pricingTiers: t.pricingTiers || [],
+                discountCodes: t.discountCodes || [],
+                images: t.images || [],
+                thumbnail: t.thumbnail || "",
+                createdBy: t.createdBy || "",
+                createdDate: t.createdDate || t.createdAt || "",
+                lastModified: t.lastModified || t.updatedAt || "",
+                version: t.version || "1.0",
+                isPublic: t.isPublic || false,
+                usageCount: t.usageCount || 0,
+                tags: t.tags || [],
+                baseTemplateId: t.baseTemplateId,
+                versions: [] // Versions not in API response yet
+            }));
+
+            setTemplates(transformedTemplates);
+        } catch (err: any) {
+            console.error("Error fetching templates", err);
+            toast.error(err.message || "Failed to load templates");
+            setTemplates([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [context.currentStudio?.id, context.authToken, selectedCategory, searchTerm]);
+
+    useEffect(() => {
+        fetchTemplates();
+    }, [fetchTemplates]);
+
 
     const categories = [
         "all",
@@ -339,28 +206,64 @@ export function ClassTemplateManager({
         "Workshops"
     ];
 
-    const filteredTemplates = mockTemplates.filter((template) => {
-        const matchesSearch =
-            template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            template.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesCategory =
-            selectedCategory === "all" || template.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    // Filter templates client-side (API already filters by category and search)
+    const filteredTemplates = templates;
 
-    const handleCreateTemplate = () => {
+    const handleCreateTemplate = async () => {
         if (!newTemplateName.trim()) {
             toast.error("Please enter a template name");
             return;
         }
 
-        toast.success("Template created successfully!");
-        setShowCreateDialog(false);
-        setNewTemplateName("");
-        setNewTemplateDescription("");
-        setNewTemplateCategory("");
-        setNewTemplateTags("");
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/class-templates`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: newTemplateName,
+                        description: newTemplateDescription,
+                        category: newTemplateCategory,
+                        level: "",
+                        duration: "",
+                        capacity: 0,
+                        materials: "",
+                        prerequisites: "",
+                        whatYouLearn: [],
+                        pricingTiers: [],
+                        discountCodes: [],
+                        images: [],
+                        thumbnail: "",
+                        isPublic: false
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to create template");
+            }
+
+            toast.success("Template created successfully!");
+            setShowCreateDialog(false);
+            setNewTemplateName("");
+            setNewTemplateDescription("");
+            setNewTemplateCategory("");
+            setNewTemplateTags("");
+            fetchTemplates();
+        } catch (err: any) {
+            console.error("Error creating template", err);
+            toast.error(err.message || "Failed to create template");
+        }
     };
 
     const handleSelectTemplate = (template: ClassTemplate) => {
@@ -370,12 +273,72 @@ export function ClassTemplateManager({
         }
     };
 
-    const handleDuplicateTemplate = (template: ClassTemplate) => {
-        toast.success(`Template "${template.name}" duplicated`);
+    const handleDuplicateTemplate = async (template: ClassTemplate) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/class-templates/${template.id}/duplicate`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${context.authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: `${template.name} (Copy)`
+                    })
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to duplicate template");
+            }
+
+            toast.success(`Template "${template.name}" duplicated`);
+            fetchTemplates();
+        } catch (err: any) {
+            console.error("Error duplicating template", err);
+            toast.error(err.message || "Failed to duplicate template");
+        }
     };
 
-    const handleDeleteTemplate = (templateId: string, templateName: string) => {
-        toast.success(`Template "${templateName}" deleted`);
+    const handleDeleteTemplate = async (templateId: string, templateName: string) => {
+        if (!context.currentStudio?.id || !context.authToken) {
+            toast.error("Missing required information");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete "${templateName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `/api/admin/studios/${context.currentStudio.id}/class-templates/${templateId}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${context.authToken}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({}));
+                throw new Error(error.error || "Failed to delete template");
+            }
+
+            toast.success(`Template "${templateName}" deleted`);
+            fetchTemplates();
+        } catch (err: any) {
+            console.error("Error deleting template", err);
+            toast.error(err.message || "Failed to delete template");
+        }
     };
 
     const handleCreateVersion = () => {
@@ -633,7 +596,12 @@ export function ClassTemplateManager({
                 ))}
             </div>
 
-            {filteredTemplates.length === 0 && (
+            {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading templates...</span>
+                </div>
+            ) : filteredTemplates.length === 0 ? (
                 <div className="text-center py-12">
                     <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="text-lg font-medium mb-2">No templates found</h3>
@@ -643,7 +611,7 @@ export function ClassTemplateManager({
                             : "Create your first template to get started"}
                     </p>
                 </div>
-            )}
+            ) : null}
 
             {/* Create Template Dialog */}
             <Dialog

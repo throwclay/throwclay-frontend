@@ -1,9 +1,13 @@
-import {
-    useAppContext,
-    type PhotoEntry,
-    type PotteryEntry,
-    type WhiteboardPage
-} from "@/app/context/AppContext";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useAppContext } from "@/app/context/AppContext";
+import type {
+    PhotoEntry,
+    PotteryEntry,
+    StickyNote as StickyNoteElement,
+    WhiteboardPage
+} from "@/types";
 import {
     AlertCircle,
     ArrowLeft,
@@ -39,7 +43,7 @@ import {
     Share2,
     Sparkles,
     Star,
-    StickyNote,
+    StickyNote as StickyNoteIcon,
     Tag,
     Target,
     Type,
@@ -92,17 +96,16 @@ export default function WhiteboardEditor() {
         currentUser,
         currentStudio,
         currentThrow,
-        setCurrentThrow,
-        updateThrow,
-        navigateToPage
+        setCurrentThrow
     } = useAppContext();
+    const router = useRouter();
 
     // Redirect to journal if no current throw
     useEffect(() => {
         if (!currentThrow) {
-            navigateToPage("journal");
+            router.push("/journal");
         }
-    }, [currentThrow, navigateToPage]);
+    }, [currentThrow, router]);
 
     // Whiteboard states
     const [currentPage, setCurrentPage] = useState(0);
@@ -302,7 +305,7 @@ export default function WhiteboardEditor() {
                     <p className="text-muted-foreground mb-4">
                         Please select a throw from your journal to edit.
                     </p>
-                    <Button onClick={() => navigateToPage("journal")}>
+                    <Button onClick={() => router.push("/journal")}>
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Journal
                     </Button>
@@ -313,10 +316,10 @@ export default function WhiteboardEditor() {
 
     const handleBackToJournal = () => {
         if (currentThrow) {
-            updateThrow(currentThrow);
+            setCurrentThrow(currentThrow);
         }
         setCurrentThrow(null);
-        navigateToPage("journal");
+        router.push("/journal");
     };
 
     const handleUpdateThrowField = (field: keyof PotteryEntry, value: any) => {
@@ -328,7 +331,7 @@ export default function WhiteboardEditor() {
             updatedAt: new Date().toISOString()
         };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
     };
 
     const handlePhotoUpload = useCallback(
@@ -374,7 +377,7 @@ export default function WhiteboardEditor() {
                             whiteboardPages: updatedPages
                         };
                         setCurrentThrow(updatedThrow);
-                        updateThrow(updatedThrow);
+                        setCurrentThrow(updatedThrow);
                     }
                 };
                 reader.readAsDataURL(file);
@@ -384,13 +387,13 @@ export default function WhiteboardEditor() {
                 fileInputRef.current.value = "";
             }
         },
-        [currentThrow, currentPage, subscriptionLimits, setCurrentThrow, updateThrow]
+        [currentThrow, currentPage, subscriptionLimits, setCurrentThrow]
     );
 
     const handleAddStickyNote = () => {
         if (!currentThrow || currentThrow.whiteboardPages.length === 0) return;
 
-        const stickyNote: StickyNote = {
+        const stickyNote: StickyNoteElement = {
             id: `sticky${Date.now()}`,
             content: "New note",
             x: 100 + Math.random() * 300,
@@ -407,7 +410,7 @@ export default function WhiteboardEditor() {
         updatedPages[currentPage].elements.stickyNotes.push(stickyNote);
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
     };
 
     const handleAddProcessNote = (processId: string) => {
@@ -440,7 +443,7 @@ export default function WhiteboardEditor() {
         const process = potteryProcesses.find((p) => p.id === processId);
         if (!process) return;
 
-        const processNote: StickyNote = {
+        const processNote: StickyNoteElement = {
             id: `process${Date.now()}`,
             content: `${process.label}\n\nAdd your notes here...`,
             x: 50 + Math.random() * 400,
@@ -457,7 +460,7 @@ export default function WhiteboardEditor() {
         updatedPages[currentPage].elements.stickyNotes.push(processNote);
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
     };
 
     const handleApplyGlazes = () => {
@@ -472,7 +475,7 @@ export default function WhiteboardEditor() {
         handleUpdateThrowField("glazes", glazeList);
 
         // Add glazing note to whiteboard
-        const glazingNote: StickyNote = {
+        const glazingNote: StickyNoteElement = {
             id: `glazing${Date.now()}`,
             content: `Glazing Plan\n\n${glazeList.join(
                 "\n"
@@ -491,7 +494,7 @@ export default function WhiteboardEditor() {
         updatedPages[currentPage].elements.stickyNotes.push(glazingNote);
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
 
         setShowGlazingDialog(false);
         setSelectedGlazes([]);
@@ -521,7 +524,7 @@ export default function WhiteboardEditor() {
               } spots remaining`
             : `Custom Firing\n\n${firingType} @ ${firingTemp}\n\nScheduled for loading...\nCoordinate with studio`;
 
-        const firingNote: StickyNote = {
+        const firingNote: StickyNoteElement = {
             id: `firing${Date.now()}`,
             content: firingContent,
             x: 100 + Math.random() * 300,
@@ -538,7 +541,7 @@ export default function WhiteboardEditor() {
         updatedPages[currentPage].elements.stickyNotes.push(firingNote);
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
 
         setShowFiringDialog(false);
         setSelectedFiring("");
@@ -585,7 +588,7 @@ export default function WhiteboardEditor() {
         if (!pattern) return;
 
         // Add trimming note with AI suggestion
-        const trimmingNote: StickyNote = {
+        const trimmingNote: StickyNoteElement = {
             id: `trimming${Date.now()}`,
             content: `AI Trimming Analysis\n\n${pattern.name}\n${pattern.description}\n\nConfidence: ${pattern.confidence}%\n\nRecommended approach:\n• Mark center point\n• Measure wall thickness\n• Trim gradually`,
             x: 100 + Math.random() * 300,
@@ -602,7 +605,7 @@ export default function WhiteboardEditor() {
         updatedPages[currentPage].elements.stickyNotes.push(trimmingNote);
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
 
         setShowTrimmingDialog(false);
         setSelectedTrimmingPattern("");
@@ -639,7 +642,7 @@ export default function WhiteboardEditor() {
         const updatedPages = [...currentThrow.whiteboardPages, newPage];
         const updatedThrow = { ...currentThrow, whiteboardPages: updatedPages };
         setCurrentThrow(updatedThrow);
-        updateThrow(updatedThrow);
+        setCurrentThrow(updatedThrow);
         setCurrentPage(updatedPages.length - 1);
     };
 
@@ -732,7 +735,7 @@ export default function WhiteboardEditor() {
                 </Button>
                 <Button
                     size="sm"
-                    onClick={() => updateThrow(currentThrow)}
+                    onClick={() => setCurrentThrow(currentThrow)}
                 >
                     <Save className="w-4 h-4 mr-1" />
                     Save
@@ -779,7 +782,7 @@ export default function WhiteboardEditor() {
                     pressed={whiteboardTool === "sticky"}
                     onPressedChange={() => setWhiteboardTool("sticky")}
                 >
-                    <StickyNote className="w-4 h-4" />
+                    <StickyNoteIcon className="w-4 h-4" />
                 </Toggle>
                 <Toggle
                     pressed={whiteboardTool === "photo"}

@@ -113,7 +113,7 @@ export function calculateShelfCapacity(
 export function calculateTotalCapacity(
     shelfCount: number,
     shelfDimensions: ShelfDimensions,
-    pieceSize: PieceSize | "small" | "medium" | "large" | "extraLarge",
+    pieceSize: PieceSize | "small" | "medium" | "large" | "extraLarge" | "custom",
     customPieceSize?: PieceSize,
     spacing: number = 2,
     utilizationRate: number = 0.85
@@ -178,7 +178,7 @@ export function calculateCapacityByFiringType(
     shelfCount: number,
     shelfDimensions: ShelfDimensions,
     firingType: "bisque" | "glaze" | "raku" | "crystalline",
-    pieceSize: PieceSize | "small" | "medium" | "large" | "extraLarge",
+    pieceSize: PieceSize | "small" | "medium" | "large" | "extraLarge" | "custom",
     customPieceSize?: PieceSize
 ): CapacityCalculation {
     // Firing type specific spacing requirements

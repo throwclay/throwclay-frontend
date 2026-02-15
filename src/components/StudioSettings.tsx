@@ -24,7 +24,7 @@ import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { Progress } from "./ui/progress";
 import { useAppContext } from "@/app/context/AppContext";
-import type { StudioLocation } from "@/app/context/AppContext";
+import type { StudioLocation } from "@/types";
 
 interface StudioSettingsData {
     name: string;

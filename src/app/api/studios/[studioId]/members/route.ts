@@ -42,8 +42,12 @@ export async function GET(req: Request, { params }: { params: { studioId: string
         return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
-    // 2) Fetch all memberships for that studio (service role bypasses RLS)
-    const { data, error } = await supabaseAdmin
+    // 2) Get locationId from query params if provided
+    const { searchParams } = new URL(req.url);
+    const locationId = searchParams.get("locationId");
+
+    // 3) Fetch memberships for that studio (optionally filtered by location)
+    let query = supabaseAdmin
         .from("studio_memberships")
         .select(
             `
@@ -67,7 +71,15 @@ export async function GET(req: Request, { params }: { params: { studioId: string
     `
         )
         .eq("studio_id", studioId)
-        .eq("role", "member"); // restricitng to members only for now (no staff)
+        .eq("role", "member") // restricting to members only for now (no staff)
+        .eq("status", "active"); // Only active members
+
+    // Filter by location if provided
+    if (locationId) {
+        query = query.eq("location_id", locationId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error("Error fetching members", error);

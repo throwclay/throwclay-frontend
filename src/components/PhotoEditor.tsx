@@ -11,7 +11,7 @@ import { Slider } from "./ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { DrawingCanvas } from "./DrawingCanvas";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import type { PhotoEntry } from "@/app/context/AppContext";
+import type { PhotoEntry } from "@/types";
 
 interface PhotoEditorProps {
     photo: PhotoEntry;
@@ -116,8 +116,9 @@ export function PhotoEditor({ photo, onSave, onCancel }: PhotoEditorProps) {
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                if (e.target?.result) {
-                    setEditedPhoto((prev) => ({ ...prev, url: e.target.result as string }));
+                const result = e.target?.result;
+                if (result) {
+                    setEditedPhoto((prev) => ({ ...prev, url: result as string }));
                     setShowReplaceDialog(false);
                 }
             };
