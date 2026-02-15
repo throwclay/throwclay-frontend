@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { DefaultLayout } from "@/components/layout/DefaultLayout";
 import type { User as UserType, Studio, StudioLocation, StudioMembership } from "@/types";
 
 
-export default function LoginForm() {
+function LoginFormInner() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
@@ -766,5 +766,21 @@ export default function LoginForm() {
                 </div>
             </div>
         </DefaultLayout>
+    );
+}
+
+export default function LoginForm() {
+    return (
+        <Suspense
+            fallback={
+                <DefaultLayout>
+                    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                        <p className="text-muted-foreground">Loading...</p>
+                    </div>
+                </DefaultLayout>
+            }
+        >
+            <LoginFormInner />
+        </Suspense>
     );
 }

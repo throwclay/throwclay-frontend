@@ -587,16 +587,16 @@ export default function Settings() {
                 <div className="mb-8">
                     <h1>Settings</h1>
                     <p className="text-muted-foreground">
-                        Manage your {currentUser.activeMode === "studio" ? "studio" : "account"}{" "}
+                        Manage your {currentUser?.activeMode === "studio" ? "studio" : "account"}{" "}
                         settings and preferences
                     </p>
                 </div>
                 <Tabs
-                    defaultValue={currentUser.activeMode === "studio" ? "studio" : "profile"}
+                    defaultValue={currentUser?.activeMode === "studio" ? "studio" : "profile"}
                     className="space-y-6"
                 >
                     <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8">
-                        {currentUser.activeMode === "studio" && (
+                        {currentUser?.activeMode === "studio" && (
                             <TabsTrigger
                                 value="studio"
                                 className="flex items-center gap-1 sm:gap-2"
@@ -642,7 +642,7 @@ export default function Settings() {
                                 <span className="text-xs sm:text-sm">Domain</span>
                             </TabsTrigger>
                         )}
-                        {currentUser.activeMode === "studio" && (
+                        {currentUser?.activeMode === "studio" && (
                             <TabsTrigger
                                 value="roles"
                                 className="flex items-center gap-1 sm:gap-2"
@@ -668,7 +668,7 @@ export default function Settings() {
                     </TabsList>
 
                     {/* Studio Settings Tab */}
-                    {currentUser.activeMode === "studio" && (
+                    {currentUser?.activeMode === "studio" && (
                         <TabsContent value="studio">
                             <StudioSettings />
                         </TabsContent>
@@ -692,7 +692,7 @@ export default function Settings() {
                                         <Label htmlFor="fullName">Full Name</Label>
                                         <Input
                                             id="fullName"
-                                            defaultValue={currentUser.name}
+                                            defaultValue={currentUser?.name}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -703,7 +703,7 @@ export default function Settings() {
                                             </span>
                                             <Input
                                                 id="handle"
-                                                defaultValue={currentUser.handle}
+                                                defaultValue={currentUser?.handle}
                                                 className="rounded-l-none"
                                             />
                                         </div>
@@ -715,7 +715,7 @@ export default function Settings() {
                                     <Input
                                         id="email"
                                         type="email"
-                                        defaultValue={currentUser.email}
+                                        defaultValue={currentUser?.email}
                                     />
                                 </div>
 
@@ -734,7 +734,7 @@ export default function Settings() {
                                         id="bio"
                                         placeholder="Tell us about yourself..."
                                         rows={4}
-                                        defaultValue={currentUser.profile?.bio}
+                                        defaultValue={currentUser?.profile?.bio}
                                     />
                                 </div>
 
@@ -1167,7 +1167,7 @@ export default function Settings() {
                                     />
                                 </div>
 
-                                {currentUser.activeMode === "studio" && (
+                                {currentUser?.activeMode === "studio" && (
                                     <>
                                         <Separator />
                                         <div className="flex items-center justify-between">
@@ -1256,7 +1256,7 @@ export default function Settings() {
                                     />
                                 </div>
 
-                                {currentUser.activeMode === "studio" && (
+                                {currentUser?.activeMode === "studio" && (
                                     <>
                                         <Separator />
                                         <div className="flex items-center justify-between">
@@ -1304,7 +1304,7 @@ export default function Settings() {
                                     />
                                 </div>
 
-                                {currentUser.activeMode === "studio" && (
+                                {currentUser?.activeMode === "studio" && (
                                     <>
                                         <Separator />
                                         <div className="flex items-center justify-between">
@@ -1533,7 +1533,7 @@ export default function Settings() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {(currentUser.activeMode === "studio"
+                                {(currentUser?.activeMode === "studio"
                                     ? paymentPlans.studio
                                     : paymentPlans.artist
                                 ).map((plan) => (
@@ -1553,7 +1553,7 @@ export default function Settings() {
                                                 <span className="text-muted-foreground">
                                                     /month
                                                 </span>
-                                                {currentUser.activeMode === "studio" &&
+                                                {currentUser?.activeMode === "studio" &&
                                                     (plan as any).memberRange && (
                                                         <p className="text-sm text-muted-foreground mt-2">
                                                             {(plan as any).memberRange}
@@ -1641,7 +1641,7 @@ export default function Settings() {
                                             <Label htmlFor="billingName">Full Name</Label>
                                             <Input
                                                 id="billingName"
-                                                defaultValue={currentUser.name}
+                                                defaultValue={currentUser?.name}
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -1649,7 +1649,7 @@ export default function Settings() {
                                             <Input
                                                 id="billingEmail"
                                                 type="email"
-                                                defaultValue={currentUser.email}
+                                                defaultValue={currentUser?.email}
                                             />
                                         </div>
                                     </div>
@@ -1841,7 +1841,7 @@ export default function Settings() {
                                     <CardTitle>Custom Domain</CardTitle>
                                     <CardDescription>
                                         Connect your custom domain to redirect to your{" "}
-                                        {currentUser.activeMode === "studio" ? "studio" : "artist"}{" "}
+                                        {currentUser?.activeMode === "studio" ? "studio" : "artist"}{" "}
                                         profile
                                     </CardDescription>
                                 </CardHeader>
@@ -2018,7 +2018,7 @@ export default function Settings() {
                     )}
 
                     {/* Roles Tab (Studio Only) */}
-                    {currentUser.activeMode === "studio" && (
+                    {currentUser?.activeMode === "studio" && (
                         <TabsContent
                             value="roles"
                             className="space-y-6"
@@ -3178,7 +3178,7 @@ export default function Settings() {
                                                     Show logo on invoices
                                                 </Label>
                                             </div>
-                                            {currentUser.activeMode === "studio" && (
+                                            {currentUser?.activeMode === "studio" && (
                                                 <>
                                                     <div className="flex items-center gap-2">
                                                         <Checkbox
@@ -3335,9 +3335,9 @@ export default function Settings() {
                                             invoiceFooter: brandingSettings.invoiceFooter
                                         }}
                                         userName={
-                                            currentUser.activeMode === "studio"
-                                                ? currentStudio?.name || currentUser.name
-                                                : currentUser.name
+                                            (currentUser?.activeMode === "studio"
+                                                ? currentStudio?.name || currentUser?.name
+                                                : currentUser?.name) ?? "User"
                                         }
                                     />
                                 </div>
@@ -3366,7 +3366,7 @@ export default function Settings() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                            {(currentUser.activeMode === "studio"
+                            {(currentUser?.activeMode === "studio"
                                 ? paymentPlans.studio
                                 : paymentPlans.artist
                             ).map((plan) => (

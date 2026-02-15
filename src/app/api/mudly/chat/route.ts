@@ -272,10 +272,11 @@ export async function POST(req: Request) {
         currentMessages = [...currentMessages, msg];
 
         for (const tc of msg.tool_calls) {
-            const name = tc.function?.name;
+            const fn = "function" in tc ? tc.function : undefined;
+            const name = fn?.name;
             let args: Record<string, unknown> = {};
             try {
-                if (tc.function?.arguments) args = JSON.parse(tc.function.arguments);
+                if (fn?.arguments) args = JSON.parse(fn.arguments);
             } catch {
                 // ignore
             }
