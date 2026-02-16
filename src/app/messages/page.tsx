@@ -55,6 +55,7 @@ interface ConversationItem {
     createdAt: string;
     updatedAt: string;
     memberCount: number;
+    unreadCount: number;
     lastMessage: {
         id: string;
         senderId: string;
@@ -121,23 +122,27 @@ export default function MessagingCenter() {
     const activeConversation = conversations.find((c) => c.id === activeChat);
     const activeChatMessages = activeChat ? messages.filter((m) => m.conversationId === activeChat) : [];
 
-    const fetchConversations = useCallback(async () => {
-        if (!studioId || !authToken) return;
-        setConversationsLoading(true);
-        try {
-            const res = await fetch(`/api/studios/${studioId}/conversations`, {
-                headers: { Authorization: `Bearer ${authToken}` }
-            });
-            if (!res.ok) throw new Error("Failed to load conversations");
-            const data = await res.json();
-            setConversations(data.conversations ?? []);
-        } catch (e) {
-            console.error(e);
-            setConversations([]);
-        } finally {
-            setConversationsLoading(false);
-        }
-    }, [studioId, authToken]);
+    const fetchConversations = useCallback(
+        async (opts?: { silent?: boolean }) => {
+            if (!studioId || !authToken) return;
+            const silent = opts?.silent === true;
+            if (!silent) setConversationsLoading(true);
+            try {
+                const res = await fetch(`/api/studios/${studioId}/conversations`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                if (!res.ok) throw new Error("Failed to load conversations");
+                const data = await res.json();
+                setConversations(data.conversations ?? []);
+            } catch (e) {
+                if (!silent) console.error(e);
+                if (!silent) setConversations([]);
+            } finally {
+                if (!silent) setConversationsLoading(false);
+            }
+        },
+        [studioId, authToken]
+    );
 
     const fetchMessages = useCallback(async (conversationId: string) => {
         if (!studioId || !authToken) return;
@@ -184,6 +189,28 @@ export default function MessagingCenter() {
         if (activeChat) fetchMessages(activeChat);
         else setMessages([]);
     }, [activeChat, fetchMessages]);
+
+    const markConversationRead = useCallback(
+        async (conversationId: string) => {
+            if (!studioId || !authToken) return;
+            try {
+                await fetch(
+                    `/api/studios/${studioId}/conversations/${conversationId}/read`,
+                    { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }
+                );
+                fetchConversations({ silent: true });
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        [studioId, authToken, fetchConversations]
+    );
+
+    useEffect(() => {
+        if (activeChat && !messagesLoading) {
+            markConversationRead(activeChat);
+        }
+    }, [activeChat, messagesLoading, markConversationRead]);
 
     useEffect(() => {
         if (showNewChatDialog) fetchMembers();
@@ -248,7 +275,7 @@ export default function MessagingCenter() {
             setMessages((prev) =>
                 prev.map((m) => (m.id === optimistic.id ? { ...data.message, id: data.message.id } : m))
             );
-            fetchConversations();
+            fetchConversations({ silent: true });
         } catch (e) {
             setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
             setMessageText(content);
@@ -290,7 +317,7 @@ export default function MessagingCenter() {
             setIsPrivateGroup(false);
             setShowNewChatDialog(false);
             if (convId) {
-                await fetchConversations();
+                await fetchConversations({ silent: true });
                 setActiveChat(convId);
                 fetchMessages(convId);
             }
@@ -581,7 +608,10 @@ export default function MessagingCenter() {
                                                 c.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                 (c.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
                                         )
-                                        .map((chat) => (
+                                        .map((chat) => {
+                                            const unreadCount = chat.unreadCount ?? (chat as { unread_count?: number }).unread_count ?? 0;
+                                            const lastMsg = chat.lastMessage as { createdAt?: string; created_at?: string; content?: string } | null;
+                                            return (
                                             <button
                                                 key={chat.id}
                                                 type="button"
@@ -604,28 +634,33 @@ export default function MessagingCenter() {
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {unreadCount > 0 && (
+                                                        <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground ring-2 ring-background">
+                                                            {unreadCount > 99 ? "99+" : unreadCount}
+                                                        </span>
+                                                    )}
                                                     {chat.isPrivate && (
                                                         <Lock className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-0.5 text-muted-foreground" />
                                                     )}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-baseline justify-between gap-2">
-                                                        <span className="font-medium text-sm truncate">
+                                                <div className="flex-1 min-w-0 overflow-hidden">
+                                                    <div className="flex items-center justify-between gap-2 min-w-0">
+                                                        <span className="font-medium text-sm truncate min-w-0">
                                                             {chat.displayName}
                                                         </span>
-                                                        {chat.lastMessage && (
-                                                            <span className={`text-xs shrink-0 ${
+                                                        {lastMsg && (
+                                                            <span className={`text-xs whitespace-nowrap shrink-0 ${
                                                                 activeChat === chat.id ? "text-primary-foreground/80" : "text-muted-foreground"
                                                             }`}>
-                                                                {formatTime(chat.lastMessage.createdAt)}
+                                                                {formatTime(lastMsg.createdAt ?? lastMsg.created_at ?? "")}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    {chat.lastMessage ? (
-                                                        <p className={`text-xs truncate mt-0.5 ${
+                                                    {lastMsg ? (
+                                                        <p className={`text-xs truncate mt-0.5 min-w-0 ${
                                                             activeChat === chat.id ? "text-primary-foreground/70" : "text-muted-foreground"
                                                         }`}>
-                                                            {chat.lastMessage.content}
+                                                            {lastMsg.content}
                                                         </p>
                                                     ) : (
                                                         <p className={`text-xs mt-0.5 ${
@@ -636,7 +671,8 @@ export default function MessagingCenter() {
                                                     )}
                                                 </div>
                                             </button>
-                                        ))
+                                            );
+                                        })
                                 )}
                             </div>
                         </ScrollArea>

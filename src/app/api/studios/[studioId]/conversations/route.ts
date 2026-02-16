@@ -48,6 +48,30 @@ export async function GET(
         return NextResponse.json({ error: "Failed to load conversations" }, { status: 500 });
     }
 
+    // Unread count per conversation: messages from others that current user hasn't read
+    const { data: messagesFromOthers } = await supabaseAdmin
+        .from("studio_messages")
+        .select("id, conversation_id")
+        .in("conversation_id", conversationIds)
+        .neq("sender_id", user.id);
+
+    const messageIdsFromOthers = (messagesFromOthers ?? []).map((m) => m.id);
+    let readMessageIds = new Set<string>();
+    if (messageIdsFromOthers.length > 0) {
+        const { data: receipts } = await supabaseAdmin
+            .from("studio_message_read_receipts")
+            .select("message_id")
+            .eq("user_id", user.id)
+            .in("message_id", messageIdsFromOthers);
+        readMessageIds = new Set((receipts ?? []).map((r) => r.message_id));
+    }
+    const unreadByConversation: Record<string, number> = {};
+    for (const m of messagesFromOthers ?? []) {
+        if (!readMessageIds.has(m.id)) {
+            unreadByConversation[m.conversation_id] = (unreadByConversation[m.conversation_id] ?? 0) + 1;
+        }
+    }
+
     // Last message per conversation and participant profiles for display name (DM)
     const withMeta = await Promise.all(
         (conversations ?? []).map(async (c) => {
@@ -69,7 +93,7 @@ export async function GET(
             const participants = participantsRes.data ?? [];
             let displayName = c.name ?? "Group chat";
             if (c.type === "direct" && participants.length >= 1) {
-                const otherIds = participants.map((p) => p.user_id).filter((id) => id !== user.id);
+                const otherIds = participants.map((p: { user_id: string }) => p.user_id).filter((id: string) => id !== user.id);
                 if (otherIds.length === 1) {
                     const { data: profile } = await supabaseAdmin
                         .from("profiles")
@@ -91,6 +115,7 @@ export async function GET(
                 createdAt: c.created_at,
                 updatedAt: c.updated_at,
                 memberCount: participants.length,
+                unreadCount: unreadByConversation[c.id] ?? 0,
                 lastMessage: lastMsg
                     ? {
                         id: lastMsg.id,
