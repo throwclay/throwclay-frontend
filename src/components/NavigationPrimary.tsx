@@ -26,7 +26,7 @@ import {
     Users,
     X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -138,11 +138,38 @@ const AppGridIcon = ({ className }: { className?: string }) => (
 export function NavigationPrimary() {
     const router = useRouter();
     const pathname = usePathname();
-    const { currentUser, setCurrentUser, currentStudio, pendingInvites, isInitializing } =
+    const { currentUser, setCurrentUser, currentStudio, pendingInvites, isInitializing, authToken } =
         useAppContext();
     const isGuest = !currentUser;
     const pendingInvitesCount = pendingInvites.filter((i) => i.status === "pending").length;
 
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+    const fetchUnreadMessagesCount = useCallback(async () => {
+        if (!currentStudio?.id || !authToken) {
+            setUnreadMessagesCount(0);
+            return;
+        }
+        try {
+            const res = await fetch(
+                `/api/studios/${currentStudio.id}/conversations/unread-count`,
+                { headers: { Authorization: `Bearer ${authToken}` } }
+            );
+            if (res.ok) {
+                const data = await res.json();
+                const total = data.totalUnread ?? 0;
+                // Don't overwrite when user is on messages page (they acknowledged the notif by clicking it)
+                if (!pathname.startsWith("/messages")) {
+                    setUnreadMessagesCount(total);
+                }
+            }
+        } catch {
+            if (!pathname.startsWith("/messages")) setUnreadMessagesCount(0);
+        }
+    }, [currentStudio?.id, authToken, pathname]);
+
+    useEffect(() => {
+        fetchUnreadMessagesCount();
+    }, [fetchUnreadMessagesCount]);
 
     console.log(`Pending invites: ${pendingInvitesCount}`);
 
@@ -332,17 +359,33 @@ export function NavigationPrimary() {
                 isRead: false
             }));
 
+        const messageNotifications: NotificationItem[] =
+            unreadMessagesCount > 0
+                ? [
+                      {
+                          id: "messages-unread",
+                          type: "message",
+                          title: "Unread messages",
+                          message: `You have ${unreadMessagesCount} unread message${unreadMessagesCount !== 1 ? "s" : ""}`,
+                          timestamp: "",
+                          isRead: false
+                      }
+                  ]
+                : [];
+
         const systemNotifications: NotificationItem[] = []; // TODO: Integrate notifications
 
-        return [...inviteNotifications, ...systemNotifications];
+        return [...inviteNotifications, ...messageNotifications, ...systemNotifications];
     };
 
     const mainNavigationItems = getMainNavigationItems();
     const moreAppsItems = getMoreItems();
     const allNavigationItems = [...mainNavigationItems, ...moreAppsItems];
     const notifications = getNotifications();
-    const baseUnread = notifications.filter((n) => !n.isRead && n.type !== "invite").length;
-    const unreadCount = baseUnread + pendingInvitesCount;
+    const baseUnread = notifications.filter(
+        (n) => !n.isRead && n.type !== "invite" && n.type !== "message"
+    ).length;
+    const unreadCount = baseUnread + pendingInvitesCount + unreadMessagesCount;
     const currentPage = pathname.split("/")[1]; // TODO: this can be improved
 
     const NavigationContent = () => (
@@ -422,7 +465,7 @@ export function NavigationPrimary() {
             )}
 
             {/* Notifications Bell */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => open && fetchUnreadMessagesCount()}>
                 <DropdownMenuTrigger asChild>
                     <Button
                         variant="ghost"
@@ -465,10 +508,10 @@ export function NavigationPrimary() {
                                     className={`cursor-pointer p-4 ${
                                         !notification.isRead ? "bg-accent/30" : ""
                                     }`}
-                                    // Optional: only clickable for non-invite notifications
                                     onClick={() => {
-                                        if (notification.type !== "invite") {
-                                            // e.g. open Messages or whatever
+                                        if (notification.type === "message") {
+                                            setUnreadMessagesCount(0);
+                                            router.push("/messages");
                                         }
                                     }}
                                 >
