@@ -3,8 +3,7 @@ import { AppProvider } from "./context/AppContext";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import { Toaster } from "@/components/ui/sonner";
-
-import { DefaultLayout } from "@/components/layout/DefaultLayout";
+import { ThemeProvider } from "@/lib/design-tokens/ThemeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,13 +17,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="en">
             <body className={inter.className}>
-                <AppProvider>
-                    {children}
-                    <Toaster
-                        richColors
-                        position="top-center"
-                    />
-                </AppProvider>
+                <ThemeProvider>
+                    <AppProvider>
+                        {children}
+                        <Toaster
+                            richColors
+                            position="top-center"
+                        />
+                    </AppProvider>
+                </ThemeProvider>
             </body>
         </html>
     );

@@ -17,10 +17,12 @@ import {
     MapPin,
     Menu,
     MessageCircle,
+    Moon,
     Package,
     Rss,
     Settings as SettingsIcon,
     ShoppingBag,
+    Sun,
     User,
     UserCog,
     Users,
@@ -40,6 +42,7 @@ import {
 } from "./ui/dropdown-menu";
 
 import { useAppContext } from "@/app/context/AppContext";
+import { useTheme } from "@/lib/design-tokens";
 import { supabase } from "@/lib/apis/supabaseClient";
 import { NotificationItem, StudioRole } from "@/types";
 import Link from "next/link";
@@ -140,6 +143,7 @@ export function NavigationPrimary() {
     const pathname = usePathname();
     const { currentUser, setCurrentUser, currentStudio, pendingInvites, isInitializing, authToken } =
         useAppContext();
+    const { isDark, toggleTheme } = useTheme();
     const isGuest = !currentUser;
     const pendingInvitesCount = pendingInvites.filter((i) => i.status === "pending").length;
 
@@ -463,6 +467,17 @@ export function NavigationPrimary() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}
+
+            {/* Theme toggle */}
+            <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
 
             {/* Notifications Bell */}
             <DropdownMenu onOpenChange={(open) => open && fetchUnreadMessagesCount()}>
